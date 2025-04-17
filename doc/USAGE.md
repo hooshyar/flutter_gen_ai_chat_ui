@@ -9,6 +9,7 @@ This document provides a comprehensive guide to using the Flutter Gen AI Chat UI
 - [Advanced Features](#advanced-features)
 - [Best Practices](#best-practices)
 - [Proper Text Streaming Usage](#proper-text-streaming-usage)
+- [Bottom Action Bar (ChatGPT‑Style)](#bottom-action-bar-chatgpt-style)
 
 ## Basic Setup
 
@@ -862,3 +863,42 @@ Future<void> streamAIResponse(String userPrompt, ChatUser aiUser) async {
 - **Forgetting error handling**: Always wrap streaming code in try/catch blocks
 - **Not marking completion**: Always set `isStreaming: false` when streaming is done
 - **Using different timestamps**: Keep the same createdAt value for all updates to the same message
+
+## Bottom Action Bar (ChatGPT‑Style)
+
+As of the *extended* version, you can add a customizable bottom action bar (similar to ChatGPT mobile) above the input field.
+
+### Step 1: Define Actions
+Create a list of `BottomAction` items:
+```dart
+final actions = [
+  BottomAction(icon: Icon(Icons.add),              onTap: _onAddAttachment),
+  BottomAction(icon: Icon(Icons.search),           label: 'Search',         onTap: _onSearch),
+  BottomAction(icon: Icon(Icons.auto_graph),       label: 'Deep research',  onTap: _onDeepResearch),
+  BottomAction(icon: Icon(Icons.mic),              onTap: _onVoiceInput),
+  BottomAction(icon: Icon(Icons.wifi_tethering),   label: 'Live',           onTap: _onLiveSession),
+];
+```
+
+### Step 2: Supply to `AiChatWidget`
+Pass your `actions` via the new `bottomActions` parameter:
+```dart
+AiChatWidget(
+  currentUser: user,
+  aiUser: ai,
+  controller: controller,
+  onSendMessage: _send,
+  bottomActions: actions,
+  // … existing parameters
+)
+```
+
+### Behavior & Styling
+- Renders immediately above the text input.
+- Honors `MediaQuery.viewInsets` to slide with the keyboard.
+- Each button has a minimum tap area of 44×44 dp.
+- Icons and labels follow the current theme's `cardColor` and `caption` text style.
+
+### Theming Tips
+- Override `ThemeData.cardColor` or wrap the bar in a custom `Container` to adjust background.
+- For custom icon colors or sizes, supply your own `Widget` into the `icon` field of `BottomAction`.

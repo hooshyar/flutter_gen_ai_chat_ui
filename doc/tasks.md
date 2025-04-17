@@ -26,6 +26,24 @@
 - [ ] Fix identified issues
 - [ ] Refine documentation
 
+## Phase 5: Extended Bottom Action Bar (ChatGPT‑Style)
+- [x] Define `ChatAction` model class (icon + optional label + onTap callback)
+- [x] Implement `ChatActionsBar` widget
+- [x] Add `actionsBarConfig` parameter to `ChatInput` API
+- [ ] Expose `actionsBarConfig` parameter in `AiChatWidget` API
+- [ ] Integrate `ChatActionsBar` in `AiChatWidget.build()` before `ChatInput`
+- [ ] Provide default ChatGPT‑style actions in example apps
+- [ ] Add widget tests for:
+  - Rendering action bar when `actionsBarConfig` is provided
+  - Verifying callbacks fire on tap
+  - Slide animation with keyboard insets
+- [ ] Update examples and documentation:
+  - README: new "Chat Action Bar" section with usage snippet
+  - MIGRATION.md: note optional `actionsBarConfig` API
+  - USAGE.md: add UI guidelines for extended action bar
+- [ ] Review performance and accessibility compliance
+- [ ] Bump version to 2.1.0 (or appropriate) and update CHANGELOG.md
+
 ## Immediate Next Steps
 1. ~~Restructure example directory to create a clear organization~~ ✓
 2. ~~Create a home screen that showcases all examples with navigation~~ ✓

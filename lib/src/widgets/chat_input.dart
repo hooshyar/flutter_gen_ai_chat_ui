@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../models/input_options.dart';
+import 'chat_actions_bar.dart';
 
 /// A custom chat input widget that supports extensive customization options.
 class ChatInput extends StatelessWidget {
@@ -12,6 +13,7 @@ class ChatInput extends StatelessWidget {
     required this.onSend,
     required this.options,
     this.focusNode,
+    this.actionsBarConfig,
   });
 
   /// The text editing controller.
@@ -25,6 +27,9 @@ class ChatInput extends StatelessWidget {
 
   /// Optional focus node for the text field.
   final FocusNode? focusNode;
+
+  /// Optional actionsBarConfig for rendering above the input
+  final ChatActionsBarConfig? actionsBarConfig;
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +117,15 @@ class ChatInput extends StatelessWidget {
       ],
     );
 
+    // Wrap inputContent with actions bar if provided
+    Widget content = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (actionsBarConfig != null) ChatActionsBar(actionsBarConfig!),
+        inputContent,
+      ],
+    );
+
     // Calculate appropriate background color based on settings
     final useScaffoldBg = options.useScaffoldBackground ?? false;
     final effectiveBackgroundColor = useScaffoldBg
@@ -155,7 +169,7 @@ class ChatInput extends StatelessWidget {
                 // Use app direction consistently for margin resolution
                 padding:
                     options.margin?.resolve(appDirection) ?? EdgeInsets.zero,
-                child: inputContent,
+                child: content,
               ),
             ),
           ),
@@ -171,7 +185,7 @@ class ChatInput extends StatelessWidget {
         child: Padding(
           // Use app direction consistently for margin resolution
           padding: options.margin?.resolve(appDirection) ?? EdgeInsets.zero,
-          child: inputContent,
+          child: content,
         ),
       );
     }
@@ -180,7 +194,7 @@ class ChatInput extends StatelessWidget {
     Widget result = Padding(
       // Use app direction consistently for margin resolution
       padding: options.margin?.resolve(appDirection) ?? EdgeInsets.zero,
-      child: inputContent,
+      child: content,
     );
 
     // Apply constraints if needed when no container decoration is used

@@ -45,3 +45,6 @@ files_list.md
 # Test coverage
 coverage/
 .test_coverage.dart
+
+doc/*
+
