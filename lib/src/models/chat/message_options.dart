@@ -213,6 +213,9 @@ class MessageOptions {
   /// Style sheet for markdown content
   final MarkdownStyleSheet? markdownStyleSheet;
 
+  /// Callback when link is clicked
+  final MarkdownTapLinkCallback? onTapLink;
+
   /// Whether to show copy button for AI messages
   final bool? showCopyButton;
 
@@ -263,6 +266,7 @@ class MessageOptions {
     this.showUserName = true,
     this.userNameStyle,
     this.markdownStyleSheet,
+    this.onTapLink,
     this.showCopyButton = false,
     this.onCopy,
     this.userTextColor,
@@ -290,6 +294,7 @@ class MessageOptions {
     bool? showUserName,
     TextStyle? userNameStyle,
     MarkdownStyleSheet? markdownStyleSheet,
+    MarkdownTapLinkCallback? onTapLink,
     bool? showCopyButton,
     void Function(String)? onCopy,
     Color? userTextColor,
@@ -316,6 +321,7 @@ class MessageOptions {
         showUserName: showUserName ?? this.showUserName,
         userNameStyle: userNameStyle ?? this.userNameStyle,
         markdownStyleSheet: markdownStyleSheet ?? this.markdownStyleSheet,
+        onTapLink: onTapLink ?? this.onTapLink,
         showCopyButton: showCopyButton ?? this.showCopyButton,
         onCopy: onCopy ?? this.onCopy,
         userTextColor: userTextColor ?? this.userTextColor,
