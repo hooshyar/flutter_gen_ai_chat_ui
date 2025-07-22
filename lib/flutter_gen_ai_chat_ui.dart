@@ -12,10 +12,10 @@ export 'src/models/ai_chat_config.dart';
 export 'src/models/chat/models.dart';
 export 'src/models/example_question.dart';
 export 'src/models/example_question_config.dart' hide ExampleQuestion;
+export 'src/models/file_upload_options.dart';
 export 'src/models/input_options.dart';
 export 'src/models/models.dart';
 export 'src/models/welcome_message_config.dart';
-export 'src/models/file_upload_options.dart';
 
 // Theme
 export 'src/theme/custom_theme_extension.dart';

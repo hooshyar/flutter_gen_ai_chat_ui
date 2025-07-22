@@ -35,6 +35,7 @@ build/
 logger.txt
 context.md
 files_list.md
+CLAUDE.md
 
 # Cursor editor
 .cursor/

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'media.dart';
-import '../chat_message.dart';
 
 import '../ai_chat_config.dart';
+import '../chat_message.dart';
+import 'media.dart';
 
 /// Class for customizing chat bubble appearance
 class BubbleStyle {

@@ -1,10 +1,9 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-import '../models/input_options.dart';
 import '../models/file_upload_options.dart';
+import '../models/input_options.dart';
 
 /// A custom chat input widget that supports extensive customization options.
 class ChatInput extends StatelessWidget {

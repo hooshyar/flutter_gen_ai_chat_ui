@@ -171,7 +171,7 @@ class ChatMessagesController extends ChangeNotifier {
       _lastMessageUserId = userId;
 
       // Create a property map to track messaging state
-      Map<String, dynamic> updatedProperties = {...?message.customProperties};
+      final updatedProperties = <String, dynamic>{...?message.customProperties};
 
       // Track the first message of an AI response
       if (isStartOfResponse) {
@@ -251,27 +251,7 @@ class ChatMessagesController extends ChangeNotifier {
       final isFirstResponse =
           updatedProperties['isFirstResponseMessage'] as bool? ?? false;
 
-      bool shouldScroll = false;
-      switch (config.autoScrollBehavior) {
-        case AutoScrollBehavior.always:
-          shouldScroll = true;
-          debugPrint('SCROLL DECISION: Always mode - will scroll');
-          break;
-        case AutoScrollBehavior.onNewMessage:
-          shouldScroll = isUserMessage || isFirstResponse;
-          debugPrint(
-              'SCROLL DECISION: onNewMessage mode - ${shouldScroll ? "will scroll" : "will NOT scroll"}');
-          break;
-        case AutoScrollBehavior.onUserMessageOnly:
-          shouldScroll = isUserMessage;
-          debugPrint(
-              'SCROLL DECISION: onUserMessageOnly mode - ${shouldScroll ? "will scroll" : "will NOT scroll"}');
-          break;
-        case AutoScrollBehavior.never:
-          shouldScroll = false;
-          debugPrint('SCROLL DECISION: Never scroll mode - will NOT scroll');
-          break;
-      }
+      final shouldScroll = _determineShouldScroll(config, isUserMessage, isFirstResponse);
 
       if (shouldScroll) {
         debugPrint('SCROLLING: After render for isUserMessage=$isUserMessage');
@@ -279,6 +259,27 @@ class ChatMessagesController extends ChangeNotifier {
       } else {
         debugPrint('NOT SCROLLING: Message doesn\'t meet scroll criteria');
       }
+    }
+  }
+
+  /// Determines if scrolling should occur based on configuration and message type
+  bool _determineShouldScroll(ScrollBehaviorConfig config, bool isUserMessage, bool isFirstResponse) {
+    switch (config.autoScrollBehavior) {
+      case AutoScrollBehavior.always:
+        debugPrint('SCROLL DECISION: Always mode - will scroll');
+        return true;
+      case AutoScrollBehavior.onNewMessage:
+        final shouldScroll = isUserMessage || isFirstResponse;
+        debugPrint(
+            'SCROLL DECISION: onNewMessage mode - ${shouldScroll ? "will scroll" : "will NOT scroll"}');
+        return shouldScroll;
+      case AutoScrollBehavior.onUserMessageOnly:
+        debugPrint(
+            'SCROLL DECISION: onUserMessageOnly mode - ${isUserMessage ? "will scroll" : "will NOT scroll"}');
+        return isUserMessage;
+      case AutoScrollBehavior.never:
+        debugPrint('SCROLL DECISION: Never scroll mode - will NOT scroll');
+        return false;
     }
   }
 
@@ -296,7 +297,7 @@ class ChatMessagesController extends ChangeNotifier {
     final currentResponseId = _currentResponseFirstMessageId;
 
     // Check if there's an active response chain in progress by looking at the latest message
-    bool isPartOfResponseChain = false;
+    var isPartOfResponseChain = false;
     String? latestResponseId;
 
     if (_messages.isNotEmpty) {
@@ -318,7 +319,7 @@ class ChatMessagesController extends ChangeNotifier {
             : const Duration(milliseconds: 200); // Default delay
 
     // Add a tracking variable to prevent multiple scroll actions
-    bool hasScrolled = false;
+    var hasScrolled = false;
 
     // Longer delay to ensure messages have time to render
     Future.delayed(scrollDelay, () {
@@ -501,7 +502,7 @@ class ChatMessagesController extends ChangeNotifier {
     // Apply debounce for scrollToBottom to prevent jitter
     // (less strict than for force scroll)
     final now = DateTime.now();
-    final minInterval = 200; // ms
+    const minInterval = 200; // ms
     if (now.difference(_lastScrollTime).inMilliseconds < minInterval) {
       debugPrint('SCROLL TO BOTTOM DEBOUNCED: Too soon after last scroll');
       return;
@@ -509,9 +510,9 @@ class ChatMessagesController extends ChangeNotifier {
     _lastScrollTime = now;
 
     // Use slightly longer animation for onNewMessage to reduce jitter
-    Duration effectiveDuration =
+    final effectiveDuration =
         duration ?? scrollBehaviorConfig.scrollAnimationDuration;
-    Curve effectiveCurve = curve ?? scrollBehaviorConfig.scrollAnimationCurve;
+    final effectiveCurve = curve ?? scrollBehaviorConfig.scrollAnimationCurve;
 
     // Log the animation being used
     debugPrint(
@@ -680,7 +681,7 @@ class ChatMessagesController extends ChangeNotifier {
 
       // Only scroll if configured to do so based on behavior and message type
       final config = scrollBehaviorConfig;
-      bool shouldScroll = false;
+      var shouldScroll = false;
       switch (config.autoScrollBehavior) {
         case AutoScrollBehavior.always:
           shouldScroll = true;
@@ -734,7 +735,7 @@ class ChatMessagesController extends ChangeNotifier {
             message.customProperties?['isFirstResponseMessage'] as bool? ??
                 false;
 
-        bool shouldScroll = false;
+        var shouldScroll = false;
         switch (config.autoScrollBehavior) {
           case AutoScrollBehavior.always:
           case AutoScrollBehavior.onNewMessage:
@@ -784,7 +785,7 @@ class ChatMessagesController extends ChangeNotifier {
 
     if (_messages.isNotEmpty &&
         config.autoScrollBehavior != AutoScrollBehavior.never) {
-      final isUserMessage = false; // Default assumption
+      const isUserMessage = false; // Default assumption
       _scrollAfterRender(isUserMessage, false, config);
     }
   }
@@ -818,16 +819,11 @@ class ChatMessagesController extends ChangeNotifier {
       }
 
       // Get more messages from the callback or use the backward compatibility one
-      final List<ChatMessage> moreMessages;
-      if (loadCallback != null) {
-        moreMessages = await loadCallback();
-      } else if (_onLoadMoreMessagesCallback != null) {
-        // Use the last message as a reference for pagination
-        final lastMessage = _messages.isNotEmpty ? _messages.last : null;
-        moreMessages = await _onLoadMoreMessagesCallback!(lastMessage);
-      } else {
-        moreMessages = [];
-      }
+      final moreMessages = loadCallback != null
+          ? await loadCallback()
+          : _onLoadMoreMessagesCallback != null
+              ? await _onLoadMoreMessagesCallback!(_messages.isNotEmpty ? _messages.last : null)
+              : <ChatMessage>[];
 
       if (moreMessages.isEmpty) {
         _hasMoreMessages = false;
