@@ -627,6 +627,49 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
+        imageBuilder: widget.messageOptions.enableImageTaps
+            ? null // Use default imageBuilder which allows taps
+            : (uri, title, alt) {
+                // Custom imageBuilder that blocks taps
+                return GestureDetector(
+                  onTap: widget.messageOptions.onImageTap != null
+                      ? () => widget.messageOptions.onImageTap!(
+                            uri.toString(),
+                            title,
+                            alt,
+                          )
+                      : null,
+                  child: Image.network(
+                    uri.toString(),
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.broken_image,
+                              color: Colors.grey[600],
+                            ),
+                            if (alt != null)
+                              Text(
+                                alt,
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
       );
 
       textWidget = markdownWidget;
@@ -654,7 +697,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                 enableImageTaps: widget.messageOptions.enableImageTaps,
               ),
             );
-          }).toList(),
+          }),
         ],
       );
     }

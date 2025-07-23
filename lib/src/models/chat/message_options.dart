@@ -231,6 +231,10 @@ class MessageOptions {
   /// Whether to enable tapping on images in markdown content
   final bool enableImageTaps;
 
+  /// Callback when an image in markdown content is tapped
+  /// Provides the image URL, title, and alt text
+  final void Function(String url, String? title, String? alt)? onImageTap;
+
   /// Custom builder for message bubbles
   final Widget Function(BuildContext, ChatMessage, Widget)? customBubbleBuilder;
 
@@ -269,6 +273,7 @@ class MessageOptions {
     this.aiTextColor,
     this.onMediaTap,
     this.enableImageTaps = false,
+    this.onImageTap,
     this.customBubbleBuilder,
   });
 
@@ -296,6 +301,7 @@ class MessageOptions {
     Color? aiTextColor,
     void Function(ChatMedia)? onMediaTap,
     bool? enableImageTaps,
+    void Function(String url, String? title, String? alt)? onImageTap,
     Widget Function(BuildContext, ChatMessage, Widget)? customBubbleBuilder,
   }) =>
       MessageOptions(

@@ -14,7 +14,7 @@
 - Resolved deprecated method usage throughout the codebase
 - Fixed type inference issues for better static analysis compatibility
 
-## 2.2.1 - [2025-05-16] Better Image Control & Developer Experience
+## 2.2.1 - [2024-05-16] Better Image Control & Developer Experience
 
 ### Added
 - **Image Interaction Control**: Added `enableImageTaps` parameter to `MessageOptions` to control whether images in markdown content respond to tap events
@@ -23,7 +23,7 @@
 ### Fixed
 - Prevented unintended navigation when tapping images in markdown content by default
 
-## 2.2.0 - [2025-05-05] Scroll Behavior Controls & UX Improvements
+## 2.2.0 - [2024-05-05] Scroll Behavior Controls & UX Improvements
 
 ### Added
 - **New Scroll Behavior Controls**: Fix for Issue #13 - Prevent auto-scrolling that hides the top of long responses
@@ -38,7 +38,7 @@
 - **Fixed Issue #13**: Resolved the problem where long AI responses would auto-scroll, pushing the beginning of the response out of view
 - **Improved Accessibility**: Users can now read the beginning of long responses without manual scrolling
 
-## 2.1.2 - [2025-04-22] Dependency Cleanup & Broader Compatibility
+## 2.1.2 - [2024-04-22] Dependency Cleanup & Broader Compatibility
 
 ### Changed
 - **Removed permission_handler**: Removed as a core dependency since it's only needed for optional speech-to-text functionality
@@ -53,7 +53,7 @@
 - More flexibility for implementing speech recognition with your preferred tools
 - Reduced risk of version conflicts with other packages in your app
 
-## 2.1.1 - [2025-04-22] Critical SDK Compatibility Fixes
+## 2.1.1 - [2024-04-22] Critical SDK Compatibility Fixes
 
 ### Fixed
 - **SDK Compatibility**: Lowered minimum Dart SDK to `>=2.19.0` to ensure broader compatibility
@@ -65,7 +65,7 @@
 - Enhanced documentation around SDK compatibility requirements
 - Extensive testing across multiple Flutter and Dart SDK versions
 
-## 2.1.0 - [2024-07-12] Major Update: Dart 3.5+ & ChatGPT‑Style UI Enhancements
+## 2.1.0 - Major Update: Dart 3.5+ & ChatGPT‑Style UI Enhancements
 
 ### Added
 - Bumped Dart SDK lower bound to `>=3.5.0` for `permission_handler` compatibility

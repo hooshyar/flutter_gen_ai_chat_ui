@@ -18,12 +18,12 @@ class MessageAttachment extends StatelessWidget {
 
   /// Creates a [MessageAttachment] widget
   const MessageAttachment({
-    Key? key,
+    super.key,
     required this.media,
     this.customBuilder,
     this.onTap,
     this.enableImageTaps = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
