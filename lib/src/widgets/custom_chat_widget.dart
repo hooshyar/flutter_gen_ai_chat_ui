@@ -613,6 +613,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         selectable: true,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
+        onTapLink: widget.messageOptions.onTapLink,
         styleSheet: widget.messageOptions.markdownStyleSheet ??
             MarkdownStyleSheet(
               p: textStyle,
