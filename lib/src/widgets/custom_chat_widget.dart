@@ -627,22 +627,26 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-        imageBuilder: widget.messageOptions.enableImageTaps
-            ? null // Use default imageBuilder which allows taps
-            : (uri, title, alt) {
-                // Custom imageBuilder that blocks taps
+        sizedImageBuilder: widget.messageOptions.enableImageTaps
+            ? null // Use default sizedImageBuilder which allows taps
+            : (config) {
+                // Custom sizedImageBuilder that blocks taps
                 return GestureDetector(
                   onTap: widget.messageOptions.onImageTap != null
                       ? () => widget.messageOptions.onImageTap!(
-                            uri.toString(),
-                            title,
-                            alt,
+                            config.uri.toString(),
+                            config.title,
+                            config.alt,
                           )
                       : null,
                   child: Image.network(
-                    uri.toString(),
+                    config.uri.toString(),
+                    width: config.width,
+                    height: config.height,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
+                        width: config.width,
+                        height: config.height,
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: Colors.grey[300],
@@ -655,9 +659,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                               Icons.broken_image,
                               color: Colors.grey[600],
                             ),
-                            if (alt != null)
+                            if (config.alt != null)
                               Text(
-                                alt,
+                                config.alt!,
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                   fontSize: 12,
