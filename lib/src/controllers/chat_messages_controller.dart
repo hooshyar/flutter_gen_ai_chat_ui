@@ -86,6 +86,25 @@ class ChatMessagesController extends ChangeNotifier {
         '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}_${message.text.hashCode}';
   }
 
+void addAgentMessage(ChatMessage message) {
+    final messageId = _getMessageId(message);
+    if (!_messageCache.containsKey(messageId)) {
+      if (paginationConfig.reverseOrder) {
+        // In reverse order (newest first), new messages go at the beginning (index 0)
+        // With ListView.builder(reverse: true), this puts newest messages at the bottom
+        _messages.insert(0, message);
+      } else {
+        // In chronological order (oldest first), new messages go at the end
+        // With ListView.builder(reverse: false), this puts newest messages at the bottom
+        _messages.add(message);
+      }
+      _messageCache[messageId] = message;
+      notifyListeners();
+
+      // After adding a message, scroll to bottom
+      //_scrollToBottomAfterRender();
+    }
+  }
   /// Adds a new message to the chat.
   void addMessage(ChatMessage message) {
     final messageId = _getMessageId(message);
@@ -293,9 +312,9 @@ class ChatMessagesController extends ChangeNotifier {
   /// The callback should return a list of messages to add.
   Future<void> loadMore(
       Future<List<ChatMessage>> Function()? loadCallback) async {
-    if (_isLoadingMore || !_hasMoreMessages || !paginationConfig.enabled) {
-      return;
-    }
+//    if (_isLoadingMore || !_hasMoreMessages || !paginationConfig.enabled) {
+//      return;
+//    }
 
     try {
       _isLoadingMore = true;

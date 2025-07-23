@@ -1,10 +1,10 @@
 name: flutter_gen_ai_chat_ui_example
 description: A comprehensive example showcasing AI chatbot interfaces for OpenAI/ChatGPT, Google Gemini, Anthropic Claude and other LLMs with Flutter. Includes streaming text, markdown rendering, and code highlighting.
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ">=3.0.0 <4.0.0"
   flutter: ">=1.17.0"
 
 dependencies:
@@ -18,7 +18,7 @@ dependencies:
   intl: ^0.20.2
   cupertino_icons: ^1.0.6
   speech_to_text: ^6.6.1
-  flutter_markdown: ^0.7.6+2
+  flutter_markdown_plus: ^1.0.3
   url_launcher: ^6.3.1
 
 dev_dependencies:
@@ -31,4 +31,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/ 
+    - assets/images/

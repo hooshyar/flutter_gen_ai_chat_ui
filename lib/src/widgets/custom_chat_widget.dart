@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../controllers/chat_messages_controller.dart';
 import '../models/chat/models.dart';
@@ -208,7 +210,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // Build the list with header/footer as needed
     return ListView.builder(
-      key: const PageStorageKey('chat_messages'),
+      // key: const PageStorageKey('chat_messages'),
       controller: _scrollController,
       reverse: paginationConfig.reverseOrder,
       physics: widget.messageListOptions.scrollPhysics ??
@@ -277,6 +279,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           final messageId = message.customProperties?['id'] as String? ??
               '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}_${message.text.hashCode}';
 
+          // return _buildMessageBubble(message, isUser);
           return RepaintBoundary(
             child: KeyedSubtree(
               key: ValueKey(messageId),
@@ -295,6 +298,26 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     if (message.customBuilder != null) {
       return message.customBuilder!(context, message);
     }
+    Size measureText(
+      String text, {
+      double maxWidth = double.infinity,
+      TextStyle? style,
+    }) {
+      final textPainter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        maxLines: 1,
+        textDirection: TextDirection.ltr,
+      )..layout(minWidth: 0, maxWidth: maxWidth);
+
+      return textPainter.size;
+    }
+
+    final textSize = measureText(message.text,
+        style: const TextStyle(
+          fontSize: 15,
+          height: 1.5,
+          letterSpacing: 0.2,
+        ));
 
     // Get effective decoration from MessageOptions
     final effectiveDecoration = widget.messageOptions.effectiveDecoration;
@@ -331,17 +354,24 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       left: isUser ? 64 : 16,
     );
 
+    final defaultMaxWidth = MediaQuery.of(context).size.width * 0.75;
     // Use different widths for user vs AI messages
     final maxWidth = isUser
         ? bubbleStyle.userBubbleMaxWidth ??
-            MediaQuery.of(context).size.width * 0.75
+            (textSize.width < defaultMaxWidth
+                ? (115 + textSize.width)
+                : defaultMaxWidth)
         : bubbleStyle.aiBubbleMaxWidth ??
             MediaQuery.of(context).size.width * 0.88;
+    // final maxWidth = isUser
+    //     ? bubbleStyle.userBubbleMaxWidth ??
+    //         MediaQuery.of(context).size.width * 0.75
+    //     : bubbleStyle.aiBubbleMaxWidth ??
+    //         MediaQuery.of(context).size.width * 0.88;
 
     final minWidth = isUser
         ? bubbleStyle.userBubbleMinWidth ?? 0.0
-        : bubbleStyle.aiBubbleMinWidth ??
-            MediaQuery.of(context).size.width * 0.5;
+        : bubbleStyle.aiBubbleMinWidth ?? 0.0;
 
     // Use custom colors if provided, otherwise use premium defaults
     final userBubbleColor =
@@ -349,9 +379,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     final aiBubbleColor = bubbleStyle.aiBubbleColor ?? defaultAiBubbleColor;
 
     // Enhanced text colors with precise opacity for readability
-    final userTextColor = isDark
-        ? Colors.white.withOpacityCompat(0.96)
-        : Colors.black.withOpacityCompat(0.86);
+    final userTextColor = Colors.white.withOpacityCompat(0.96);
     final aiTextColor = isDark
         ? Colors.white.withOpacityCompat(0.96)
         : Colors.black.withOpacityCompat(0.86);
@@ -488,7 +516,8 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
                       // Premium footer with timestamp and action buttons
                       Padding(
-                        padding: const EdgeInsets.only(top: 8),
+                        padding: EdgeInsets.only(
+                            top: widget.messageOptions.showTime ? 8 : 0),
                         child: Row(
                           mainAxisSize: MainAxisSize.max,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -518,60 +547,80 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                               Material(
                                 color: Colors.transparent,
                                 borderRadius: BorderRadius.circular(16),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(16),
-                                  onTap: () {
-                                    Clipboard.setData(
-                                        ClipboardData(text: message.text));
-                                    // Show premium feedback if provided
-                                    if (widget.messageOptions.onCopy != null) {
-                                      widget
-                                          .messageOptions.onCopy!(message.text);
-                                    } else {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: const Text(
-                                              'Message copied to clipboard'),
-                                          duration: const Duration(seconds: 2),
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 5, bottom: 10),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(16),
+                                    onTap: () async {
+                                      if (Platform.isAndroid) {
+                                        FocusScope.of(context).unfocus();
+                                        await Future.delayed(
+                                            const Duration(milliseconds: 1000));
+                                      }
+
+                                      FocusScope.of(context).unfocus();
+                                      Clipboard.setData(
+                                          ClipboardData(text: message.text));
+                                      // Show premium feedback if provided
+                                      if (widget.messageOptions.onCopy !=
+                                          null) {
+                                        widget.messageOptions
+                                            .onCopy!(message.text);
+                                      } else {
+                                        if (Platform.isIOS) {
+                                          await Future.delayed(const Duration(
+                                              milliseconds: 500));
+                                          FocusScope.of(context).unfocus();
+                                        }
+
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: const Text(
+                                                'Message copied to clipboard'),
+                                            duration:
+                                                const Duration(seconds: 2),
+                                            behavior: SnackBarBehavior.floating,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            backgroundColor: isDark
+                                                ? Colors.grey[800]
+                                                : Colors.grey[900],
                                           ),
-                                          backgroundColor: isDark
-                                              ? Colors.grey[800]
-                                              : Colors.grey[900],
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.copy_outlined,
-                                          size: 14,
-                                          color: bubbleStyle.copyIconColor ??
-                                              primaryColor,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Copy',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            letterSpacing: 0.1,
+                                        );
+                                      }
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 0,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.copy_outlined,
+                                            size: 14,
                                             color: bubbleStyle.copyIconColor ??
                                                 primaryColor,
-                                            fontWeight: FontWeight.w500,
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Copy',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              letterSpacing: 0.1,
+                                              color:
+                                                  bubbleStyle.copyIconColor ??
+                                                      primaryColor,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -585,6 +634,63 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
               ),
             ),
           ),
+          // if (!isUser && (widget.messageOptions.showCopyButton ?? false))
+          //   Material(
+          //     color: Colors.transparent,
+          //     borderRadius: BorderRadius.circular(16),
+          //     child: Padding(
+          //       padding: const EdgeInsets.only(left: 18.0),
+          //       child: InkWell(
+          //         borderRadius: BorderRadius.circular(16),
+          //         onTap: () {
+          //           Clipboard.setData(ClipboardData(text: message.text));
+          //           // Show premium feedback if provided
+          //           if (widget.messageOptions.onCopy != null) {
+          //             widget.messageOptions.onCopy!(message.text);
+          //           } else {
+          //             ScaffoldMessenger.of(context).showSnackBar(
+          //               SnackBar(
+          //                 content: const Text('Message copied to clipboard'),
+          //                 duration: const Duration(seconds: 2),
+          //                 behavior: SnackBarBehavior.floating,
+          //                 shape: RoundedRectangleBorder(
+          //                   borderRadius: BorderRadius.circular(12),
+          //                 ),
+          //                 backgroundColor:
+          //                     isDark ? Colors.grey[800] : Colors.grey[900],
+          //               ),
+          //             );
+          //           }
+          //         },
+          //         child: Padding(
+          //           padding: const EdgeInsets.symmetric(
+          //             horizontal: 8,
+          //             vertical: 0,
+          //           ),
+          //           child: Row(
+          //             mainAxisSize: MainAxisSize.min,
+          //             children: [
+          //               Icon(
+          //                 Icons.copy_outlined,
+          //                 size: 14,
+          //                 color: bubbleStyle.copyIconColor ?? primaryColor,
+          //               ),
+          //               const SizedBox(width: 4),
+          //               // Text(
+          //               //   'Copy',
+          //               //   style: TextStyle(
+          //               //     fontSize: 12,
+          //               //     letterSpacing: 0.1,
+          //               //     color: bubbleStyle.copyIconColor ?? primaryColor,
+          //               //     fontWeight: FontWeight.w500,
+          //               //   ),
+          //               // ),
+          //             ],
+          //           ),
+          //         ),
+          //       ),
+          //     ),
+          //   ),
         ],
       ),
     );
@@ -593,7 +699,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   Widget _buildMessageContent(ChatMessage message, TextStyle textStyle) {
     final isRtlText = FontHelper.isRTL(message.text);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black87;
+    final isUser = message.user.id == widget.currentUser.id;
+    final textColor = isUser ? Colors.white : Colors.black;
+
     final textDirection = isRtlText ? TextDirection.rtl : TextDirection.ltr;
 
     if (message.isMarkdown) {
@@ -602,9 +710,17 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       final markdownWidget = Markdown(
         key: ValueKey('markdown_${message.text.hashCode}'),
         data: message.text,
-        selectable: true,
+        selectable: false,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
+        onTapLink: (text, href, title) async {
+          if (href != null) {
+            final uri = Uri.tryParse(href);
+            if (uri != null && await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            }
+          }
+        },
         styleSheet: widget.messageOptions.markdownStyleSheet ??
             MarkdownStyleSheet(
               p: TextStyle(
@@ -709,10 +825,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
               img: const TextStyle(
                 fontSize: 0, // Hide image alt text
               ),
-              listBullet: TextStyle(
+              listBullet: const TextStyle(
                 fontSize: 16,
-                color:
-                    isDark ? const Color(0xFF79C0FF) : const Color(0xFF0969DA),
+                color: Colors.black,
               ),
             ),
       );

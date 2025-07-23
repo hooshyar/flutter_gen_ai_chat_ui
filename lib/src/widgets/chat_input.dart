@@ -70,7 +70,10 @@ class ChatInput extends StatelessWidget {
       onChanged: options.onChanged,
       inputFormatters: options.inputFormatters,
       mouseCursor: options.mouseCursor,
-      contextMenuBuilder: options.contextMenuBuilder,
+       contextMenuBuilder: options.contextMenuBuilder ??
+          (context, editableTextState) =>
+              AdaptiveTextSelectionToolbar.editableText(
+                  editableTextState: editableTextState),
       undoController: options.undoController,
       spellCheckConfiguration: options.spellCheckConfiguration,
       magnifierConfiguration: options.magnifierConfiguration,
@@ -100,15 +103,16 @@ class ChatInput extends StatelessWidget {
           child: textField,
         ),
         // Adjust send button to match text field height
-        Container(
-          // Match the height to align with text field
-          height: options.inputHeight ??
-              (options.decoration?.contentPadding?.vertical ?? 14) +
-                  24, // Base height approximation
-          // Center the button vertically
-          alignment: Alignment.center,
-          child: options.effectiveSendButtonBuilder(onSend),
-        ),
+        // Container(
+        //   // Match the height to align with text field
+        //   height: options.inputHeight ??
+        //       (options.decoration?.contentPadding?.vertical ?? 14) +
+        //           24, // Base height approximation
+        //   // Center the button vertically
+        //   alignment: Alignment.center,
+        //   child: options.effectiveSendButtonBuilder(onSend),
+        // ),
+        options.effectiveSendButtonBuilder(onSend)
       ],
     );
 
