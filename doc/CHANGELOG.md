@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.3.1
+## 2.3.1 - 2025-01-23
 
 ### Added
 - Added `onTapLink` callback support for markdown links

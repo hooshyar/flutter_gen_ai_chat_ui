@@ -2,6 +2,9 @@
 
 [![pub package](https://img.shields.io/pub/v/flutter_gen_ai_chat_ui.svg)](https://pub.dev/packages/flutter_gen_ai_chat_ui)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Dart Analyze](https://img.shields.io/badge/dart-analyze--perfect-green.svg)](https://github.com/hooshyar/flutter_gen_ai_chat_ui)
+[![Flutter](https://img.shields.io/badge/Flutter-3.7%2B-blue.svg)](https://flutter.dev)
+[![Platform](https://img.shields.io/badge/platform-android%20%7C%20ios%20%7C%20web%20%7C%20windows%20%7C%20macos%20%7C%20linux-lightgrey.svg)](https://pub.dev/packages/flutter_gen_ai_chat_ui)
 
 A modern, minimalistic chat UI kit designed specifically for AI applications built with Flutter. Create beautiful interfaces for ChatGPT, Google Gemini, Anthropic Claude, Llama, and other LLM-powered chatbots with features like streaming responses, markdown support, code highlighting, and extensive customization options.
 
@@ -76,7 +79,7 @@ Add this to your package's pubspec.yaml file:
 
 ```yaml
 dependencies:
-  flutter_gen_ai_chat_ui: ^2.1.2
+  flutter_gen_ai_chat_ui: ^2.3.1
 ```
 
 Then run:
@@ -87,7 +90,7 @@ flutter pub get
 
 > **⚠️ Important**: This package is under active development. We recommend pinning to a specific version in your pubspec.yaml to avoid unexpected breaking changes when you update. Always check the [CHANGELOG](https://github.com/hooshyar/flutter_gen_ai_chat_ui/blob/main/CHANGELOG.md) before upgrading.
 
-> **Compatibility Note**: Version 2.1.2 removes permission_handler and several other unused dependencies, significantly reducing the package footprint and eliminating SDK conflicts. Speech-to-text functionality is fully optional and must be implemented by the app developer. See the [Compatibility Guide](https://github.com/hooshyar/flutter_gen_ai_chat_ui/blob/main/doc/COMPATIBILITY.md) for implementation details.
+> **Compatibility Note**: Version 2.3.1 includes modern API compatibility updates, enhanced markdown support, and improved image handling. All features maintain backward compatibility. See the [Compatibility Guide](https://github.com/hooshyar/flutter_gen_ai_chat_ui/blob/main/doc/COMPATIBILITY.md) for implementation details.
 
 ## Basic Usage
 

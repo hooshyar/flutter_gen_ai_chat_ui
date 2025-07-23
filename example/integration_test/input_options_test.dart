@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
-import 'package:flutter_gen_ai_chat_ui/src/utils/color_extensions.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -18,15 +17,13 @@ void main() {
 
     testWidgets('Should apply custom input decoration',
         (WidgetTester tester) async {
-      // Arrange: Create config with custom input decoration
-      const config = AiChatConfig(
-        inputOptions: InputOptions(
-          decoration: const InputDecoration(
-            hintText: 'Type a custom message...',
-            border: OutlineInputBorder(),
-            fillColor: Colors.grey,
-            filled: true,
-          ),
+      // Arrange: Create widget with custom input decoration
+      const inputOptions = InputOptions(
+        decoration: InputDecoration(
+          hintText: 'Type a custom message...',
+          border: OutlineInputBorder(),
+          fillColor: Colors.grey,
+          filled: true,
         ),
       );
 
