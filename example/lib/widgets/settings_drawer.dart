@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_gen_ai_chat_ui/src/utils/color_extensions.dart';
+import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
 import '../models/app_state.dart';
 
@@ -348,7 +348,7 @@ class SettingsDrawer extends StatelessWidget {
           colors: [
             colorScheme.primary,
             colorScheme.primary
-                .withBlue((colorScheme.primary.blue + 40).clamp(0, 255)),
+                .withValues(blue: (colorScheme.primary.b + 40).clamp(0, 255)),
           ],
         ),
         borderRadius: const BorderRadius.only(

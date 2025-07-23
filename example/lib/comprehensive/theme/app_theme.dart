@@ -98,7 +98,7 @@ class AppTheme {
       fillColor: lightSurfaceVariant,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
-    extensions: [lightThemeExtension],
+    extensions: const [lightThemeExtension],
   );
 
   // Define dark theme
@@ -148,6 +148,6 @@ class AppTheme {
       fillColor: darkSurfaceVariant,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
-    extensions: [darkThemeExtension],
+    extensions: const [darkThemeExtension],
   );
 }

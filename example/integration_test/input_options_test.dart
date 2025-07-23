@@ -31,7 +31,7 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: config,
+          inputOptions: inputOptions,
         ),
       );
 
@@ -46,14 +46,12 @@ void main() {
 
     testWidgets('Should apply custom text style to input field',
         (WidgetTester tester) async {
-      // Arrange: Create config with custom text style
-      const config = AiChatConfig(
-        inputOptions: InputOptions(
-          textStyle: const TextStyle(
-            color: Colors.blue,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+      // Arrange: Create inputOptions with custom text style
+      const inputOptions = InputOptions(
+        textStyle: TextStyle(
+          color: Colors.blue,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
         ),
       );
 
@@ -61,7 +59,7 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: config,
+          inputOptions: inputOptions,
         ),
       );
 
@@ -75,13 +73,11 @@ void main() {
 
     testWidgets('Should use custom send button builder',
         (WidgetTester tester) async {
-      // Arrange: Create config with custom send button builder
-      final config = AiChatConfig(
-        inputOptions: InputOptions(
-          sendButtonBuilder: (onSend) => IconButton(
-            icon: const Icon(Icons.send_rounded, color: Colors.red),
-            onPressed: onSend,
-          ),
+      // Arrange: Create inputOptions with custom send button builder
+      final inputOptions = InputOptions(
+        sendButtonBuilder: (onSend) => IconButton(
+          icon: const Icon(Icons.send_rounded, color: Colors.red),
+          onPressed: onSend,
         ),
       );
 
@@ -89,7 +85,7 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: config,
+          inputOptions: inputOptions,
         ),
       );
 
@@ -104,18 +100,16 @@ void main() {
     });
 
     testWidgets('Should respect maxLines setting', (WidgetTester tester) async {
-      // Arrange: Create config with maxLines set
-      const config = AiChatConfig(
-        inputOptions: const InputOptions(
-          maxLines: 3,
-        ),
+      // Arrange: Create inputOptions with maxLines set
+      const inputOptions = InputOptions(
+        maxLines: 3,
       );
 
       // Act: Render the chat widget
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: config,
+          inputOptions: inputOptions,
         ),
       );
 
@@ -127,19 +121,17 @@ void main() {
 
     testWidgets('Should apply custom container decoration',
         (WidgetTester tester) async {
-      // Arrange: Create config with custom container decoration
-      final config = AiChatConfig(
-        inputOptions: InputOptions(
-          containerDecoration: BoxDecoration(
-            color: Colors.amber.withOpacityCompat(0.2),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacityCompat(0.1),
-                blurRadius: 10,
-              ),
-            ],
-          ),
+      // Arrange: Create inputOptions with custom container decoration
+      final inputOptions = InputOptions(
+        containerDecoration: BoxDecoration(
+          color: Colors.amber.withOpacityCompat(0.2),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacityCompat(0.1),
+              blurRadius: 10,
+            ),
+          ],
         ),
       );
 
@@ -147,7 +139,7 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: config,
+          inputOptions: inputOptions,
         ),
       );
 
@@ -172,24 +164,22 @@ void main() {
 
     testWidgets('Should use glassmorphic factory-created InputOptions',
         (WidgetTester tester) async {
-      // Arrange: Create config with glassmorphic input options
-      final config = AiChatConfig(
-        inputOptions: InputOptions.glassmorphic(
-          colors: [
-            Colors.blue.withOpacityCompat(0.3),
-            Colors.blue.withOpacityCompat(0.2)
-          ],
-          borderRadius: 25,
-          blurStrength: 10,
-          hintText: 'Type a message...',
-        ),
+      // Arrange: Create glassmorphic input options
+      final inputOptions = InputOptions.glassmorphic(
+        colors: [
+          Colors.blue.withOpacityCompat(0.3),
+          Colors.blue.withOpacityCompat(0.2)
+        ],
+        borderRadius: 25,
+        blurStrength: 10,
+        hintText: 'Type a message...',
       );
 
       // Act: Render the chat widget
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: config,
+          inputOptions: inputOptions,
         ),
       );
 

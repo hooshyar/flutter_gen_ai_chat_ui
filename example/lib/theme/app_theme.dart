@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_gen_ai_chat_ui/src/utils/color_extensions.dart';
 
 class AppTheme {
   // Modern color palette
@@ -9,8 +8,9 @@ class AppTheme {
   static const Color _secondaryColor = Color(0xFF5E5CE6);
   static const Color _accentColor = Color(0xFF30D158);
   static const Color _dangerColor = Color(0xFFFF453A);
-  static const Color _warningColor = Color(0xFFFFD60A);
-  static const Color _infoColor = Color(0xFF64D2FF);
+  // Removed unused color constants for lint compliance
+  // static const Color _warningColor = Color(0xFFFFD60A);
+  // static const Color _infoColor = Color(0xFF64D2FF);
 
   // Light theme colors
   static const Color _lightBackgroundColor = Color(0xFFF2F2F7);

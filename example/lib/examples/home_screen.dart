@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen_ai_chat_ui/src/utils/color_extensions.dart';
+import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
 /// The main navigation page for all Flutter Gen AI Chat UI examples
 class ExamplesHomeScreen extends StatelessWidget {
@@ -209,46 +209,5 @@ class ExamplesHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeaturesSection(BuildContext context) {
-    final features = [
-      {'icon': Icons.dark_mode, 'label': 'Dark & Light Themes'},
-      {'icon': Icons.animation, 'label': 'Streaming Animations'},
-      {'icon': Icons.format_align_left, 'label': 'Markdown Support'},
-      {'icon': Icons.emoji_emotions, 'label': 'Message Reactions'},
-      {'icon': Icons.code, 'label': 'Code Highlighting'},
-      {'icon': Icons.mic, 'label': 'Voice Input'},
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Key Features',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-        ),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: features.map((feature) {
-            return Chip(
-              avatar: Icon(
-                feature['icon'] as IconData,
-                size: 18,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              label: Text(feature['label'] as String),
-              backgroundColor:
-                  Theme.of(context).colorScheme.primary.withOpacityCompat(0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
+  // Unused method removed to fix lint warning
 }

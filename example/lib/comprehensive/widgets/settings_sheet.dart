@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_gen_ai_chat_ui/src/utils/color_extensions.dart';
+import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 import '../models/app_state.dart';
 
 /// A bottom sheet with settings options for the chat UI
@@ -11,7 +11,8 @@ class SettingsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    // Removed unused variable for lint compliance
+    // final isDark = theme.brightness == Brightness.dark;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.7,

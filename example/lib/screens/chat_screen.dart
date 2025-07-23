@@ -28,8 +28,8 @@ class _ChatScreenState extends State<ChatScreen>
     with SingleTickerProviderStateMixin {
   final _chatController = ChatMessagesController();
   final _mockAiService = MockAiService();
-  final _currentUser = ChatUser(id: 'user123', firstName: 'You');
-  final _aiUser = ChatUser(id: 'ai123', firstName: 'Dila');
+  final _currentUser = const ChatUser(id: 'user123', firstName: 'You');
+  final _aiUser = const ChatUser(id: 'ai123', firstName: 'Dila');
   final _random = Random();
   bool _isLoading = false;
   bool _welcomeMessageVisible = true;
@@ -180,12 +180,14 @@ class _ChatScreenState extends State<ChatScreen>
       });
 
       // Show error message to user
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

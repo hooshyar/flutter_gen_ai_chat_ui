@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
-import 'package:flutter_gen_ai_chat_ui/src/models/example_question.dart';
-import 'package:flutter_gen_ai_chat_ui/src/utils/color_extensions.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/app_state.dart';
@@ -24,8 +22,8 @@ class _BasicChatScreenState extends State<BasicChatScreen> {
   final _aiService = AiService();
 
   // Define users for the chat
-  final _currentUser = ChatUser(id: 'user123', firstName: 'You');
-  final _aiUser = ChatUser(id: 'ai123', firstName: 'AI Assistant');
+  final _currentUser = const ChatUser(id: 'user123', firstName: 'You');
+  final _aiUser = const ChatUser(id: 'ai123', firstName: 'AI Assistant');
 
   // Track loading state
   bool _isLoading = false;
@@ -132,7 +130,7 @@ class _BasicChatScreenState extends State<BasicChatScreen> {
         // Loading state
         loadingConfig: LoadingConfig(
           isLoading: _isLoading,
-          loadingIndicator: LoadingWidget(
+          loadingIndicator: const LoadingWidget(
             texts: [
               'Generating response...',
               'Thinking...',

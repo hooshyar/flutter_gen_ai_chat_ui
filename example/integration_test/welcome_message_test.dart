@@ -18,16 +18,14 @@ void main() {
 
     testWidgets('Should display welcome message when configured',
         (WidgetTester tester) async {
-      // Arrange: Create config with welcome message
-      final config = AiChatConfig(
-        welcomeMessageConfig: TestUtils.createWelcomeMessageConfig(),
-      );
+      // Arrange: Create welcomeMessageConfig
+      final welcomeMessageConfig = TestUtils.createWelcomeMessageConfig();
 
       // Act: Render the chat widget
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: config,
+          welcomeMessageConfig: welcomeMessageConfig,
         ),
       );
 
@@ -47,16 +45,14 @@ void main() {
         const ExampleQuestion(question: 'Tell me a joke'),
       ];
 
-      final config = AiChatConfig(
-        exampleQuestions: exampleQuestions,
-        welcomeMessageConfig: TestUtils.createWelcomeMessageConfig(),
-      );
+      final welcomeMessageConfig = TestUtils.createWelcomeMessageConfig();
 
       // Act: Render the chat widget
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: config,
+          exampleQuestions: exampleQuestions,
+          welcomeMessageConfig: welcomeMessageConfig,
           onSendMessage: (message) {
             sentMessages.add(message);
           },
@@ -81,16 +77,14 @@ void main() {
         const ExampleQuestion(question: 'What is your name?'),
       ];
 
-      final config = AiChatConfig(
-        exampleQuestions: exampleQuestions,
-        welcomeMessageConfig: TestUtils.createWelcomeMessageConfig(),
-      );
+      final welcomeMessageConfig = TestUtils.createWelcomeMessageConfig();
 
       // Act: Render the chat widget
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: config,
+          exampleQuestions: exampleQuestions,
+          welcomeMessageConfig: welcomeMessageConfig,
           onSendMessage: (message) {
             sentMessages.add(message);
             // Simulate AI response

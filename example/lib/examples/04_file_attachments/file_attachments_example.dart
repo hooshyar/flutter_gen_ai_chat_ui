@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
-import 'package:flutter_gen_ai_chat_ui/src/models/example_question.dart';
-import 'package:flutter_gen_ai_chat_ui/src/utils/color_extensions.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/app_state.dart';
-import '../../services/ai_service.dart';
+// Removed unused import for lint compliance
+// import '../../services/ai_service.dart';
 
 /// Demonstrates file attachment capabilities of the Flutter Gen AI Chat UI
 /// Shows different file types, custom attachment previews, and handling file uploads
@@ -21,8 +20,8 @@ class _FileAttachmentsExampleState extends State<FileAttachmentsExample> {
   final _chatController = ChatMessagesController();
 
   // User definitions
-  final _currentUser = ChatUser(id: 'user123', firstName: 'You');
-  final _aiUser = ChatUser(
+  final _currentUser = const ChatUser(id: 'user123', firstName: 'You');
+  final _aiUser = const ChatUser(
     id: 'ai123',
     firstName: 'AI Assistant',
     avatar: 'https://ui-avatars.com/api/?name=AI&background=6366f1&color=fff',
@@ -426,7 +425,7 @@ class _FileAttachmentsExampleState extends State<FileAttachmentsExample> {
           bubbleStyle: BubbleStyle(
             userBubbleColor: colorScheme.primaryContainer,
             aiBubbleColor: isDarkMode
-                ? colorScheme.surfaceVariant
+                ? colorScheme.surfaceContainerHighest
                 : colorScheme.surfaceContainerHighest,
           ),
         ),

@@ -91,7 +91,7 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: const AiChatConfig(readOnly: true),
+          readOnly: true,
         ),
       );
 

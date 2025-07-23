@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen_ai_chat_ui/src/utils/color_extensions.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
-import 'package:flutter_gen_ai_chat_ui/src/utils/color_extensions.dart';
 
 void main() {
   runApp(const ColorExtensionApp());
@@ -29,7 +27,7 @@ class ColorExtensionDemo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Base color
-    final baseColor = Colors.blue;
+    const baseColor = Colors.blue;
 
     // Various transformations using withValues
     final variants = [
@@ -101,7 +99,7 @@ class ColorTile extends StatelessWidget {
       ),
       child: Center(
         child: Text(
-          '$title (${color.red}, ${color.green}, ${color.blue}, ${(color.opacity).toStringAsFixed(2)})',
+          '$title (${color.r}, ${color.g}, ${color.b}, ${color.a.toStringAsFixed(2)}),',
           style: TextStyle(
             color: textColor,
             fontWeight: FontWeight.bold,

@@ -1,17 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Test utilities for integration tests of the Flutter Gen AI Chat UI package
 class TestUtils {
-  /// Creates a test app with the AiChatWidget
+  /// Creates a test app with the AiChatWidget using modern API
   static Widget createTestApp({
     required ChatMessagesController controller,
-    AiChatConfig? config,
     ChatUser? currentUser,
     ChatUser? aiUser,
     void Function(ChatMessage)? onSendMessage,
     bool darkMode = false,
+    // Modern direct parameters instead of AiChatConfig
+    InputOptions? inputOptions,
+    MessageOptions? messageOptions,
+    MessageListOptions? messageListOptions,
+    WelcomeMessageConfig? welcomeMessageConfig,
+    List<ExampleQuestion> exampleQuestions = const [],
+    bool persistentExampleQuestions = false,
+    bool enableAnimation = true,
+    double? maxWidth,
+    LoadingConfig? loadingConfig,
+    PaginationConfig? paginationConfig,
+    EdgeInsets? padding,
+    bool enableMarkdownStreaming = true,
+    Duration streamingDuration = const Duration(milliseconds: 30),
+    MarkdownStyleSheet? markdownStyleSheet,
+    bool readOnly = false,
+    List<ChatUser>? typingUsers,
+    ScrollBehaviorConfig? scrollBehaviorConfig,
+    FileUploadOptions? fileUploadOptions,
   }) {
     return MaterialApp(
       theme: darkMode ? ThemeData.dark() : ThemeData.light(),
@@ -22,26 +41,24 @@ class TestUtils {
               currentUser ?? const ChatUser(id: 'user-1', name: 'Test User'),
           aiUser: aiUser ?? const ChatUser(id: 'ai-1', name: 'Test AI'),
           onSendMessage: onSendMessage ?? (message) {},
-          // Use individual config properties instead of top-level config parameter
-          inputOptions: config?.inputOptions,
-          messageOptions: config?.messageOptions,
-          messageListOptions: config?.messageListOptions,
-          welcomeMessageConfig: config?.welcomeMessageConfig,
-          exampleQuestions: config?.exampleQuestions ?? const [],
-          persistentExampleQuestions:
-              config?.persistentExampleQuestions ?? false,
-          enableAnimation: config?.enableAnimation ?? true,
-          maxWidth: config?.maxWidth,
-          loadingConfig: config?.loadingConfig ?? const LoadingConfig(),
-          paginationConfig:
-              config?.paginationConfig ?? const PaginationConfig(),
-          padding: config?.padding,
-          enableMarkdownStreaming: config?.enableMarkdownStreaming ?? true,
-          streamingDuration:
-              config?.streamingDuration ?? const Duration(milliseconds: 30),
-          markdownStyleSheet: config?.markdownStyleSheet,
-          readOnly: config?.readOnly ?? false,
-          typingUsers: config?.typingUsers,
+          inputOptions: inputOptions,
+          messageOptions: messageOptions,
+          messageListOptions: messageListOptions,
+          welcomeMessageConfig: welcomeMessageConfig,
+          exampleQuestions: exampleQuestions,
+          persistentExampleQuestions: persistentExampleQuestions,
+          enableAnimation: enableAnimation,
+          maxWidth: maxWidth,
+          loadingConfig: loadingConfig ?? const LoadingConfig(),
+          paginationConfig: paginationConfig ?? const PaginationConfig(),
+          padding: padding,
+          enableMarkdownStreaming: enableMarkdownStreaming,
+          streamingDuration: streamingDuration,
+          markdownStyleSheet: markdownStyleSheet,
+          readOnly: readOnly,
+          typingUsers: typingUsers,
+          scrollBehaviorConfig: scrollBehaviorConfig,
+          fileUploadOptions: fileUploadOptions,
         ),
       ),
     );

@@ -1,6 +1,6 @@
 name: flutter_gen_ai_chat_ui
 description: "High-performance Flutter UI kit for AI chat: streaming markdown, code highlighting, theming, and customizable integration hooks for major LLMs."
-version: 2.3.1
+version: 2.3.2
 homepage: https://github.com/hooshyar/flutter_gen_ai_chat_ui
 repository: https://github.com/hooshyar/flutter_gen_ai_chat_ui
 issue_tracker: https://github.com/hooshyar/flutter_gen_ai_chat_ui/issues

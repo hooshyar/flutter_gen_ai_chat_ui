@@ -27,10 +27,8 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: const AiChatConfig(
-            enableAnimation: true,
-            streamingDuration: Duration(milliseconds: 30),
-          ),
+          enableAnimation: true,
+          streamingDuration: const Duration(milliseconds: 30),
         ),
       );
 
@@ -72,9 +70,7 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: const AiChatConfig(
-            enableMarkdownStreaming: true,
-          ),
+          enableMarkdownStreaming: true,
         ),
       );
 
@@ -105,10 +101,8 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: const AiChatConfig(
-            enableAnimation: true,
-            streamingDuration: Duration(milliseconds: 50),
-          ),
+          enableAnimation: true,
+          streamingDuration: const Duration(milliseconds: 50),
         ),
       );
 
@@ -157,9 +151,7 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: const AiChatConfig(
-            enableAnimation: false, // Disable animation
-          ),
+          enableAnimation: false, // Disable animation
         ),
       );
 

@@ -17,18 +17,16 @@ void main() {
 
     testWidgets('Should show loading indicator when isLoading is true',
         (WidgetTester tester) async {
-      // Arrange: Create config with loading set to true
-      const config = AiChatConfig(
-        loadingConfig: const LoadingConfig(
-          isLoading: true,
-        ),
+      // Arrange: Create loadingConfig with loading set to true
+      const loadingConfig = LoadingConfig(
+        isLoading: true,
       );
 
       // Act: Render the chat widget
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: config,
+          loadingConfig: loadingConfig,
         ),
       );
 
@@ -38,20 +36,18 @@ void main() {
 
     testWidgets('Should show custom loading indicator when provided',
         (WidgetTester tester) async {
-      // Arrange: Create config with custom loading indicator
-      final config = AiChatConfig(
-        loadingConfig: LoadingConfig(
-          isLoading: true,
-          loadingIndicator: Container(
-            width: 50,
-            height: 50,
-            decoration: const BoxDecoration(
-              color: Colors.amber,
-              shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child: Text('Loading...'),
-            ),
+      // Arrange: Create loadingConfig with custom loading indicator
+      final loadingConfig = LoadingConfig(
+        isLoading: true,
+        loadingIndicator: Container(
+          width: 50,
+          height: 50,
+          decoration: const BoxDecoration(
+            color: Colors.amber,
+            shape: BoxShape.circle,
+          ),
+          child: const Center(
+            child: Text('Loading...'),
           ),
         ),
       );
@@ -60,7 +56,7 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: config,
+          loadingConfig: loadingConfig,
         ),
       );
 
@@ -87,16 +83,14 @@ void main() {
 
     testWidgets('Should show typing indicator when typing users are specified',
         (WidgetTester tester) async {
-      // Arrange: Create config with typing users
-      const config = AiChatConfig(
-        typingUsers: [const ChatUser(id: 'user-2', name: 'John')],
-      );
+      // Arrange: Create typing users list
+      const typingUsers = [ChatUser(id: 'user-2', name: 'John')];
 
       // Act: Render the chat widget with typing users
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: config,
+          typingUsers: typingUsers,
         ),
       );
 
@@ -111,19 +105,18 @@ void main() {
 
     testWidgets('Should respect typing indicator color',
         (WidgetTester tester) async {
-      // Arrange: Create config with typing users and custom color
-      const config = AiChatConfig(
-        typingUsers: [const ChatUser(id: 'user-2', name: 'John')],
-        loadingConfig: const LoadingConfig(
-          typingIndicatorColor: Colors.purple,
-        ),
+      // Arrange: Create typing users and loading config with custom color
+      const typingUsers = [ChatUser(id: 'user-2', name: 'John')];
+      const loadingConfig = LoadingConfig(
+        typingIndicatorColor: Colors.purple,
       );
 
       // Act: Render the chat widget
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: config,
+          typingUsers: typingUsers,
+          loadingConfig: loadingConfig,
         ),
       );
 

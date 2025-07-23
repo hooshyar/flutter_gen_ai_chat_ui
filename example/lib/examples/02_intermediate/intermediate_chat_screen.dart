@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen_ai_chat_ui/src/utils/color_extensions.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
-import 'package:flutter_gen_ai_chat_ui/src/models/example_question.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/app_state.dart';
@@ -20,12 +18,12 @@ class _IntermediateChatScreenState extends State<IntermediateChatScreen> {
   // Chat controller to manage messages
   final _chatController = ChatMessagesController();
 
-  // Service to generate AI responses
-  final _aiService = AiService();
+  // Service to generate AI responses (removed unused field)
+  // final _aiService = AiService();
 
   // User definitions
-  final _currentUser = ChatUser(id: 'user123', firstName: 'You');
-  final _aiUser = ChatUser(
+  final _currentUser = const ChatUser(id: 'user123', firstName: 'You');
+  final _aiUser = const ChatUser(
     id: 'ai123',
     firstName: 'AI Assistant',
     avatar: 'https://ui-avatars.com/api/?name=AI&background=6366f1&color=fff',

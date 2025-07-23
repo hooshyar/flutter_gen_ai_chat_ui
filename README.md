@@ -79,7 +79,7 @@ Add this to your package's pubspec.yaml file:
 
 ```yaml
 dependencies:
-  flutter_gen_ai_chat_ui: ^2.3.1
+  flutter_gen_ai_chat_ui: ^2.3.2
 ```
 
 Then run:
@@ -90,7 +90,7 @@ flutter pub get
 
 > **⚠️ Important**: This package is under active development. We recommend pinning to a specific version in your pubspec.yaml to avoid unexpected breaking changes when you update. Always check the [CHANGELOG](https://github.com/hooshyar/flutter_gen_ai_chat_ui/blob/main/CHANGELOG.md) before upgrading.
 
-> **Compatibility Note**: Version 2.3.1 includes modern API compatibility updates, enhanced markdown support, and improved image handling. All features maintain backward compatibility. See the [Compatibility Guide](https://github.com/hooshyar/flutter_gen_ai_chat_ui/blob/main/doc/COMPATIBILITY.md) for implementation details.
+> **Compatibility Note**: Version 2.3.2 includes comprehensive quality improvements, eliminates deprecated API usage, and provides professional-grade example applications. All features maintain backward compatibility. See the [Compatibility Guide](https://github.com/hooshyar/flutter_gen_ai_chat_ui/blob/main/doc/COMPATIBILITY.md) for implementation details.
 
 ## Basic Usage
 

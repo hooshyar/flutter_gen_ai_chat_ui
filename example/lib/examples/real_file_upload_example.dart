@@ -24,8 +24,8 @@ class _RealFileUploadExampleState extends State<RealFileUploadExample> {
   final _chatController = ChatMessagesController();
 
   // User definitions
-  final _currentUser = ChatUser(id: 'user123', firstName: 'You');
-  final _aiUser = ChatUser(
+  final _currentUser = const ChatUser(id: 'user123', firstName: 'You');
+  final _aiUser = const ChatUser(
     id: 'ai123',
     firstName: 'AI Assistant',
     avatar: 'https://ui-avatars.com/api/?name=AI&background=6366f1&color=fff',
@@ -38,7 +38,7 @@ class _RealFileUploadExampleState extends State<RealFileUploadExample> {
   final ImagePicker _imagePicker = ImagePicker();
 
   // Temporary files
-  List<File> _temporaryFiles = [];
+  final List<File> _temporaryFiles = [];
 
   @override
   void initState() {
@@ -123,6 +123,7 @@ class _RealFileUploadExampleState extends State<RealFileUploadExample> {
         final File file = File(pickedFile.path);
 
         // Show caption dialog
+        if (!mounted) return;
         final String? caption = await _showCaptionDialog(context);
 
         // Send file with the caption (empty string if skipped)
@@ -174,6 +175,7 @@ class _RealFileUploadExampleState extends State<RealFileUploadExample> {
         File file = File(result.files.single.path!);
 
         // For documents, we could use the same caption feature or a different dialog
+        if (!mounted) return;
         final String? caption = await _showCaptionDialog(context);
 
         _sendFileMessage([file], caption ?? '');
@@ -195,6 +197,7 @@ class _RealFileUploadExampleState extends State<RealFileUploadExample> {
         List<File> files = result.paths.map((path) => File(path!)).toList();
 
         // For multiple files, we might want a different caption approach
+        if (!mounted) return;
         final String? caption =
             await _showMultipleFilesCaptionDialog(context, files.length);
 
@@ -326,25 +329,24 @@ class _RealFileUploadExampleState extends State<RealFileUploadExample> {
         switch (media.type) {
           case ChatMediaType.image:
             response =
-                'I\'ve received your image file${captionAcknowledgment} (${_formatFileSize(media.size!)}). I can see this is a ${media.extension?.toUpperCase()} image named "${media.fileName}". Would you like me to analyze the content of this image?';
+                'I\'ve received your image file$captionAcknowledgment (${_formatFileSize(media.size!)}). I can see this is a ${media.extension?.toUpperCase()} image named "${media.fileName}". Would you like me to analyze the content of this image?';
             break;
           case ChatMediaType.document:
             final extension = media.extension?.toUpperCase() ?? 'DOCUMENT';
             response =
-                'I\'ve received your $extension file${captionAcknowledgment} (${_formatFileSize(media.size!)}). The document is named "${media.fileName}". Would you like me to extract text or analyze the content of this document?';
+                'I\'ve received your $extension file$captionAcknowledgment (${_formatFileSize(media.size!)}). The document is named "${media.fileName}". Would you like me to extract text or analyze the content of this document?';
             break;
           case ChatMediaType.video:
             response =
-                'I\'ve received your video file${captionAcknowledgment} (${_formatFileSize(media.size!)}). The file is in ${media.extension?.toUpperCase()} format and is named "${media.fileName}". Would you like me to extract audio or analyze frames from this video?';
+                'I\'ve received your video file$captionAcknowledgment (${_formatFileSize(media.size!)}). The file is in ${media.extension?.toUpperCase()} format and is named "${media.fileName}". Would you like me to extract audio or analyze frames from this video?';
             break;
           case ChatMediaType.audio:
             response =
-                'I\'ve received your audio file${captionAcknowledgment} (${_formatFileSize(media.size!)}). The file is in ${media.extension?.toUpperCase()} format and is named "${media.fileName}". Would you like me to transcribe this audio file or analyze its content?';
+                'I\'ve received your audio file$captionAcknowledgment (${_formatFileSize(media.size!)}). The file is in ${media.extension?.toUpperCase()} format and is named "${media.fileName}". Would you like me to transcribe this audio file or analyze its content?';
             break;
           case ChatMediaType.other:
-          default:
             response =
-                'I\'ve received your file${captionAcknowledgment} (${_formatFileSize(media.size!)}). The file is named "${media.fileName}". What would you like me to do with this file?';
+                'I\'ve received your file$captionAcknowledgment (${_formatFileSize(media.size!)}). The file is named "${media.fileName}". What would you like me to do with this file?';
             break;
         }
       } else {
@@ -358,10 +360,10 @@ class _RealFileUploadExampleState extends State<RealFileUploadExample> {
         final fileNames = attachments.map((m) => m.fileName).join(', ');
 
         final String captionAcknowledgment =
-            hasCaption ? ' with caption: "${caption}"' : '';
+            hasCaption ? ' with caption: "$caption"' : '';
 
         response =
-            'I\'ve received your ${attachments.length} files${captionAcknowledgment} (${_formatFileSize(totalSize)}). The files include $types types, and are named: $fileNames. How would you like me to process these files?';
+            'I\'ve received your ${attachments.length} files$captionAcknowledgment (${_formatFileSize(totalSize)}). The files include $types types, and are named: $fileNames. How would you like me to process these files?';
       }
 
       _chatController.addMessage(
@@ -500,7 +502,7 @@ class _RealFileUploadExampleState extends State<RealFileUploadExample> {
           bubbleStyle: BubbleStyle(
             userBubbleColor: colorScheme.primaryContainer,
             aiBubbleColor:
-                isDarkMode ? colorScheme.surfaceVariant : colorScheme.surface,
+                isDarkMode ? colorScheme.surfaceContainerHighest : colorScheme.surface,
           ),
         ),
 

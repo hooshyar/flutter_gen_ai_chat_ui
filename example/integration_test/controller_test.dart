@@ -128,10 +128,8 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          config: const AiChatConfig(
-            enableAnimation: true,
-            streamingDuration: Duration(milliseconds: 50),
-          ),
+          enableAnimation: true,
+          streamingDuration: const Duration(milliseconds: 50),
         ),
       );
 
