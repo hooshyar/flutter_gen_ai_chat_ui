@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_streaming_text_markdown/flutter_streaming_text_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../controllers/chat_messages_controller.dart';
 import '../models/chat/models.dart';
@@ -132,9 +132,8 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             paginationConfig.distanceToTriggerLoadPixels;
       } else {
         // Normal mode: Check if we're near the bottom
-        shouldLoadMore =
-            (maxScroll - _scrollController.position.pixels) <
-                paginationConfig.distanceToTriggerLoadPixels;
+        shouldLoadMore = (maxScroll - _scrollController.position.pixels) <
+            paginationConfig.distanceToTriggerLoadPixels;
       }
 
       if (shouldLoadMore &&
@@ -306,7 +305,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   }
 
   /// Builds the default message bubble with all standard styling and features.
-  /// 
+  ///
   /// This method contains the original bubble building logic and is used as
   /// the fallback when no custom bubble builder is provided, or as the default
   /// bubble passed to custom bubble builders.
@@ -744,13 +743,27 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                 },
         );
       } else {
-        // Default: stream markdown using StreamingText
-        textWidget = StreamingText(
-          text: message.text,
-          style: textStyle,
-          typingSpeed: const Duration(milliseconds: 30),
-          markdownEnabled: true,
-        );
+        // Check if message should be streaming
+        final isStreaming = message.customProperties?['isStreaming'] as bool? ?? false;
+        
+        if (isStreaming) {
+          // Stream markdown using StreamingText
+          textWidget = StreamingText(
+            text: message.text,
+            style: textStyle,
+            typingSpeed: const Duration(milliseconds: 30),
+            markdownEnabled: true,
+            wordByWord: true,
+            fadeInEnabled: true,
+            fadeInDuration: const Duration(milliseconds: 200),
+          );
+        } else {
+          // Use static markdown for completed messages
+          textWidget = MarkdownBody(
+            data: message.text,
+            styleSheet: effectiveStyleSheet,
+          );
+        }
       }
     } else {
       // Non-markdown: allow custom text builder override
@@ -763,13 +776,28 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       if (customText != null) {
         return customText;
       }
-      // Default: stream plain text
-      textWidget = StreamingText(
-        text: message.text,
-        style: textStyle,
-        typingSpeed: const Duration(milliseconds: 30),
-        markdownEnabled: false,
-      );
+      
+      // Check if message should be streaming
+      final isStreaming = message.customProperties?['isStreaming'] as bool? ?? false;
+      
+      if (isStreaming) {
+        // Stream plain text
+        textWidget = StreamingText(
+          text: message.text,
+          style: textStyle,
+          typingSpeed: const Duration(milliseconds: 30),
+          markdownEnabled: false,
+          wordByWord: true,
+          fadeInEnabled: true,
+          fadeInDuration: const Duration(milliseconds: 200),
+        );
+      } else {
+        // Use static text for completed messages
+        textWidget = Text(
+          message.text,
+          style: textStyle,
+        );
+      }
     }
 
     // Display media attachments if present

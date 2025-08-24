@@ -45,12 +45,11 @@ class MessageContentText extends StatelessWidget {
       textWidget = StreamingText(
         text: text,
         style: style,
-        fadeInEnabled: true,
-        typingSpeed: const Duration(milliseconds: 300),
-        wordByWord: true,
+        typingSpeed: const Duration(milliseconds: 30),
         markdownEnabled: false,
-        fadeInCurve: Curves.easeInOut,
-        fadeInDuration: const Duration(milliseconds: 400),
+        wordByWord: true,
+        fadeInEnabled: true,
+        fadeInDuration: const Duration(milliseconds: 200),
         textAlign: textAlign,
         textDirection: textDirection,
       );

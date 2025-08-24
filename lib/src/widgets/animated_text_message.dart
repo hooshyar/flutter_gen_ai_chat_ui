@@ -61,6 +61,10 @@ class _AnimatedTextMessageState extends State<AnimatedTextMessage>
         text: widget.text,
         style: widget.style,
         typingSpeed: const Duration(milliseconds: 30),
+        markdownEnabled: true,
+        wordByWord: true,
+        fadeInEnabled: true,
+        fadeInDuration: const Duration(milliseconds: 200),
       );
     }
 
@@ -70,6 +74,10 @@ class _AnimatedTextMessageState extends State<AnimatedTextMessage>
         text: widget.text,
         style: widget.style,
         typingSpeed: const Duration(milliseconds: 30),
+        markdownEnabled: false,
+        wordByWord: true,
+        fadeInEnabled: true,
+        fadeInDuration: const Duration(milliseconds: 200),
       );
     }
 
