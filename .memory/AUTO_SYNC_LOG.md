@@ -177,3 +177,128 @@ c183487 fix(chat_ui): preserve interactive Markdown fallback; default to streami
 8aa35e3 chore: auto-update development context
 Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,lib/src/widgets/custom_chat_widget.dart
 
+
+## Auto-Sync: 2025-08-19 13:24:10
+Branch: main
+Recent commits:
+aca1c52 chore: auto-update development context
+c183487 fix(chat_ui): preserve interactive Markdown fallback; default to streaming when safe
+3d80127 chore: auto-update development context
+1387874 merge: integrate StreamingText and content builder hooks
+2269ef3 chore: workspace state
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-19 14:07:00
+Branch: main
+Recent commits:
+aca1c52 chore: auto-update development context
+c183487 fix(chat_ui): preserve interactive Markdown fallback; default to streaming when safe
+3d80127 chore: auto-update development context
+1387874 merge: integrate StreamingText and content builder hooks
+2269ef3 chore: workspace state
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-19 14:07:04
+Branch: main
+Recent commits:
+aca1c52 chore: auto-update development context
+c183487 fix(chat_ui): preserve interactive Markdown fallback; default to streaming when safe
+3d80127 chore: auto-update development context
+1387874 merge: integrate StreamingText and content builder hooks
+2269ef3 chore: workspace state
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-19 14:07:13
+Branch: main
+Recent commits:
+aca1c52 chore: auto-update development context
+c183487 fix(chat_ui): preserve interactive Markdown fallback; default to streaming when safe
+3d80127 chore: auto-update development context
+1387874 merge: integrate StreamingText and content builder hooks
+2269ef3 chore: workspace state
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-19 14:08:13
+Branch: main
+Recent commits:
+aca1c52 chore: auto-update development context
+c183487 fix(chat_ui): preserve interactive Markdown fallback; default to streaming when safe
+3d80127 chore: auto-update development context
+1387874 merge: integrate StreamingText and content builder hooks
+2269ef3 chore: workspace state
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-19 14:08:28
+Branch: main
+Recent commits:
+aca1c52 chore: auto-update development context
+c183487 fix(chat_ui): preserve interactive Markdown fallback; default to streaming when safe
+3d80127 chore: auto-update development context
+1387874 merge: integrate StreamingText and content builder hooks
+2269ef3 chore: workspace state
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-23 12:26:55
+Branch: main
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-23 12:28:02
+Branch: main
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-23 12:39:04
+Branch: main
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-23 23:33:50
+Branch: main
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-23 23:36:17
+Branch: main
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-24 01:39:02
+Branch: main
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-24 11:04:13
+Branch: main
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-24 16:25:35
+Branch: main
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-24 17:41:17
+Branch: main
+Changed files: .memory/AUTO_SYNC_LOG.md,.memory/CURRENT_STATUS.md,.memory/progress.json
+
+
+## Auto-Sync: 2025-08-24 17:42:20
+Branch: fix/streaming-text-external-dependency
+Recent commits:
+3603813 fix: use external flutter_streaming_text_markdown dependency only
+Changed files: lib/src/widgets/animated_text.dart,lib/src/widgets/animated_text_message.dart,lib/src/widgets/custom_chat_widget.dart,lib/src/widgets/message_content_text.dart
+
+
+## Auto-Sync: 2025-08-24 18:13:50
+Branch: fix/streaming-text-external-dependency
+Recent commits:
+3603813 fix: use external flutter_streaming_text_markdown dependency only
+Changed files: lib/src/widgets/animated_text.dart,lib/src/widgets/animated_text_message.dart,lib/src/widgets/custom_chat_widget.dart,lib/src/widgets/message_content_text.dart
+
