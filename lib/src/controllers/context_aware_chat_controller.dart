@@ -86,10 +86,12 @@ class ContextAwareChatController extends ChangeNotifier {
   }
 
   /// Create an enhanced prompt that includes context and actions
+  // ignore: cascade_invocations
   String _createEnhancedPrompt(String originalMessage) {
     final buffer = StringBuffer();
 
     // Build the complete prompt
+    // ignore: cascade_invocations
     buffer.writeln('User Request: $originalMessage');
 
     // Add readable context if enabled and available

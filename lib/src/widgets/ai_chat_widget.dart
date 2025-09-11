@@ -178,7 +178,7 @@ class _AiChatWidgetState extends State<AiChatWidget>
 
     _textController =
         widget.inputOptions?.textController ?? TextEditingController();
-    _inputFocusNode = FocusNode();
+    _inputFocusNode = widget.inputOptions?.focusNode ?? FocusNode();
 
     // Create and store the listener to prevent memory leaks
     _textControllerListener = () {
@@ -549,7 +549,11 @@ class _AiChatWidgetState extends State<AiChatWidget>
     if (widget.inputOptions?.textController == null) {
       _textController.dispose();
     }
-    _inputFocusNode.dispose();
+
+    // Don't dispose if using external focus node
+    if (widget.inputOptions?.focusNode == null) {
+      _inputFocusNode.dispose();
+    }
     super.dispose();
   }
 }

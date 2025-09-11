@@ -103,6 +103,10 @@ class InputOptions {
   final SmartQuotesType? smartQuotesType;
   final TextSelectionControls? selectionControls;
 
+  // Focus behavior
+  final bool autofocus;
+  final FocusNode? focusNode;
+
   const InputOptions({
     this.textController,
     this.textStyle,
@@ -165,6 +169,8 @@ class InputOptions {
     this.smartDashesType,
     this.smartQuotesType,
     this.selectionControls,
+    this.autofocus = false,
+    this.focusNode,
   });
 
   /// Creates a minimal input field with no outer container.
@@ -176,11 +182,15 @@ class InputOptions {
     double? borderRadius,
     TextEditingController? textController,
     bool sendOnEnter = true,
+    bool autofocus = false,
+    FocusNode? focusNode,
   }) {
     return InputOptions(
       textController: textController,
       useOuterContainer: false,
       sendOnEnter: sendOnEnter,
+      autofocus: autofocus,
+      focusNode: focusNode,
       textStyle: textColor != null ? TextStyle(color: textColor) : null,
       decoration: InputDecoration(
         hintText: hintText,
@@ -212,6 +222,8 @@ class InputOptions {
     bool useOuterContainer = true,
     TextEditingController? textController,
     bool sendOnEnter = true,
+    bool autofocus = false,
+    FocusNode? focusNode,
   }) {
     final effectiveColors = colors ??
         [
@@ -223,6 +235,8 @@ class InputOptions {
       textController: textController,
       useOuterContainer: useOuterContainer,
       sendOnEnter: sendOnEnter,
+      autofocus: autofocus,
+      focusNode: focusNode,
       blurStrength: blurStrength,
       textStyle: textColor != null ? TextStyle(color: textColor) : null,
       containerBackgroundColor: Colors.transparent,

@@ -106,7 +106,7 @@ Add this to your package's pubspec.yaml file:
 
 ```yaml
 dependencies:
-  flutter_gen_ai_chat_ui: ^2.3.6
+  flutter_gen_ai_chat_ui: ^2.4.2
 ```
 
 Then run:
@@ -126,14 +126,18 @@ flutter pub get
 
 ## 🎮 Live Examples
 
-**🔗 [Try Interactive Demo](https://your-demo-site.com)** | **📱 [Download APK](https://github.com/hooshyar/flutter_gen_ai_chat_ui/releases)** | **🌐 [Web Demo](https://flutter-gen-ai-chat-ui.web.app)**
-
 Explore all features with our comprehensive example app:
 - **Basic Chat**: Simple ChatGPT-style interface
 - **Streaming Text**: Real-time word-by-word animations  
 - **File Attachments**: Upload images, documents, videos
 - **Custom Themes**: Light, dark, and glassmorphic styles
 - **Advanced Features**: Scroll behavior, markdown, code highlighting
+
+To run the example app:
+```bash
+cd example/
+flutter run
+```
 
 ## Quick Start
 
@@ -240,7 +244,8 @@ AiChatWidget(
   ],
   persistentExampleQuestions: true,  // Keep questions visible after welcome
   enableAnimation: true,       // Enable message animations
-  enableMarkdownStreaming: true,  // Enable streaming text
+  enableMarkdownStreaming: true,  // Enable streaming text (FIXED in v2.4.2+)
+  streamingWordByWord: false,     // Control word-by-word vs character animation  
   streamingDuration: Duration(milliseconds: 30),  // Stream speed
   welcomeMessageConfig: WelcomeMessageConfig(...),  // Welcome message styling
   
@@ -299,6 +304,10 @@ InputOptions(
   // Basic properties
   sendOnEnter: true,
   
+  // Focus behavior (NEW in v2.4.2+)
+  autofocus: true,          // Automatically focus the input field
+  focusNode: myFocusNode,   // Custom focus node for external control
+  
   // Styling
   textStyle: TextStyle(...),
   decoration: InputDecoration(...),
@@ -314,6 +323,8 @@ InputOptions.minimal(
   hintColor: Colors.grey,
   backgroundColor: Colors.white,
   borderRadius: 24.0,
+  autofocus: true,        // Available in factory constructors too
+  focusNode: myFocusNode, // Custom focus node support
 )
 ```
 
@@ -326,6 +337,8 @@ InputOptions.glassmorphic(
   blurStrength: 10.0,
   hintText: 'Ask me anything...',
   textColor: Colors.white,
+  autofocus: false,       // Control autofocus behavior
+  focusNode: myFocusNode, // Optional custom focus node
 )
 ```
 
@@ -764,10 +777,24 @@ flutter run
 
 ### Community & Support
 
-- **📚 [Documentation](https://github.com/hooshyar/flutter_gen_ai_chat_ui/wiki)** - Comprehensive guides and tutorials
-- **💬 [Discord Community](https://discord.gg/flutter-chat-ui)** - Get help and share ideas  
 - **🐛 [Issue Tracker](https://github.com/hooshyar/flutter_gen_ai_chat_ui/issues)** - Report bugs and request features
 - **⭐ [Star on GitHub](https://github.com/hooshyar/flutter_gen_ai_chat_ui)** - Show your support!
+
+## Recent Updates (v2.4.2+)
+
+### 🔧 Bug Fixes & Improvements
+
+- **Fixed Streaming Animation Disable**: The `enableAnimation: false`, `enableMarkdownStreaming: false`, and `streamingWordByWord: false` parameters now work correctly. Previously, markdown messages would always stream regardless of these settings.
+
+- **Added Focus Control**: New `autofocus` and `focusNode` support in `InputOptions` for better input field control.
+  ```dart
+  InputOptions(
+    autofocus: true,          // Auto-focus input on widget load
+    focusNode: myFocusNode,   // External focus control
+  )
+  ```
+
+- **Enhanced Factory Constructors**: `InputOptions.minimal()` and `InputOptions.glassmorphic()` now support the new focus parameters.
 
 ### What Developers Say
 

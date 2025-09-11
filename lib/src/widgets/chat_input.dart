@@ -40,6 +40,7 @@ class ChatInput extends StatelessWidget {
     Widget textField = TextField(
       controller: controller,
       focusNode: focusNode,
+      autofocus: options.autofocus,
       style: options.textStyle,
       // Always use the app's text direction for the TextField
       textDirection: appDirection,

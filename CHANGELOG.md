@@ -1,3 +1,30 @@
+## 2.4.2 - [2025-09-10] Critical Bug Fixes & Focus Control Enhancement
+
+### Fixed
+- **Streaming Animation Disable**: Fixed critical issue where `enableAnimation: false`, `enableMarkdownStreaming: false`, and `streamingWordByWord: false` parameters were ignored for markdown messages. Markdown messages would always stream regardless of these settings.
+  - Updated streaming logic in `CustomChatWidget` to properly respect disable flags
+  - Fixed hardcoded streaming parameters that bypassed user configuration  
+  - Added proper conditional rendering for static vs streaming markdown
+- **Test Coverage**: Added comprehensive tests for streaming disable functionality
+
+### Added
+- **Focus Control**: New `autofocus` and `focusNode` parameters in `InputOptions` for enhanced input field control
+  - `autofocus: bool` - Automatically focus the input field when widget loads
+  - `focusNode: FocusNode?` - Custom focus node for external focus management
+  - Available in all factory constructors: `minimal()`, `glassmorphic()`, and default constructor
+- **Enhanced API**: Updated `ChatInput` widget to support autofocus functionality
+- **Test Coverage**: Added comprehensive tests for focus control features
+
+### Improved  
+- **Developer Experience**: Better focus management reduces need for external focus handling
+- **API Consistency**: Focus parameters available across all `InputOptions` constructors
+- **Documentation**: Updated README with new focus control examples and streaming fix notes
+
+### Technical
+- **Breaking Changes**: None - all changes are backward compatible
+- **Memory Management**: Proper focus node disposal to prevent memory leaks
+- **Test Coverage**: Added 11 new test cases covering focus and streaming scenarios
+
 ## 2.4.1 - [2025-09-04] Perfect 160/160 Pub.dev Score Achievement
 
 ### Fixed
