@@ -65,12 +65,6 @@ class BubbleStyle {
   /// Shadow offset for message bubbles
   final Offset? shadowOffset;
 
-  /// Border for AI message bubble
-  final Border? aiBubbleBorder;
-
-  /// Border for user message bubble
-  final Border? userBubbleBorder;
-
   /// Widget for AI avatar image
   final Widget Function(ChatUser chatUser)? aiAvatarWidgetBuilder;
 
@@ -97,8 +91,6 @@ class BubbleStyle {
     this.shadowOpacity,
     this.shadowBlurRadius,
     this.shadowOffset,
-    this.aiBubbleBorder,
-    this.userBubbleBorder,
     this.aiAvatarWidgetBuilder,
     this.userAvatarWidgetBuilder,
   });
