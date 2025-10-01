@@ -495,6 +495,12 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           ]
         : null;
 
+    // Avatar image builders
+    final aiAvatarWidgetBuilder =
+        widget.messageOptions.bubbleStyle?.aiAvatarWidgetBuilder;
+    final userAvatarWidgetBuilder =
+        widget.messageOptions.bubbleStyle?.userAvatarWidgetBuilder;
+
     // Create a custom decoration that prioritizes bubbleStyle colors
     BoxDecoration createBubbleDecoration() {
       if (effectiveDecoration != null) {
@@ -564,17 +570,13 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Add premium icon for AI messages
-                              if (!isUser)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: Icon(
-                                    Icons.smart_toy_outlined,
-                                    size: 14,
-                                    color:
-                                        bubbleStyle.aiNameColor ?? primaryColor,
-                                  ),
-                                ),
+                              if (isUser &&
+                                  userAvatarWidgetBuilder != null) ...[
+                                userAvatarWidgetBuilder(message.user),
+                              ] else if (!isUser &&
+                                  aiAvatarWidgetBuilder != null) ...[
+                                aiAvatarWidgetBuilder(message.user),
+                              ],
                               Text(
                                 message.user.name,
                                 style: widget.messageOptions.userNameStyle ??
