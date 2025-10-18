@@ -1266,7 +1266,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             child: Row(
               children: [
                 Icon(
-                  Icons.chat_bubble_outline_rounded,
+                  question.config?.iconData ?? Icons.chat_bubble_outline_rounded,
                   size: question.config?.iconSize ?? 18,
                   color: question.config?.iconColor ??
                       (isDarkMode
