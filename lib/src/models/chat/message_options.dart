@@ -402,6 +402,8 @@ class MessageListOptions {
   /// Custom scroll physics for the message list
   final ScrollPhysics? scrollPhysics;
 
+  final ScrollViewKeyboardDismissBehavior? keyboardDismissBehavior;
+
   /// Builder for date separator between messages
   final Widget Function(DateTime)? dateSeparatorBuilder;
 
@@ -426,6 +428,7 @@ class MessageListOptions {
   const MessageListOptions({
     this.scrollController,
     this.scrollPhysics,
+    this.keyboardDismissBehavior,
     this.dateSeparatorBuilder,
     this.loadingWidget,
     this.onLoadEarlier,
@@ -438,6 +441,7 @@ class MessageListOptions {
   MessageListOptions copyWith({
     ScrollController? scrollController,
     ScrollPhysics? scrollPhysics,
+    ScrollViewKeyboardDismissBehavior? keyboardDismissBehavior,
     Widget Function(DateTime)? dateSeparatorBuilder,
     Widget? loadingWidget,
     Future<void> Function()? onLoadEarlier,
@@ -449,6 +453,7 @@ class MessageListOptions {
       MessageListOptions(
         scrollController: scrollController ?? this.scrollController,
         scrollPhysics: scrollPhysics ?? this.scrollPhysics,
+        keyboardDismissBehavior: keyboardDismissBehavior ?? this.keyboardDismissBehavior,
         dateSeparatorBuilder: dateSeparatorBuilder ?? this.dateSeparatorBuilder,
         loadingWidget: loadingWidget ?? this.loadingWidget,
         onLoadEarlier: onLoadEarlier ?? this.onLoadEarlier,

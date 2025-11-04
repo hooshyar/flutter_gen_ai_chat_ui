@@ -237,6 +237,8 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       reverse: paginationConfig.reverseOrder,
       physics: widget.messageListOptions.scrollPhysics ??
           const BouncingScrollPhysics(),
+      keyboardDismissBehavior: widget.messageListOptions.keyboardDismissBehavior ??
+          ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: widget.messages.length +
           (widget.typingUsers?.isNotEmpty == true ? 1 : 0) +
