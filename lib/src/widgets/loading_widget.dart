@@ -269,7 +269,16 @@ class _LoadingWidgetState extends State<LoadingWidget> {
       baseColor: baseColor,
       highlightColor: highlightColor,
       child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 800),
+        duration: const Duration(milliseconds: 300),
+        layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+          return Stack(
+            alignment: effectiveAlignment,
+            children: <Widget>[
+              ...previousChildren,
+              if (currentChild != null) currentChild,
+            ],
+          );
+        },
         child: Text(
           widget.texts[_currentIndex],
           key: ValueKey<String>(widget.texts[_currentIndex]),
