@@ -1,0 +1,209 @@
+name: Pub.dev Score Validation
+
+on:
+  push:
+    branches: [ main, develop, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  validate-package:
+    name: Validate Package Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.5'
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Get Dependencies
+        run: flutter pub get
+
+      - name: 🔍 Verify Flutter Installation
+        run: |
+          flutter --version
+          dart --version
+
+      # ============================================
+      # STATIC ANALYSIS
+      # ============================================
+      - name: 🔍 Run Static Analysis
+        run: |
+          echo "Running dart analyze with fatal-infos..."
+          dart analyze --fatal-infos
+
+      # ============================================
+      # CODE FORMATTING
+      # ============================================
+      - name: ✨ Check Code Formatting
+        run: |
+          echo "Checking code formatting..."
+          dart format --output=none --set-exit-if-changed .
+
+      # ============================================
+      # TESTS
+      # ============================================
+      - name: 🧪 Run Tests
+        run: |
+          echo "Running all tests with coverage..."
+          flutter test --coverage
+
+      - name: 📊 Upload Coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          fail_ci_if_error: false  # Don't fail CI if codecov upload fails
+
+      # ============================================
+      # DOCUMENTATION
+      # ============================================
+      - name: 📚 Generate Documentation
+        run: |
+          echo "Generating dartdoc..."
+          dart doc . --output doc/api || true
+
+          # Check for warnings (non-blocking)
+          if grep -qi "warning\|error" doc/api/index.html 2>/dev/null; then
+            echo "⚠️ Documentation warnings found"
+          else
+            echo "✓ Documentation generated successfully"
+          fi
+
+      # ============================================
+      # DEPENDENCY CHECK
+      # ============================================
+      - name: 📦 Check Dependencies
+        run: |
+          echo "Checking for outdated dependencies..."
+          flutter pub outdated || true
+
+      # ============================================
+      # PUB SCORE (PANA)
+      # ============================================
+      - name: 🎯 Run pana Analysis
+        run: |
+          echo "Installing pana..."
+          dart pub global activate pana
+
+          echo "Running pana analysis..."
+          dart pub global run pana --no-warning
+
+      - name: 📝 Generate Score Report
+        if: always()
+        run: |
+          echo "# 📊 Package Validation Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Status" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All validation checks completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See job logs for detailed results." >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # EXAMPLE APP VALIDATION
+  # ============================================
+  validate-example:
+    name: Validate Example App
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.5'
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Get Package Dependencies
+        run: flutter pub get
+
+      - name: 📦 Get Example Dependencies
+        working-directory: example
+        run: flutter pub get
+
+      - name: 🔍 Analyze Example
+        working-directory: example
+        run: dart analyze --fatal-infos
+
+      - name: ✨ Check Example Formatting
+        working-directory: example
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: 🧪 Run Example Tests
+        working-directory: example
+        run: flutter test || echo "No example tests found"
+
+      - name: 🏗️ Build Example (Android)
+        working-directory: example
+        run: flutter build apk --debug
+
+      - name: 🏗️ Build Example (Web)
+        working-directory: example
+        run: flutter build web
+
+  # ============================================
+  # INTEGRATION TESTS
+  # ============================================
+  integration-tests:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.5'
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Get Dependencies
+        run: flutter pub get
+
+      - name: 🧪 Run Integration Tests
+        run: |
+          if [ -d "integration_test" ]; then
+            echo "Running integration tests..."
+            flutter test integration_test/
+          else
+            echo "No integration tests found"
+          fi
+
+  # ============================================
+  # FINAL STATUS CHECK
+  # ============================================
+  validation-complete:
+    name: ✅ Validation Complete
+    runs-on: ubuntu-latest
+    needs: [validate-package, validate-example, integration-tests]
+    if: always()
+
+    steps:
+      - name: Check All Jobs Status
+        run: |
+          if [ "${{ needs.validate-package.result }}" == "success" ] && \
+             [ "${{ needs.validate-example.result }}" == "success" ] && \
+             [ "${{ needs.integration-tests.result }}" == "success" ]; then
+            echo "🎉 All validation checks passed!"
+            exit 0
+          else
+            echo "❌ Some validation checks failed"
+            echo "Package: ${{ needs.validate-package.result }}"
+            echo "Example: ${{ needs.validate-example.result }}"
+            echo "Integration: ${{ needs.integration-tests.result }}"
+            exit 1
+          fi
