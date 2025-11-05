@@ -36,6 +36,8 @@ class CustomChatWidget extends StatefulWidget {
   final bool streamingFadeInEnabled;
   final bool streamingWordByWord;
 
+  final ChatSpacingConfig spacingConfig;
+
   /// Custom widget to display instead of the default typing indicator
   final Widget? typingIndicator;
 
@@ -67,6 +69,7 @@ class CustomChatWidget extends StatefulWidget {
     this.streamingFadeInCurve = Curves.easeInOut,
     this.streamingFadeInEnabled = false,
     this.streamingWordByWord = false,
+    required this.spacingConfig,
   });
 
   @override
@@ -203,7 +206,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             if (widget.quickReplyOptions.quickReplies != null &&
                 widget.quickReplyOptions.quickReplies!.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: widget.spacingConfig.quickRepliesPadding,
                 child: _buildQuickReplies(),
               ),
           ],
@@ -239,7 +242,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           const BouncingScrollPhysics(),
       keyboardDismissBehavior: widget.messageListOptions.keyboardDismissBehavior ??
           ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: widget.spacingConfig.messageListPadding,
       itemCount: widget.messages.length +
           (widget.typingUsers?.isNotEmpty == true ? 1 : 0) +
           (loadingWidget != null ? 1 : 0) +
@@ -437,13 +440,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     final bottomLeftRadius = bubbleStyle.bottomLeftRadius ?? 22;
     final bottomRightRadius = bubbleStyle.bottomRightRadius ?? 22;
 
-    // Professional margin with precise spacing
-    final defaultMargin = EdgeInsets.only(
-      top: 6,
-      bottom: 6,
-      right: isUser ? 16 : 64,
-      left: isUser ? 64 : 16,
-    );
+    final defaultMargin = widget.spacingConfig.messageBubbleMargin(isUser);
 
     final defaultMaxWidth = MediaQuery.of(context).size.width * 0.75;
     // Use different widths for user vs AI messages
@@ -537,7 +534,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // Enhanced bubble implementation with premium styling
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: widget.spacingConfig.messageBubbleOuterPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -553,8 +550,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                 decoration: createBubbleDecoration(),
                 child: Padding(
                   padding: widget.messageOptions.padding ??
-                      EdgeInsets.symmetric(
-                          vertical: 14, horizontal: isUser ? 16 : 18),
+                      widget.spacingConfig.messageBubbleInnerPadding,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -562,7 +558,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                       // Display user name if needed
                       if (widget.messageOptions.showUserName ?? true)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
+                          padding: widget.spacingConfig.messageUsernameBottomPadding,
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -601,7 +597,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                       // Premium footer with timestamp and action buttons
                       Padding(
                         padding: EdgeInsets.only(
-                            top: widget.messageOptions.showTime ? 8 : 0),
+                            top: widget.messageOptions.showTime
+                              ? widget.spacingConfig.messageFooterTopPadding.top
+                              : 0),
                         child: Row(
                           mainAxisSize: MainAxisSize.max,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -854,6 +852,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             styleSheet: effectiveStyleSheet,
+            padding: EdgeInsets.zero,
           );
         }
       }
@@ -899,7 +898,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           const SizedBox(height: 8),
           ...message.media!.map((media) {
             return Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
+              padding: widget.spacingConfig.messageMediaSpacing,
               child: MessageAttachment(
                 media: media,
                 onTap: widget.messageOptions.onMediaTap,
@@ -984,11 +983,11 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // Default typing indicator dots
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: widget.spacingConfig.typingIndicatorMargin,
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: widget.spacingConfig.typingIndicatorPadding,
             decoration: BoxDecoration(
               color: Colors.grey[200],
               borderRadius: BorderRadius.circular(16),
