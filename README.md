@@ -42,7 +42,7 @@ AiChatWidget(
 | **File Attachments** | ❌ None | ⚠️ Limited | ✅ **Images, docs, videos** |
 | **AI-Specific Features** | ❌ None | ❌ None | ✅ **Welcome messages, examples, typing indicators** |
 | **Theme Customization** | ⚠️ Limited | ✅ Good | ✅ **Extensive (glassmorphic, custom)** |
-| **Performance** | ❓ Unknown | ❓ Unknown | ✅ **60 FPS with 1K+ messages** |
+| **Performance** | ❓ Unknown | ❓ Unknown | ✅ **Production-optimized** |
 
 **Our focus:** If you're building an AI chat app, we have the features you need built-in.
 
@@ -83,10 +83,12 @@ Purpose-built for AI applications:
 ### 3. **Production-Ready Performance**
 
 Optimized for real-world use:
-- ✅ 60 FPS with 1,000+ messages
-- ✅ Efficient memory usage (15 MB for 1K messages)
-- ✅ Smooth scrolling even with 10K+ messages
+- ✅ Efficient rendering with large message lists
+- ✅ Smart memory management and caching
+- ✅ Smooth scrolling with pagination support
 - ✅ Tested on iOS, Android, Web, Desktop
+
+> 📊 **Performance benchmarks coming soon** - We're currently conducting comprehensive tests to provide verified FPS, memory usage, and scalability metrics.
 
 ### 4. **Beautiful & Customizable**
 
