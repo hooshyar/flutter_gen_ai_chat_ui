@@ -1,0 +1,29 @@
+name: flutter_gen_ai_viral_demo
+description: Viral demo for flutter_gen_ai_chat_ui showcasing all features
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: ">=2.19.0 <4.0.0"
+  flutter: ">=3.7.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_gen_ai_chat_ui:
+    path: ../
+  share_plus: ^7.2.1
+  url_launcher: ^6.3.1
+  provider: ^6.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Add assets for the demo
+  assets:
+    - assets/
