@@ -843,6 +843,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             fadeInDuration: widget.streamingFadeInDuration,
             fadeInCurve: widget.streamingFadeInCurve,
             wordByWord: widget.streamingWordByWord,
+            showCursor: false,
           );
         } else {
           // Static markdown rendering when streaming is disabled
@@ -879,6 +880,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           fadeInDuration: widget.streamingFadeInDuration,
           fadeInCurve: widget.streamingFadeInCurve,
           wordByWord: widget.streamingWordByWord,
+          showCursor: false,
         );
       } else {
         // Static plain text for completed messages
