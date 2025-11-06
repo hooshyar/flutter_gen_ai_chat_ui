@@ -1,3 +1,54 @@
+## 2.5.0 - [2025-11-06] Built-in AI Integration (OpenAI)
+
+### Added
+- **🤖 OpenAI Integration**: Built-in integration with OpenAI's GPT models
+  - `OpenAIChatWidget`: Pre-configured widget for instant ChatGPT integration
+  - `OpenAIProvider`: Direct API client with streaming support
+  - `OpenAIConfig`: Comprehensive configuration options
+  - Streaming responses with word-by-word animation
+  - Automatic conversation history management
+  - Token counting and cost estimation
+  - System prompt support for custom AI behavior
+  - Temperature and max tokens configuration
+  - Organization ID support
+  - Token usage callbacks for monitoring
+- **🔐 Security Documentation**: Comprehensive security guide for API key management
+  - Environment variables best practices
+  - Backend proxy patterns for production
+  - Rate limiting examples
+  - Cost monitoring strategies
+  - Secret scanning tools
+- **📚 Example Apps**: Complete ChatGPT clone examples
+  - Simple ChatGPT clone with basic configuration
+  - Advanced example with custom system prompts
+  - Proper API key handling demonstrations
+- **🧪 Test Coverage**: Unit tests for OpenAI integration
+  - Provider initialization tests
+  - Configuration tests
+  - Exception handling tests
+  - Integration test templates
+
+### Changed
+- **Dependencies**: Added `dart_openai: ^5.1.0` for OpenAI API integration
+- **Package Structure**: New `lib/src/integrations/` folder for AI providers
+- **Exports**: New `lib/integrations.dart` entry point for AI integrations
+
+### Usage
+
+Simple setup (3 lines):
+```dart
+import 'package:flutter_gen_ai_chat_ui/integrations.dart';
+
+OpenAIChatWidget(
+  apiKey: const String.fromEnvironment('OPENAI_API_KEY'),
+  currentUser: ChatUser(id: 'user', firstName: 'You'),
+)
+```
+
+See [doc/SECURITY.md](doc/SECURITY.md) for security best practices.
+
+---
+
 ## 2.4.2 - [2025-09-10] Critical Bug Fixes & Focus Control Enhancement
 
 ### Fixed

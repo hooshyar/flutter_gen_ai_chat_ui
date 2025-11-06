@@ -170,6 +170,64 @@ class _ChatScreenState extends State<ChatScreen> {
 
 ---
 
+## 🤖 Built-in AI Integration
+
+### OpenAI (ChatGPT, GPT-4)
+
+The easiest way to add ChatGPT to your Flutter app:
+
+```dart
+import 'package:flutter_gen_ai_chat_ui/integrations.dart';
+
+OpenAIChatWidget(
+  apiKey: const String.fromEnvironment('OPENAI_API_KEY'),
+  model: 'gpt-4-turbo', // or 'gpt-3.5-turbo'
+  currentUser: ChatUser(id: 'user', firstName: 'You'),
+
+  // Optional: Customize AI behavior
+  systemPrompt: 'You are a helpful Flutter development assistant.',
+  temperature: 0.7,
+
+  // Optional: Track usage
+  showTokenUsage: true,
+  onTokensUsed: (tokens, cost) {
+    print('Used $tokens tokens (\$${cost.toStringAsFixed(4)})');
+  },
+
+  // Optional: Add welcome message
+  welcomeMessage: 'Ask me anything about Flutter!',
+  exampleQuestions: [
+    ExampleQuestion(question: 'How do I use State Management?'),
+    ExampleQuestion(question: 'Explain Flutter widgets'),
+  ],
+)
+```
+
+**Features:**
+- ✅ Streaming responses (word-by-word like ChatGPT)
+- ✅ Conversation history automatically managed
+- ✅ Token counting and cost estimation
+- ✅ Markdown rendering with code highlighting
+- ✅ Error handling built-in
+
+**Security:**
+
+⚠️ **NEVER hardcode your API key!**
+
+✅ Use environment variables:
+```bash
+flutter run --dart-define=OPENAI_API_KEY=your_key_here
+```
+
+✅ Or fetch from secure backend:
+```dart
+final apiKey = await yourBackend.getSecureToken();
+```
+
+[Read full security guide →](doc/SECURITY.md)
+
+---
+
 ## 🎨 Customization Examples
 
 ### Glassmorphic Input Style
