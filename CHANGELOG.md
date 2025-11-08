@@ -1,3 +1,37 @@
+## 2.5.0 - [2025-11-08] Community Contributions - Spacing Control & UX Enhancements
+
+### Added
+- **ChatSpacingConfig**: New centralized configuration for all spacing and padding throughout the chat UI (#27 by @ducnguyenenterprise)
+  - Consistent control over message bubble padding and margins
+  - Customizable message list padding
+  - Configurable quick replies spacing
+  - Loading widget spacing control
+  - Typing indicator spacing configuration
+  - Includes `.compact()` and `.comfortable()` factory methods for common layouts
+- **Custom Icon Support**: Added `iconData` parameter to example questions for full icon customization (#27)
+- **Keyboard Dismiss Behavior**: New `keyboardDismissBehavior` parameter in `MessageOptions` for scroll-based keyboard dismissal (#27)
+
+### Changed
+- **Improved Animation Performance**: Loading animation speed improved from 800ms to 300ms for snappier UX (#27)
+- **Optimized Cursor Animations**: Reduced unnecessary cursor animations when not needed (#27)
+
+### Improved
+- **Developer Experience**: Centralized spacing configuration makes it much easier to create consistent custom themes
+- **Code Organization**: Refactored hardcoded spacing values into configurable system
+- **Backward Compatibility**: All changes are optional with defaults matching previous behavior
+
+### Technical
+- Refactored spacing from hardcoded `EdgeInsets` to configurable `ChatSpacingConfig`
+- All defaults preserve exact previous behavior (verified for backward compatibility)
+- Zero breaking changes - completely backward compatible
+
+### Contributors
+- @ducnguyenenterprise (Dean Nguyen) - Thank you for this excellent contribution! 🙏
+
+*This release demonstrates our commitment to community-driven development. Special thanks to our contributors for helping make this package better!*
+
+---
+
 ## 2.4.2 - [2025-09-10] Critical Bug Fixes & Focus Control Enhancement
 
 ### Fixed
