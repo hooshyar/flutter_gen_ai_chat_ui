@@ -58,6 +58,7 @@ class AiChatWidget extends StatefulWidget {
 
     // New parameters
     this.fileUploadOptions,
+    this.spacingConfig,
   });
 
   /// The current user in the conversation
@@ -151,6 +152,9 @@ class AiChatWidget extends StatefulWidget {
 
   /// Optional file upload options
   final FileUploadOptions? fileUploadOptions;
+
+  /// Configuration for spacing throughout the chat UI
+  final ChatSpacingConfig? spacingConfig;
 
   @override
   State<AiChatWidget> createState() => _AiChatWidgetState();
@@ -348,6 +352,7 @@ class _AiChatWidgetState extends State<AiChatWidget>
                   streamingFadeInCurve:
                       widget.streamingFadeInCurve ?? Curves.easeInOut,
                   streamingWordByWord: widget.streamingWordByWord ?? false,
+                  spacingConfig: widget.spacingConfig ?? const ChatSpacingConfig(),
                 ),
               ),
               // Loading indicator overlay

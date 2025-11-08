@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../models/chat/models.dart';
 import '../utils/color_extensions.dart';
 
 /// A highly customizable loading widget that displays a shimmer effect with animated text.
@@ -38,6 +39,7 @@ class LoadingWidget extends StatefulWidget {
     this.height,
     this.minHeight,
     this.maxHeight,
+    this.spacingConfig,
   });
 
   /// The list of texts to cycle through.
@@ -121,6 +123,9 @@ class LoadingWidget extends StatefulWidget {
 
   /// Maximum height constraint.
   final double? maxHeight;
+
+  /// Optional spacing configuration (used as fallback for margin/padding if not specified).
+  final ChatSpacingConfig? spacingConfig;
 
   @override
   State<LoadingWidget> createState() => _LoadingWidgetState();
@@ -269,7 +274,16 @@ class _LoadingWidgetState extends State<LoadingWidget> {
       baseColor: baseColor,
       highlightColor: highlightColor,
       child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 800),
+        duration: const Duration(milliseconds: 300),
+        layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+          return Stack(
+            alignment: effectiveAlignment,
+            children: <Widget>[
+              ...previousChildren,
+              if (currentChild != null) currentChild,
+            ],
+          );
+        },
         child: Text(
           widget.texts[_currentIndex],
           key: ValueKey<String>(widget.texts[_currentIndex]),
@@ -291,6 +305,7 @@ class _LoadingWidgetState extends State<LoadingWidget> {
     if (!useContainerStyling) {
       return Container(
         padding: widget.padding ??
+            widget.spacingConfig?.loadingWidgetPadding ??
             const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         alignment: effectiveAlignment,
         child: textContent,
@@ -303,7 +318,8 @@ class _LoadingWidgetState extends State<LoadingWidget> {
       height: widget.height,
       constraints: constraints,
       margin: widget.margin ??
-          const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          widget.spacingConfig?.loadingWidgetMargin ??
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Material(
         color: Colors.transparent,
         elevation: widget.elevation ?? 0,
@@ -311,6 +327,7 @@ class _LoadingWidgetState extends State<LoadingWidget> {
         child: Container(
           decoration: _buildDecoration(context),
           padding: widget.padding ??
+              widget.spacingConfig?.loadingWidgetPadding ??
               const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
           alignment: effectiveAlignment,
           child: textContent,
