@@ -102,6 +102,7 @@ class InputOptions {
   final SmartDashesType? smartDashesType;
   final SmartQuotesType? smartQuotesType;
   final TextSelectionControls? selectionControls;
+  final bool enableInteractiveSelection;
 
   const InputOptions({
     this.textController,
@@ -165,6 +166,7 @@ class InputOptions {
     this.smartDashesType,
     this.smartQuotesType,
     this.selectionControls,
+    this.enableInteractiveSelection = true,
   });
 
   /// Creates a minimal input field with no outer container.
@@ -331,6 +333,7 @@ class InputOptions {
     SmartDashesType? smartDashesType,
     SmartQuotesType? smartQuotesType,
     TextSelectionControls? selectionControls,
+    bool? enableInteractiveSelection,
   }) {
     return InputOptions(
       textController: textController ?? this.textController,
@@ -400,6 +403,8 @@ class InputOptions {
       smartDashesType: smartDashesType ?? this.smartDashesType,
       smartQuotesType: smartQuotesType ?? this.smartQuotesType,
       selectionControls: selectionControls ?? this.selectionControls,
+      enableInteractiveSelection:
+          enableInteractiveSelection ?? this.enableInteractiveSelection,
     );
   }
 

@@ -56,6 +56,7 @@ class ChatInput extends StatelessWidget {
       showCursor: options.showCursor,
       enableSuggestions: options.enableSuggestions,
       enableIMEPersonalizedLearning: options.enableIMEPersonalizedLearning,
+      enableInteractiveSelection: options.enableInteractiveSelection,
       readOnly: options.readOnly,
       smartDashesType: options.smartDashesType,
       smartQuotesType: options.smartQuotesType,
