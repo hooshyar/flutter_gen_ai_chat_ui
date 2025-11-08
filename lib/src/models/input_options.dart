@@ -103,6 +103,12 @@ class InputOptions {
   final SmartQuotesType? smartQuotesType;
   final TextSelectionControls? selectionControls;
 
+  /// Whether to enable interactive selection of text in the input field.
+  ///
+  /// When false, users cannot select text using touch or mouse.
+  /// Defaults to true to maintain standard text field behavior.
+  final bool enableInteractiveSelection;
+
   // Focus behavior
   final bool autofocus;
   final FocusNode? focusNode;
@@ -169,6 +175,7 @@ class InputOptions {
     this.smartDashesType,
     this.smartQuotesType,
     this.selectionControls,
+    this.enableInteractiveSelection = true,
     this.autofocus = false,
     this.focusNode,
   });
@@ -345,6 +352,9 @@ class InputOptions {
     SmartDashesType? smartDashesType,
     SmartQuotesType? smartQuotesType,
     TextSelectionControls? selectionControls,
+    bool? enableInteractiveSelection,
+    bool? autofocus,
+    FocusNode? focusNode,
   }) {
     return InputOptions(
       textController: textController ?? this.textController,
@@ -414,6 +424,10 @@ class InputOptions {
       smartDashesType: smartDashesType ?? this.smartDashesType,
       smartQuotesType: smartQuotesType ?? this.smartQuotesType,
       selectionControls: selectionControls ?? this.selectionControls,
+      enableInteractiveSelection:
+          enableInteractiveSelection ?? this.enableInteractiveSelection,
+      autofocus: autofocus ?? this.autofocus,
+      focusNode: focusNode ?? this.focusNode,
     );
   }
 

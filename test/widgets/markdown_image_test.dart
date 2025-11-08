@@ -41,6 +41,7 @@ void main() {
             readOnly: false,
             quickReplyOptions: const QuickReplyOptions(),
             scrollToBottomOptions: const ScrollToBottomOptions(),
+            spacingConfig: const ChatSpacingConfig(),
           ),
         ),
       ));
@@ -89,6 +90,7 @@ void main() {
             readOnly: false,
             quickReplyOptions: const QuickReplyOptions(),
             scrollToBottomOptions: const ScrollToBottomOptions(),
+            spacingConfig: const ChatSpacingConfig(),
           ),
         ),
       ));
