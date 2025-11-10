@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen_ai_chat_ui/src/models/models.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../ai_chat_config.dart';
@@ -64,6 +65,12 @@ class BubbleStyle {
   /// Shadow offset for message bubbles
   final Offset? shadowOffset;
 
+  /// Widget for AI avatar image
+  final Widget Function(ChatUser chatUser)? aiAvatarWidgetBuilder;
+
+  /// Widget for user avatar image
+  final Widget Function(ChatUser chatUser)? userAvatarWidgetBuilder;
+
   const BubbleStyle({
     this.userBubbleMaxWidth,
     this.aiBubbleMaxWidth,
@@ -84,6 +91,8 @@ class BubbleStyle {
     this.shadowOpacity,
     this.shadowBlurRadius,
     this.shadowOffset,
+    this.aiAvatarWidgetBuilder,
+    this.userAvatarWidgetBuilder,
   });
 
   /// Default style for message bubbles
