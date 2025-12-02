@@ -130,6 +130,8 @@ class BubbleStyle {
     double? shadowOpacity,
     double? shadowBlurRadius,
     Offset? shadowOffset,
+    Widget Function(ChatUser)? aiAvatarWidgetBuilder,
+    Widget Function(ChatUser)? userAvatarWidgetBuilder,
   }) {
     return BubbleStyle(
       userBubbleMaxWidth: userBubbleMaxWidth ?? this.userBubbleMaxWidth,
@@ -155,6 +157,10 @@ class BubbleStyle {
       shadowOpacity: shadowOpacity ?? this.shadowOpacity,
       shadowBlurRadius: shadowBlurRadius ?? this.shadowBlurRadius,
       shadowOffset: shadowOffset ?? this.shadowOffset,
+      aiAvatarWidgetBuilder:
+          aiAvatarWidgetBuilder ?? this.aiAvatarWidgetBuilder,
+      userAvatarWidgetBuilder:
+          userAvatarWidgetBuilder ?? this.userAvatarWidgetBuilder,
     );
   }
 }
