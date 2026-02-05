@@ -158,6 +158,9 @@ class MessageOptions {
   /// Padding around the message bubble
   final EdgeInsets? padding;
 
+  /// Custom AI Icon 
+  final Widget? aiNameIcon;
+
   /// Margin around the message bubble
   final EdgeInsets? containerMargin;
 
@@ -312,6 +315,7 @@ class MessageOptions {
     this.textBuilder,
     this.markdownBuilder,
     this.customBubbleBuilder,
+    this.aiNameIcon,
   });
 
   MessageOptions copyWith({

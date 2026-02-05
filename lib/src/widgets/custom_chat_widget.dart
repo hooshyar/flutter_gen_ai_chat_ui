@@ -566,7 +566,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                               if (!isUser)
                                 Padding(
                                   padding: const EdgeInsets.only(right: 6),
-                                  child: Icon(
+                                  child: widget.messageOptions.aiNameIcon ?? Icon(
                                     Icons.smart_toy_outlined,
                                     size: 14,
                                     color:
