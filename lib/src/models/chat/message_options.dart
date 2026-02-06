@@ -3,6 +3,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../ai_chat_config.dart';
 import 'chat_message.dart';
+import 'citation.dart';
 import 'media.dart';
 
 /// Class for customizing chat bubble appearance
@@ -272,6 +273,28 @@ class MessageOptions {
   /// This provides true customization rather than just wrapping the default bubble.
   final Widget Function(BuildContext, ChatMessage, bool)? customBubbleBuilder;
 
+  /// Custom builder for footer content after message text (e.g., citations)
+  ///
+  /// This builder allows adding content between the message text and the
+  /// timestamp footer. Common uses include:
+  /// - Citation chips for legal/source references
+  /// - Action buttons
+  /// - Feedback buttons
+  ///
+  /// The parameters provided are:
+  /// - [BuildContext] context: The build context
+  /// - [ChatMessage] message: The message being rendered
+  /// - [bool] isUser: Whether this message is from the current user
+  ///
+  /// Return null to render nothing in the footer area.
+  final Widget? Function(BuildContext, ChatMessage, bool)? footerBuilder;
+
+  /// Callback when a citation is tapped
+  ///
+  /// Used when citations are rendered via the default citation display.
+  /// Receives the tapped [ChatCitation] for navigation or detail display.
+  final void Function(ChatCitation)? onCitationTap;
+
   /// Creates an instance of [MessageOptions].
   ///
   /// Note about decorations:
@@ -312,6 +335,8 @@ class MessageOptions {
     this.textBuilder,
     this.markdownBuilder,
     this.customBubbleBuilder,
+    this.footerBuilder,
+    this.onCitationTap,
   });
 
   MessageOptions copyWith({
@@ -344,6 +369,8 @@ class MessageOptions {
     Widget Function(BuildContext, String, MarkdownStyleSheet, bool)?
         markdownBuilder,
     Widget Function(BuildContext, ChatMessage, bool)? customBubbleBuilder,
+    Widget? Function(BuildContext, ChatMessage, bool)? footerBuilder,
+    void Function(ChatCitation)? onCitationTap,
   }) =>
       MessageOptions(
         textStyle: textStyle ?? this.textStyle,
@@ -374,6 +401,8 @@ class MessageOptions {
         textBuilder: textBuilder ?? this.textBuilder,
         markdownBuilder: markdownBuilder ?? this.markdownBuilder,
         customBubbleBuilder: customBubbleBuilder ?? this.customBubbleBuilder,
+        footerBuilder: footerBuilder ?? this.footerBuilder,
+        onCitationTap: onCitationTap ?? this.onCitationTap,
       );
 
   /// Get effective decoration with fallback to containerColor

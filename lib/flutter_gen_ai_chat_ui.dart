@@ -65,3 +65,5 @@ export 'src/widgets/voice/transcript_chip.dart';
 // Voice UI wrappers (UI-only)
 export 'src/widgets/voice/voice_send_button.dart';
 export 'src/widgets/voice/voice_status_bar.dart';
+// Citation widgets for legal/source references
+export 'src/widgets/citation_chip.dart';

@@ -1,0 +1,16 @@
+# CTO Configuration for Flutter Gen AI Chat UI
+
+project: flutter_gen_ai_chat_ui
+type: flutter-package
+path: /Users/hooshyar/Desktop/development/flutter_gen_ai_chat_ui
+status: maintenance
+priority: important
+
+description: |
+  Open source Flutter package. Important but no time to maintain.
+  Has open GitHub issues that need addressing.
+
+github: hooshyar/flutter_gen_ai_chat_ui  # TODO: verify
+open_source: true
+
+owner: hooshyar

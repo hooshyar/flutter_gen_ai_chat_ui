@@ -594,7 +594,18 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                       // Handle markdown or plain text with premium styling
                       _buildMessageContent(message, context),
 
-                      // Premium footer with timestamp and action buttons
+                      // Custom footer content (e.g., citations)
+                      // Waits for streaming to complete before appearing
+                      if (widget.messageOptions.footerBuilder != null)
+                        _AnimatedFooter(
+                          message: message,
+                          isUser: isUser,
+                          footerBuilder: widget.messageOptions.footerBuilder!,
+                          controller: widget.controller,
+                          streamingEnabled: widget.streamingEnabled,
+                        ),
+
+                      // Footer with timestamp and action buttons
                       Padding(
                         padding: EdgeInsets.only(
                             top: widget.messageOptions.showTime
@@ -891,12 +902,35 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       }
     }
 
+    // Detect text direction from customProperties or infer from text content
+    // This supports RTL languages like Arabic and Kurdish
+    TextDirection? textDirection;
+    final directionProp = message.customProperties?['textDirection'];
+    final isRTL = message.customProperties?['isRTL'];
+
+    if (directionProp == 'rtl' || isRTL == true) {
+      textDirection = TextDirection.rtl;
+    } else if (directionProp == 'ltr' || isRTL == false) {
+      textDirection = TextDirection.ltr;
+    } else {
+      // Auto-detect from text content if not specified
+      textDirection = _detectTextDirection(message.text);
+    }
+
+    // Wrap with Directionality to ensure proper RTL/LTR rendering
+    final directionalTextWidget = Directionality(
+      textDirection: textDirection,
+      child: textWidget,
+    );
+
     // Display media attachments if present
     if (message.media != null && message.media!.isNotEmpty) {
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: textDirection == TextDirection.rtl
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
-          textWidget,
+          directionalTextWidget,
           const SizedBox(height: 8),
           ...message.media!.map((media) {
             return Padding(
@@ -912,7 +946,39 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       );
     }
 
-    return textWidget;
+    return directionalTextWidget;
+  }
+
+  /// Detects text direction based on the first strong directional character.
+  /// Returns RTL for Arabic, Persian, Kurdish, Hebrew, etc.
+  TextDirection _detectTextDirection(String text) {
+    // Remove markdown formatting, URLs, and code blocks for direction detection
+    final cleanText = text
+        .replaceAll(RegExp(r'```[\s\S]*?```'), '') // code blocks
+        .replaceAll(RegExp(r'`[^`]+`'), '') // inline code
+        .replaceAll(RegExp(r'\[([^\]]+)\]\([^\)]+\)'), r'\1') // links
+        .replaceAll(RegExp(r'https?://[^\s]+'), '') // URLs
+        .replaceAll(RegExp(r'[*_#>\-\[\]]'), '') // markdown chars
+        .trim();
+
+    // RTL Unicode ranges: Arabic, Hebrew, Persian/Kurdish extensions
+    final rtlRegex = RegExp(
+      r'[\u0600-\u06FF'  // Arabic
+      r'\u0750-\u077F'   // Arabic Supplement
+      r'\u08A0-\u08FF'   // Arabic Extended-A
+      r'\uFB50-\uFDFF'   // Arabic Presentation Forms-A
+      r'\uFE70-\uFEFF'   // Arabic Presentation Forms-B
+      r'\u0590-\u05FF'   // Hebrew
+      r']'
+    );
+
+    // Check first 100 characters for RTL
+    final sample = cleanText.length > 100 ? cleanText.substring(0, 100) : cleanText;
+    if (rtlRegex.hasMatch(sample)) {
+      return TextDirection.rtl;
+    }
+
+    return TextDirection.ltr;
   }
 
   String _defaultTimestampFormat(DateTime dateTime) {
@@ -1385,5 +1451,159 @@ class _DotIndicatorState extends State<_DotIndicator>
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+}
+
+/// Animated footer widget that waits for streaming to complete before appearing.
+/// Uses a subtle, human-touch animation - no flashy AI effects.
+class _AnimatedFooter extends StatefulWidget {
+  const _AnimatedFooter({
+    required this.message,
+    required this.isUser,
+    required this.footerBuilder,
+    required this.controller,
+    required this.streamingEnabled,
+  });
+
+  final ChatMessage message;
+  final bool isUser;
+  final Widget? Function(BuildContext, ChatMessage, bool) footerBuilder;
+  final ChatMessagesController? controller;
+  final bool streamingEnabled;
+
+  @override
+  State<_AnimatedFooter> createState() => _AnimatedFooterState();
+}
+
+class _AnimatedFooterState extends State<_AnimatedFooter>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  bool _shouldShow = false;
+  bool _wasStreaming = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 320),
+      vsync: this,
+    );
+
+    // Subtle fade - not starting from 0 to feel more natural
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    ));
+
+    // Very subtle upward slide - feels like content settling into place
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    // Listen to controller changes for streaming state updates
+    widget.controller?.addListener(_onControllerChanged);
+
+    _checkStreamingState();
+  }
+
+  void _onControllerChanged() {
+    // Re-check streaming state when controller notifies (e.g., streaming stopped)
+    if (mounted) {
+      setState(() {
+        _checkStreamingState();
+      });
+    }
+  }
+
+  void _checkStreamingState() {
+    final messageId = widget.message.customProperties?['id'] as String? ??
+        '${widget.message.user.id}_${widget.message.createdAt.millisecondsSinceEpoch}';
+    final controllerStreamingId = widget.controller?.currentlyStreamingMessageId;
+    final isCurrentlyStreaming = controllerStreamingId == messageId;
+    final isStreaming = isCurrentlyStreaming && widget.streamingEnabled;
+
+    debugPrint('🎬 AnimatedFooter - messageId: $messageId');
+    debugPrint('🎬 AnimatedFooter - controllerStreamingId: $controllerStreamingId');
+    debugPrint('🎬 AnimatedFooter - isCurrentlyStreaming: $isCurrentlyStreaming');
+    debugPrint('🎬 AnimatedFooter - streamingEnabled: ${widget.streamingEnabled}');
+    debugPrint('🎬 AnimatedFooter - isStreaming: $isStreaming');
+    debugPrint('🎬 AnimatedFooter - _wasStreaming: $_wasStreaming');
+
+    if (isStreaming) {
+      _wasStreaming = true;
+      _shouldShow = false;
+      debugPrint('🎬 AnimatedFooter - Currently streaming, hiding footer');
+    } else {
+      // Not streaming - show the footer
+      if (_wasStreaming) {
+        // Was streaming, now complete - animate in
+        _shouldShow = true;
+        _animController.forward();
+        debugPrint('🎬 AnimatedFooter - Streaming complete, animating footer in');
+      } else {
+        // Was never streaming (loaded message) - show immediately
+        _shouldShow = true;
+        _animController.value = 1.0;
+        debugPrint('🎬 AnimatedFooter - Never streamed, showing immediately');
+      }
+    }
+    debugPrint('🎬 AnimatedFooter - _shouldShow: $_shouldShow');
+  }
+
+  @override
+  void didUpdateWidget(_AnimatedFooter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Handle controller changes
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller?.removeListener(_onControllerChanged);
+      widget.controller?.addListener(_onControllerChanged);
+    }
+    _checkStreamingState();
+  }
+
+  @override
+  void dispose() {
+    widget.controller?.removeListener(_onControllerChanged);
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    debugPrint('🎬 AnimatedFooter.build - _shouldShow: $_shouldShow, isUser: ${widget.isUser}');
+    if (!_shouldShow) {
+      debugPrint('🎬 AnimatedFooter.build - Returning SizedBox (not showing)');
+      return const SizedBox.shrink();
+    }
+
+    final footerWidget = widget.footerBuilder(
+      context,
+      widget.message,
+      widget.isUser,
+    );
+
+    debugPrint('🎬 AnimatedFooter.build - footerWidget is null: ${footerWidget == null}');
+    if (footerWidget == null) {
+      debugPrint('🎬 AnimatedFooter.build - Returning SizedBox (footer is null)');
+      return const SizedBox.shrink();
+    }
+
+    debugPrint('🎬 AnimatedFooter.build - Returning animated footer');
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: footerWidget,
+      ),
+    );
   }
 }
