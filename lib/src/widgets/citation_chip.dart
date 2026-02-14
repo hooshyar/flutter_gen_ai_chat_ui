@@ -51,10 +51,10 @@ class CitationChipTheme {
   static CitationChipTheme defaultTheme(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
     return CitationChipTheme(
-      backgroundColor: primaryColor.withOpacity(0.1),
+      backgroundColor: primaryColor.withValues(alpha: 0.1),
       textColor: primaryColor,
       iconColor: primaryColor,
-      borderColor: primaryColor.withOpacity(0.3),
+      borderColor: primaryColor.withValues(alpha: 0.3),
     );
   }
 
@@ -63,15 +63,15 @@ class CitationChipTheme {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return CitationChipTheme(
       backgroundColor: isDark
-          ? Colors.white.withOpacity(0.08)
-          : Colors.black.withOpacity(0.04),
+          ? Colors.white.withValues(alpha: 0.08)
+          : Colors.black.withValues(alpha: 0.04),
       textColor: isDark ? Colors.white70 : Colors.black87,
       iconColor: isDark ? Colors.white54 : Colors.black54,
       borderRadius: 12,
       outlined: true,
       borderColor: isDark
-          ? Colors.white.withOpacity(0.15)
-          : Colors.black.withOpacity(0.1),
+          ? Colors.white.withValues(alpha: 0.15)
+          : Colors.black.withValues(alpha: 0.1),
     );
   }
 
@@ -79,7 +79,7 @@ class CitationChipTheme {
   static CitationChipTheme legal(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
     return CitationChipTheme(
-      backgroundColor: primaryColor.withOpacity(0.12),
+      backgroundColor: primaryColor.withValues(alpha: 0.12),
       textColor: primaryColor,
       iconColor: primaryColor,
       icon: Icons.gavel,
@@ -92,8 +92,8 @@ class CitationChipTheme {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return CitationChipTheme(
       backgroundColor: isDark
-          ? Colors.white.withOpacity(0.05)
-          : Colors.grey.withOpacity(0.1),
+          ? Colors.white.withValues(alpha: 0.05)
+          : Colors.grey.withValues(alpha: 0.1),
       textColor: isDark ? Colors.white70 : Colors.grey[700],
       showIcon: false,
       borderRadius: 6,
@@ -167,7 +167,7 @@ class CitationChip extends StatelessWidget {
             border: effectiveTheme.outlined
                 ? Border.all(
                     color: effectiveTheme.borderColor ??
-                        effectiveTheme.textColor?.withOpacity(0.3) ??
+                        effectiveTheme.textColor?.withValues(alpha: 0.3) ??
                         Colors.grey,
                     width: 1,
                   )
@@ -203,7 +203,7 @@ class CitationChip extends StatelessWidget {
                   Icons.chevron_right,
                   size: compact ? 12 : 14,
                   color: (effectiveTheme.iconColor ?? effectiveTheme.textColor)
-                      ?.withOpacity(0.6),
+                      ?.withValues(alpha: 0.6),
                 ),
               ],
             ],
@@ -347,8 +347,8 @@ class CitationsSection extends StatelessWidget {
         border: Border(
           top: BorderSide(
             color: isDark
-                ? Colors.white.withOpacity(0.1)
-                : Colors.black.withOpacity(0.06),
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.06),
             width: 1,
           ),
         ),
@@ -369,8 +369,8 @@ class CitationsSection extends StatelessWidget {
                     fontSize: compact ? 10 : 11,
                     fontWeight: FontWeight.w600,
                     color: isDark
-                        ? Colors.white.withOpacity(0.6)
-                        : Colors.black.withOpacity(0.5),
+                        ? Colors.white.withValues(alpha: 0.6)
+                        : Colors.black.withValues(alpha: 0.5),
                     letterSpacing: 0.3,
                   ),
             ),
@@ -407,8 +407,8 @@ class CitationsSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.05)
-            : Colors.grey.withOpacity(0.1),
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.grey.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -455,13 +455,13 @@ class CitationExpandedView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.05)
-            : primaryColor.withOpacity(0.04),
+            ? Colors.white.withValues(alpha: 0.05)
+            : primaryColor.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.1)
-              : primaryColor.withOpacity(0.15),
+              ? Colors.white.withValues(alpha: 0.1)
+              : primaryColor.withValues(alpha: 0.15),
           width: 1,
         ),
       ),
@@ -517,8 +517,8 @@ class CitationExpandedView extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.black.withOpacity(0.2)
-                    : Colors.white.withOpacity(0.8),
+                    ? Colors.black.withValues(alpha: 0.2)
+                    : Colors.white.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -526,7 +526,7 @@ class CitationExpandedView extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.5,
-                  color: isDark ? Colors.white.withOpacity(0.85) : Colors.black87,
+                  color: isDark ? Colors.white.withValues(alpha: 0.85) : Colors.black87,
                 ),
               ),
             ),

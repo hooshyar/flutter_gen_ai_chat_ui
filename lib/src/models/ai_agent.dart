@@ -176,8 +176,7 @@ class AgentAction {
   });
 }
 
-/// Enums for agent system
-
+/// Lifecycle status of an AI agent (idle, processing, error, etc.).
 enum AgentStatus {
   initializing,
   idle,
@@ -188,6 +187,7 @@ enum AgentStatus {
   offline,
 }
 
+/// Priority level assigned to an agent request or task.
 enum AgentPriority {
   low,
   normal,
@@ -195,6 +195,7 @@ enum AgentPriority {
   critical,
 }
 
+/// Categorizes the kind of request sent to an agent.
 enum AgentRequestType {
   query,
   command,
@@ -203,6 +204,7 @@ enum AgentRequestType {
   contextUpdate,
 }
 
+/// Categorizes the kind of response returned by an agent.
 enum AgentResponseType {
   answer,
   delegation,
@@ -212,6 +214,7 @@ enum AgentResponseType {
   collaborationRequest,
 }
 
+/// Priority level for an agent-suggested action.
 enum ActionPriority {
   low,
   normal,
@@ -279,6 +282,7 @@ class AgentCollaboration {
   }
 }
 
+/// Tracks the progress of a multi-agent collaboration session.
 enum CollaborationStatus {
   active,
   completed,

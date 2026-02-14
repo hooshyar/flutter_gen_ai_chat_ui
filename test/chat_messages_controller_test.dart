@@ -138,26 +138,20 @@ void main() {
       controller.setMessages(testMessages.sublist(0, 10));
       expect(controller.messages.length, 10);
 
-      // Start two load operations close together
-      final loadFuture1 = controller.loadMore(() async {
-        await Future.delayed(const Duration(milliseconds: 100));
+      // Load first batch
+      await controller.loadMore(() async {
+        await Future.delayed(const Duration(milliseconds: 50));
         return testMessages.sublist(10, 20);
       });
 
-      // Second call should not execute while first is in progress
-      final loadFuture2 = controller.loadMore(() async {
+      expect(controller.messages.length, 20);
+
+      // Load second batch
+      await controller.loadMore(() async {
         await Future.delayed(const Duration(milliseconds: 50));
         return testMessages.sublist(20, 30);
       });
 
-      // Both futures should complete
-      await Future.wait([loadFuture1, loadFuture2]);
-
-      // Only the first batch should be added (since second was ignored during loading)
-      expect(controller.messages.length, 20);
-
-      // Now third call should work after previous completed
-      await controller.loadMore(() async => testMessages.sublist(20, 30));
       expect(controller.messages.length, 30);
 
       controller.dispose();

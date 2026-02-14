@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+/// Severity level for a [Callout] banner.
 enum CalloutType { info, warning, error, success }
 
+/// Colored banner for displaying informational, warning, error, or success messages.
 class Callout extends StatelessWidget {
   final String title;
   final String message;

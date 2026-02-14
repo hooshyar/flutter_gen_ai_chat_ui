@@ -985,9 +985,9 @@ class ChatMessagesController extends ChangeNotifier {
   /// The callback should return a list of messages to add.
   Future<void> loadMore(
       Future<List<ChatMessage>> Function()? loadCallback) async {
-//    if (_isLoadingMore || !_hasMoreMessages || !paginationConfig.enabled) {
-//      return;
-//    }
+    if (_isLoadingMore || !_hasMoreMessages || !paginationConfig.enabled) {
+      return;
+    }
 
     try {
       _isLoadingMore = true;

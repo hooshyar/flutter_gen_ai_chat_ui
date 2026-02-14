@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Provides light and dark theme switching with chat-specific color tokens.
 class ThemeProvider extends ChangeNotifier {
   bool _isDark = false;
   bool get isDark => _isDark;
@@ -71,6 +72,7 @@ class ThemeProvider extends ChangeNotifier {
   }
 }
 
+/// Theme extension holding chat-specific colors, elevation, and border radius.
 class CustomThemeExtension extends ThemeExtension<CustomThemeExtension> {
   CustomThemeExtension({
     required this.chatBackground,

@@ -15,6 +15,7 @@ import '../models/welcome_message_config.dart';
 import '../utils/color_extensions.dart';
 import 'message_attachment.dart';
 
+/// Full-featured chat widget with streaming markdown, typing indicators, and pagination.
 class CustomChatWidget extends StatefulWidget {
   final ChatUser currentUser;
   final List<ChatMessage> messages;
@@ -1518,9 +1519,7 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
   void _onControllerChanged() {
     // Re-check streaming state when controller notifies (e.g., streaming stopped)
     if (mounted) {
-      setState(() {
-        _checkStreamingState();
-      });
+      setState(_checkStreamingState);
     }
   }
 

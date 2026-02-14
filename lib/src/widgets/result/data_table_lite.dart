@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Lightweight data table for rendering structured rows and columns in chat results.
 class DataTableLite extends StatelessWidget {
   final List<String> columns;
   final List<List<String>> rows;

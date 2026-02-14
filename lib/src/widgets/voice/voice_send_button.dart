@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// Interaction mode for voice input (push-to-talk or toggle on/off).
 enum VoiceSendMode { pushToTalk, toggle }
 
+/// Current state of the voice recording lifecycle.
 enum VoiceState {
   idle,
   listening,
@@ -13,6 +15,7 @@ enum VoiceState {
   disabled
 }
 
+/// Microphone button that handles push-to-talk and toggle voice recording.
 class VoiceSendButton extends StatelessWidget {
   final VoiceSendMode mode;
   final VoiceState state;

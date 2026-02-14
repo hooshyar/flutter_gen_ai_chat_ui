@@ -66,6 +66,7 @@ class PlatformThemeVariants {
 }
 
 /// iOS-specific theme variant following Human Interface Guidelines
+/// iOS-specific theme overrides following Human Interface Guidelines.
 @immutable
 class IOSThemeVariant {
   /// Use SF Symbols when available
@@ -164,6 +165,7 @@ class IOSThemeVariant {
 }
 
 /// Android-specific theme variant following Material Design Guidelines
+/// Android-specific theme overrides following Material Design guidelines.
 @immutable
 class AndroidThemeVariant {
   /// Use Material Design 3 components
@@ -261,6 +263,7 @@ class AndroidThemeVariant {
 }
 
 /// Web-specific theme variant for browser environments
+/// Web-specific theme overrides optimized for browser rendering and responsiveness.
 @immutable
 class WebThemeVariant {
   /// Web scroll behavior
@@ -351,6 +354,7 @@ class WebThemeVariant {
 }
 
 /// Desktop-specific theme variant for Windows, macOS, Linux
+/// Desktop-specific theme overrides for macOS, Windows, and Linux.
 @immutable
 class DesktopThemeVariant {
   /// Desktop scroll behavior

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_user.dart';
 
+/// Manages chat message state and notifies listeners of changes.
 class ChatProvider with ChangeNotifier {
   ChatProvider() {
     _createNewSession();

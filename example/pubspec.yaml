@@ -13,7 +13,7 @@ dependencies:
   flutter_gen_ai_chat_ui:
     path: ../
   provider: ^6.1.2
-  google_fonts: ^6.2.1
+  google_fonts: ^8.0.1
   shared_preferences: ^2.2.2
   intl: ^0.20.2
   cupertino_icons: ^1.0.6

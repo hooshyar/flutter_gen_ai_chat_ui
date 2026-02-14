@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Controls vertical and horizontal spacing between chat bubbles and sections.
 class ChatSpacingConfig {
   final EdgeInsets messageBubbleOuterPadding;
   final EdgeInsets messageBubbleInnerPadding;

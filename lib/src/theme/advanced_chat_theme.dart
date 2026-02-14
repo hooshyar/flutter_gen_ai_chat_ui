@@ -10,6 +10,7 @@ import 'platform_theme_variants.dart';
 
 /// Advanced chat theme system with 50+ sophisticated properties
 /// supporting gradients, typography scales, animations, and platform variations
+/// Comprehensive chat theme with 50+ properties including gradients, animations, and platform variants.
 @immutable
 class AdvancedChatTheme extends ThemeExtension<AdvancedChatTheme> {
   /// Background gradient system

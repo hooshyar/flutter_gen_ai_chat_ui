@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Immutable theme extension that stores chat UI color tokens and layout properties.
 @immutable
 class CustomThemeExtension extends ThemeExtension<CustomThemeExtension> {
   final Color? chatBackground;

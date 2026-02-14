@@ -85,12 +85,14 @@ void main() {
 
   group('ChatMessagesController Pagination', () {
     test('handles load more correctly', () async {
+      final now = DateTime.now();
       final messages = List.generate(
         5,
         (i) => ChatMessage(
           text: 'Message $i',
           user: testUser,
-          createdAt: DateTime.now(),
+          createdAt: now.add(Duration(seconds: i)),
+          customProperties: {'id': 'load_more_$i'},
         ),
       );
 

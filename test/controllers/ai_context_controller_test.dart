@@ -226,7 +226,7 @@ void main() {
 
     group('Event Streaming', () {
       test('should emit context added event', () async {
-        late AiContextEvent receivedEvent;
+        AiContextEvent? receivedEvent;
         controller.events.listen((event) {
           receivedEvent = event;
         });
@@ -234,8 +234,12 @@ void main() {
         final contextData = _createTestContext();
         controller.setContext(contextData);
 
-        expect(receivedEvent.type, equals(AiContextEventType.added));
-        expect(receivedEvent.contextData, equals(contextData));
+        // Stream events are async, wait for microtask
+        await Future.delayed(Duration.zero);
+
+        expect(receivedEvent, isNotNull);
+        expect(receivedEvent!.type, equals(AiContextEventType.added));
+        expect(receivedEvent!.contextData, equals(contextData));
       });
 
       test('should emit context updated event', () async {
@@ -250,6 +254,8 @@ void main() {
         });
 
         controller.setContext(contextData.copyWith(data: {'updated': true}));
+
+        await Future.delayed(Duration.zero);
 
         expect(updateEvent, isNotNull);
         expect(updateEvent!.type, equals(AiContextEventType.updated));
@@ -269,6 +275,8 @@ void main() {
 
         controller.removeContext('test_context');
 
+        await Future.delayed(Duration.zero);
+
         expect(removedEvent, isNotNull);
         expect(removedEvent!.type, equals(AiContextEventType.removed));
         expect(removedEvent!.contextData, equals(contextData));
@@ -285,6 +293,8 @@ void main() {
         });
 
         controller.clearContext();
+
+        await Future.delayed(Duration.zero);
 
         expect(clearedEvent, isNotNull);
         expect(clearedEvent!.type, equals(AiContextEventType.cleared));

@@ -332,6 +332,7 @@ enum AutoScrollBehavior {
 ///
 /// @Deprecated: This class is being phased out in favor of direct parameters in AiChatWidget.
 /// For new code, pass configuration options directly to AiChatWidget constructor.
+/// Aggregated configuration for the AI chat widget (deprecated in favor of direct parameters).
 @Deprecated(
     'Use direct parameters in AiChatWidget instead. This class will be removed in a future version.')
 class AiChatConfig {

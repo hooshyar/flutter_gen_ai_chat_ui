@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Card container for presenting agent action results with a title and body.
 class ResultCard extends StatelessWidget {
   final String? title;
   final String? subtitle;

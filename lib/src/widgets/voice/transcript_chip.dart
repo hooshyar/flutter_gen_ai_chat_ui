@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Compact chip that shows real-time speech-to-text transcription output.
 class TranscriptChip extends StatelessWidget {
   final String text;
   final bool isFinal;

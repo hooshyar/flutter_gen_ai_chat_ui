@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Displays a vertical list of label–value pairs for structured metadata.
 class KeyValueList extends StatelessWidget {
   final Map<String, String> items;
   final EdgeInsetsGeometry padding;

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+/// Current phase of a full-duplex voice conversation.
 enum DuplexState { listening, speaking, thinking, connecting, idle }
 
+/// Animated status bar showing the current voice conversation phase and level.
 class VoiceStatusBar extends StatelessWidget {
   final DuplexState duplexState;
   final int? latencyMs;

@@ -85,7 +85,7 @@ class ChatCitation {
       );
     } catch (e) {
       debugPrint('Error parsing ChatCitation: $e');
-      return ChatCitation(
+      return const ChatCitation(
         id: '',
         shortCitation: '',
         fullCitation: '',
@@ -93,7 +93,7 @@ class ChatCitation {
     }
   }
 
-  /// Helper to parse a Map<String, String> from dynamic
+  /// Helper to parse a `Map<String, String>` from dynamic
   static Map<String, String>? _parseStringMap(dynamic data) {
     if (data == null) return null;
     if (data is! Map) return null;
