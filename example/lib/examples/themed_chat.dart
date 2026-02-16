@@ -170,12 +170,16 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
             padding: const EdgeInsets.only(bottom: 12),
             child: SegmentedButton<ChatTheme>(
               segments: const [
-                ButtonSegment(value: ChatTheme.defaultTheme, label: Text('Default')),
-                ButtonSegment(value: ChatTheme.ocean, label: Text('Ocean')),
-                ButtonSegment(value: ChatTheme.sunset, label: Text('Sunset')),
+                ButtonSegment(
+                    value: ChatTheme.defaultTheme, label: Text('Default')),
+                ButtonSegment(
+                    value: ChatTheme.ocean, label: Text('Ocean')),
+                ButtonSegment(
+                    value: ChatTheme.sunset, label: Text('Sunset')),
               ],
               selected: {_selectedTheme},
-              onSelectionChanged: (s) => setState(() => _selectedTheme = s.first),
+              onSelectionChanged: (s) =>
+                  setState(() => _selectedTheme = s.first),
             ),
           ),
         ),
@@ -186,7 +190,12 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
         controller: _controller,
         onSendMessage: _onSendMessage,
         enableMarkdownStreaming: true,
-        loadingConfig: LoadingConfig(isLoading: _isLoading),
+        loadingConfig: LoadingConfig(
+          isLoading: _isLoading,
+          loadingIndicator: const LoadingWidget(
+            texts: ['Aria is typing...', 'Styling response...'],
+          ),
+        ),
         messageOptions: MessageOptions(
           showTime: true,
           bubbleStyle: _bubbleStyle,
@@ -205,7 +214,9 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
             color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),
+              color: isDark
+                  ? const Color(0xFF2A2A3A)
+                  : const Color(0xFFE5E7EB),
             ),
           ),
           questionsSectionTitle: 'Switch themes above, then try:',

@@ -73,7 +73,12 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
         controller: _controller,
         onSendMessage: _onSendMessage,
         enableMarkdownStreaming: true,
-        loadingConfig: LoadingConfig(isLoading: _isLoading),
+        loadingConfig: LoadingConfig(
+          isLoading: _isLoading,
+          loadingIndicator: const LoadingWidget(
+            texts: ['Generating code...', 'Compiling thoughts...'],
+          ),
+        ),
         welcomeMessageConfig: WelcomeMessageConfig(
           title: 'Code Assistant ⚡',
           titleStyle: TextStyle(
@@ -85,7 +90,9 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
             color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),
+              color: isDark
+                  ? const Color(0xFF2A2A3A)
+                  : const Color(0xFFE5E7EB),
             ),
           ),
           questionsSectionTitle: 'Try asking:',
@@ -104,8 +111,9 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
           showCopyButton: true,
           showTime: true,
           bubbleStyle: BubbleStyle(
-            userBubbleColor: isDark ? const Color(0xFF6366F1) : const Color(0xFF6366F1),
-            aiBubbleColor: isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF5F5FF),
+            userBubbleColor: const Color(0xFF6366F1),
+            aiBubbleColor:
+                isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF5F5FF),
             userBubbleTopLeftRadius: 18,
             userBubbleTopRightRadius: 18,
             aiBubbleTopLeftRadius: 18,

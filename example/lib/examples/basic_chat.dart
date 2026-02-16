@@ -49,7 +49,12 @@ class _BasicChatExampleState extends State<BasicChatExample> {
         aiUser: _aiUser,
         controller: _controller,
         onSendMessage: _onSendMessage,
-        loadingConfig: LoadingConfig(isLoading: _isLoading),
+        loadingConfig: LoadingConfig(
+          isLoading: _isLoading,
+          loadingIndicator: const LoadingWidget(
+            texts: ['Thinking...', 'Almost there...'],
+          ),
+        ),
         enableAnimation: false,
         enableMarkdownStreaming: false,
         welcomeMessageConfig: WelcomeMessageConfig(
