@@ -12,18 +12,7 @@ dependencies:
     sdk: flutter
   flutter_gen_ai_chat_ui:
     path: ../
-  provider: ^6.1.2
-  google_fonts: ^8.0.1
-  shared_preferences: ^2.2.2
-  intl: ^0.20.2
   cupertino_icons: ^1.0.6
-  speech_to_text: ^6.6.1
-  flutter_markdown_plus: ^1.0.3
-  url_launcher: ^6.3.1
-  file_picker: ^10.1.9
-  image_picker: ^1.1.2
-  path_provider: ^2.1.5
-  path: ^1.9.0
 
 dev_dependencies:
   flutter_test:
