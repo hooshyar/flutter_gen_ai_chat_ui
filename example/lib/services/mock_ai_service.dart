@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 /// Simple mock AI service for example apps.
-class MockAiService {
+class ExampleAiService {
   final _random = Random();
 
   /// Generate a response with a simulated delay.

@@ -19,7 +19,7 @@ class StreamingChatExample extends StatefulWidget {
 
 class _StreamingChatExampleState extends State<StreamingChatExample> {
   final _controller = ChatMessagesController();
-  final _aiService = MockAiService();
+  final _aiService = ExampleAiService();
   bool _isLoading = false;
   StreamSubscription<String>? _streamSubscription;
 

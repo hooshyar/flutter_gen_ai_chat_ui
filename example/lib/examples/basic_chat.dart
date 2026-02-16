@@ -16,7 +16,7 @@ class BasicChatExample extends StatefulWidget {
 
 class _BasicChatExampleState extends State<BasicChatExample> {
   final _controller = ChatMessagesController();
-  final _aiService = MockAiService();
+  final _aiService = ExampleAiService();
   bool _isLoading = false;
 
   static const _currentUser = ChatUser(id: 'user', name: 'You');
