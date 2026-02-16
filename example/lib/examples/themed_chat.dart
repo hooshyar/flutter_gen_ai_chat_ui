@@ -20,7 +20,7 @@ class ThemedChatExample extends StatefulWidget {
 
 class _ThemedChatExampleState extends State<ThemedChatExample> {
   final _controller = ChatMessagesController();
-  final _aiService = ExampleAiService();
+  final _aiService = ExampleAiService(style: ResponseStyle.conversational);
   bool _isLoading = false;
   StreamSubscription<String>? _streamSubscription;
   ChatTheme _selectedTheme = ChatTheme.defaultTheme;
