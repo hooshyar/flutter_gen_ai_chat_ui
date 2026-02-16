@@ -56,12 +56,11 @@ class _BasicChatExampleState extends State<BasicChatExample> {
         aiUser: _aiUser,
         controller: _controller,
         onSendMessage: _onSendMessage,
-        loadingConfig: _isLoading ? const LoadingConfig() : null,
+        loadingConfig: LoadingConfig(isLoading: _isLoading),
         enableAnimation: false,
         enableMarkdownStreaming: false,
         welcomeMessageConfig: const WelcomeMessageConfig(
           title: 'Hello!',
-          subtitle: 'Type a message to get started.',
         ),
       ),
     );

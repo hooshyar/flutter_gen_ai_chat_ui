@@ -78,10 +78,9 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
         controller: _controller,
         onSendMessage: _onSendMessage,
         enableMarkdownStreaming: true,
-        loadingConfig: _isLoading ? const LoadingConfig() : null,
+        loadingConfig: LoadingConfig(isLoading: _isLoading),
         welcomeMessageConfig: const WelcomeMessageConfig(
           title: 'Code Assistant',
-          subtitle: 'Responses stream in with full markdown support.',
         ),
         exampleQuestions: [
           const ExampleQuestion(question: 'Write a Dart singleton pattern'),

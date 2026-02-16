@@ -172,12 +172,11 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
         controller: _controller,
         onSendMessage: _onSendMessage,
         enableMarkdownStreaming: true,
-        loadingConfig: _isLoading ? const LoadingConfig() : null,
+        loadingConfig: LoadingConfig(isLoading: _isLoading),
         messageOptions: _messageOptions,
         inputOptions: _inputOptions,
         welcomeMessageConfig: const WelcomeMessageConfig(
           title: 'Design Playground',
-          subtitle: 'Switch themes above to see bubble styles change.',
         ),
         exampleQuestions: [
           const ExampleQuestion(question: 'Send me a long response'),
