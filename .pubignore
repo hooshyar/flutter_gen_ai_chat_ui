@@ -1,18 +1,23 @@
-# Development files to exclude from package
+# Build artifacts
+build/
+.dart_tool/
+
+# Agent memory / docs not relevant to package users
 .memory/
-DESIGN_SYSTEM_GUIDE.md  
-DEVELOPMENT_ROADMAP.md
-IMPROVEMENTS.md
-PROGRESS_SUMMARY.md
-doc/ROADMAP_UI.md
-.claude/
-example/integration_test/README.md
+CLAUDE.md
+PR_HANDLING_ULTRATHINK.md
+ULTRATHINK_ENABLE_INTERACTIVE_SELECTION.md
 
-# Git and IDE files
-.git/
-.vscode/
+# IDE
 .idea/
-*.md.bak
+.vscode/
+*.iml
 
-# Development artifacts  
-devtools_options.yaml
+# macOS derived data
+example/macos/DerivedData/
+example/macos/Pods/
+example/ios/Pods/
+
+# Platform build dirs in example
+example/android/.gradle/
+example/build/

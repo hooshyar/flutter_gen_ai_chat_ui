@@ -1,3 +1,25 @@
+## 2.6.0 - [2026-02-16] Citations, Text Selection & Example Overhaul
+
+### Added
+- **Citation Support**: New `Citation` model and `CitationChip` widget for displaying source references on AI messages
+  - `citations` field on `ChatMessage` for attaching source URLs/titles
+  - `showCitations` and `citationStyle` on `MessageOptions` for display control
+- **Interactive Text Selection**: New `enableInteractiveSelection` parameter on `InputOptions` to control text selection in the input field
+  - Fixed `copyWith` bugs in `InputOptions` and related models
+
+### Changed
+- **Example App Overhaul**: Replaced 35+ scattered example files with 3 focused, professional examples
+  - **Basic Chat** — minimal setup, plain text, no extras
+  - **Streaming + Markdown** — code assistant with rich markdown, custom bubble styles
+  - **Custom Themes** — Ocean/Sunset/Default theme switcher with per-theme colors and input decoration
+  - Each example has distinct AI personality, response style, and shimmer loading text
+  - `ExampleAiService` with `ResponseStyle` enum (plain/markdown/conversational)
+- **Dependency Updates**: Bumped dependencies to latest compatible versions
+
+### Fixed
+- Name collision between package's `MockAiService` and example's mock service (renamed to `ExampleAiService`)
+- `copyWith` bugs in `InputOptions`, `MessageOptions`, and related config classes
+
 ## 2.5.0 - [2025-11-08] Community Contributions - Spacing Control & UX Enhancements
 
 ### Added
