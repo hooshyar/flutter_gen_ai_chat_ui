@@ -482,7 +482,8 @@ class MessageListOptions {
       MessageListOptions(
         scrollController: scrollController ?? this.scrollController,
         scrollPhysics: scrollPhysics ?? this.scrollPhysics,
-        keyboardDismissBehavior: keyboardDismissBehavior ?? this.keyboardDismissBehavior,
+        keyboardDismissBehavior:
+            keyboardDismissBehavior ?? this.keyboardDismissBehavior,
         dateSeparatorBuilder: dateSeparatorBuilder ?? this.dateSeparatorBuilder,
         loadingWidget: loadingWidget ?? this.loadingWidget,
         onLoadEarlier: onLoadEarlier ?? this.onLoadEarlier,

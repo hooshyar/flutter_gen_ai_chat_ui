@@ -352,7 +352,8 @@ class _AiChatWidgetState extends State<AiChatWidget>
                   streamingFadeInCurve:
                       widget.streamingFadeInCurve ?? Curves.easeInOut,
                   streamingWordByWord: widget.streamingWordByWord ?? false,
-                  spacingConfig: widget.spacingConfig ?? const ChatSpacingConfig(),
+                  spacingConfig:
+                      widget.spacingConfig ?? const ChatSpacingConfig(),
                 ),
               ),
               // Loading indicator overlay

@@ -1,3 +1,8 @@
+## 2.6.1 - [2026-02-16] Formatting Fix
+
+### Fixed
+- Applied `dart format` to 6 library files to restore full 160/160 pub.dev score
+
 ## 2.6.0 - [2026-02-16] Citations, Text Selection & Example Overhaul
 
 ### Added

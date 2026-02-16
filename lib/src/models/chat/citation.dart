@@ -63,24 +63,24 @@ class ChatCitation {
         fullCitation: json['full_citation']?.toString() ??
             json['legal_citation']?.toString() ??
             '',
-        sourceTitle: json['source_title']?.toString() ??
-            json['law_title']?.toString(),
+        sourceTitle:
+            json['source_title']?.toString() ?? json['law_title']?.toString(),
         sourceNumber: json['source_number']?.toString() ??
             json['law_number']?.toString() ??
             json['article_number']?.toString(),
         year: json['year'] is int
             ? json['year'] as int
             : int.tryParse(json['year']?.toString() ?? ''),
-        category: json['category']?.toString() ??
-            json['legal_domain']?.toString(),
+        category:
+            json['category']?.toString() ?? json['legal_domain']?.toString(),
         contentExcerpt: json['content_excerpt']?.toString() ??
             json['matched_content']?.toString(),
-        localizedCitations: _parseStringMap(json['localized_citations'] ??
-            json['citations_all_languages']),
-        localizedTitles: _parseStringMap(json['localized_titles'] ??
-            json['law_title']),
-        localizedContent: _parseStringMap(json['localized_content'] ??
-            json['matched_content_all_languages']),
+        localizedCitations: _parseStringMap(
+            json['localized_citations'] ?? json['citations_all_languages']),
+        localizedTitles:
+            _parseStringMap(json['localized_titles'] ?? json['law_title']),
+        localizedContent: _parseStringMap(
+            json['localized_content'] ?? json['matched_content_all_languages']),
         customProperties: json['custom_properties'] as Map<String, dynamic>?,
       );
     } catch (e) {
@@ -116,7 +116,8 @@ class ChatCitation {
         if (year != null) 'year': year,
         if (category != null) 'category': category,
         if (contentExcerpt != null) 'content_excerpt': contentExcerpt,
-        if (localizedCitations != null) 'localized_citations': localizedCitations,
+        if (localizedCitations != null)
+          'localized_citations': localizedCitations,
         if (localizedTitles != null) 'localized_titles': localizedTitles,
         if (localizedContent != null) 'localized_content': localizedContent,
         if (customProperties != null) 'custom_properties': customProperties,
@@ -175,8 +176,7 @@ class ChatCitation {
       );
 
   @override
-  String toString() =>
-      'ChatCitation(id: $id, shortCitation: $shortCitation)';
+  String toString() => 'ChatCitation(id: $id, shortCitation: $shortCitation)';
 
   @override
   bool operator ==(Object other) =>

@@ -58,12 +58,14 @@ class ChatSpacingConfig {
   }
 
   factory ChatSpacingConfig.compact() => const ChatSpacingConfig(
-        messageBubbleInnerPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        messageBubbleInnerPadding:
+            EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         messageListPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       );
 
   factory ChatSpacingConfig.comfortable() => const ChatSpacingConfig(
-        messageBubbleInnerPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        messageBubbleInnerPadding:
+            EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         messageListPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       );
 
@@ -82,17 +84,23 @@ class ChatSpacingConfig {
     EdgeInsets? quickRepliesPadding,
   }) {
     return ChatSpacingConfig(
-      messageBubbleOuterPadding: messageBubbleOuterPadding ?? this.messageBubbleOuterPadding,
-      messageBubbleInnerPadding: messageBubbleInnerPadding ?? this.messageBubbleInnerPadding,
+      messageBubbleOuterPadding:
+          messageBubbleOuterPadding ?? this.messageBubbleOuterPadding,
+      messageBubbleInnerPadding:
+          messageBubbleInnerPadding ?? this.messageBubbleInnerPadding,
       messageBubbleMargin: messageBubbleMargin ?? this.messageBubbleMargin,
-      messageUsernameBottomPadding: messageUsernameBottomPadding ?? this.messageUsernameBottomPadding,
-      messageFooterTopPadding: messageFooterTopPadding ?? this.messageFooterTopPadding,
+      messageUsernameBottomPadding:
+          messageUsernameBottomPadding ?? this.messageUsernameBottomPadding,
+      messageFooterTopPadding:
+          messageFooterTopPadding ?? this.messageFooterTopPadding,
       messageMediaSpacing: messageMediaSpacing ?? this.messageMediaSpacing,
       messageListPadding: messageListPadding ?? this.messageListPadding,
       loadingWidgetMargin: loadingWidgetMargin ?? this.loadingWidgetMargin,
       loadingWidgetPadding: loadingWidgetPadding ?? this.loadingWidgetPadding,
-      typingIndicatorPadding: typingIndicatorPadding ?? this.typingIndicatorPadding,
-      typingIndicatorMargin: typingIndicatorMargin ?? this.typingIndicatorMargin,
+      typingIndicatorPadding:
+          typingIndicatorPadding ?? this.typingIndicatorPadding,
+      typingIndicatorMargin:
+          typingIndicatorMargin ?? this.typingIndicatorMargin,
       quickRepliesPadding: quickRepliesPadding ?? this.quickRepliesPadding,
     );
   }

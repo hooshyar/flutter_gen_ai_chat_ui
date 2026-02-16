@@ -226,7 +226,8 @@ class CitationChip extends StatelessWidget {
   String _getDisplayText() {
     // Use localized citation if available, otherwise short citation
     final localizedCitation = citation.getCitationInLanguage(language);
-    if (localizedCitation.isNotEmpty && localizedCitation != citation.fullCitation) {
+    if (localizedCitation.isNotEmpty &&
+        localizedCitation != citation.fullCitation) {
       return localizedCitation;
     }
     return citation.shortCitation.isNotEmpty
@@ -249,9 +250,8 @@ class CitationChip extends StatelessWidget {
     final content = citation.getContentInLanguage(language);
     if (content != null && content.isNotEmpty) {
       // Truncate content for tooltip
-      final truncated = content.length > 100
-          ? '${content.substring(0, 100)}...'
-          : content;
+      final truncated =
+          content.length > 100 ? '${content.substring(0, 100)}...' : content;
       parts.add(truncated);
     }
 
@@ -338,8 +338,8 @@ class CitationsSection extends StatelessWidget {
     final citations = maxVisible != null
         ? citationsData.citations.take(maxVisible!).toList()
         : citationsData.citations;
-    final hasMore = maxVisible != null &&
-        citationsData.citations.length > maxVisible!;
+    final hasMore =
+        maxVisible != null && citationsData.citations.length > maxVisible!;
 
     return Container(
       padding: EdgeInsets.only(top: compact ? 6 : 8),
@@ -526,7 +526,9 @@ class CitationExpandedView extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.5,
-                  color: isDark ? Colors.white.withValues(alpha: 0.85) : Colors.black87,
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : Colors.black87,
                 ),
               ),
             ),

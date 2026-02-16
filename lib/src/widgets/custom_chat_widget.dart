@@ -241,8 +241,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       reverse: paginationConfig.reverseOrder,
       physics: widget.messageListOptions.scrollPhysics ??
           const BouncingScrollPhysics(),
-      keyboardDismissBehavior: widget.messageListOptions.keyboardDismissBehavior ??
-          ScrollViewKeyboardDismissBehavior.onDrag,
+      keyboardDismissBehavior:
+          widget.messageListOptions.keyboardDismissBehavior ??
+              ScrollViewKeyboardDismissBehavior.onDrag,
       padding: widget.spacingConfig.messageListPadding,
       itemCount: widget.messages.length +
           (widget.typingUsers?.isNotEmpty == true ? 1 : 0) +
@@ -559,7 +560,8 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                       // Display user name if needed
                       if (widget.messageOptions.showUserName ?? true)
                         Padding(
-                          padding: widget.spacingConfig.messageUsernameBottomPadding,
+                          padding:
+                              widget.spacingConfig.messageUsernameBottomPadding,
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -610,8 +612,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                       Padding(
                         padding: EdgeInsets.only(
                             top: widget.messageOptions.showTime
-                              ? widget.spacingConfig.messageFooterTopPadding.top
-                              : 0),
+                                ? widget
+                                    .spacingConfig.messageFooterTopPadding.top
+                                : 0),
                         child: Row(
                           mainAxisSize: MainAxisSize.max,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -963,18 +966,17 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         .trim();
 
     // RTL Unicode ranges: Arabic, Hebrew, Persian/Kurdish extensions
-    final rtlRegex = RegExp(
-      r'[\u0600-\u06FF'  // Arabic
-      r'\u0750-\u077F'   // Arabic Supplement
-      r'\u08A0-\u08FF'   // Arabic Extended-A
-      r'\uFB50-\uFDFF'   // Arabic Presentation Forms-A
-      r'\uFE70-\uFEFF'   // Arabic Presentation Forms-B
-      r'\u0590-\u05FF'   // Hebrew
-      r']'
-    );
+    final rtlRegex = RegExp(r'[\u0600-\u06FF' // Arabic
+        r'\u0750-\u077F' // Arabic Supplement
+        r'\u08A0-\u08FF' // Arabic Extended-A
+        r'\uFB50-\uFDFF' // Arabic Presentation Forms-A
+        r'\uFE70-\uFEFF' // Arabic Presentation Forms-B
+        r'\u0590-\u05FF' // Hebrew
+        r']');
 
     // Check first 100 characters for RTL
-    final sample = cleanText.length > 100 ? cleanText.substring(0, 100) : cleanText;
+    final sample =
+        cleanText.length > 100 ? cleanText.substring(0, 100) : cleanText;
     if (rtlRegex.hasMatch(sample)) {
       return TextDirection.rtl;
     }
@@ -1336,7 +1338,8 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             child: Row(
               children: [
                 Icon(
-                  question.config?.iconData ?? Icons.chat_bubble_outline_rounded,
+                  question.config?.iconData ??
+                      Icons.chat_bubble_outline_rounded,
                   size: question.config?.iconSize ?? 18,
                   color: question.config?.iconColor ??
                       (isDarkMode
@@ -1526,14 +1529,18 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
   void _checkStreamingState() {
     final messageId = widget.message.customProperties?['id'] as String? ??
         '${widget.message.user.id}_${widget.message.createdAt.millisecondsSinceEpoch}';
-    final controllerStreamingId = widget.controller?.currentlyStreamingMessageId;
+    final controllerStreamingId =
+        widget.controller?.currentlyStreamingMessageId;
     final isCurrentlyStreaming = controllerStreamingId == messageId;
     final isStreaming = isCurrentlyStreaming && widget.streamingEnabled;
 
     debugPrint('🎬 AnimatedFooter - messageId: $messageId');
-    debugPrint('🎬 AnimatedFooter - controllerStreamingId: $controllerStreamingId');
-    debugPrint('🎬 AnimatedFooter - isCurrentlyStreaming: $isCurrentlyStreaming');
-    debugPrint('🎬 AnimatedFooter - streamingEnabled: ${widget.streamingEnabled}');
+    debugPrint(
+        '🎬 AnimatedFooter - controllerStreamingId: $controllerStreamingId');
+    debugPrint(
+        '🎬 AnimatedFooter - isCurrentlyStreaming: $isCurrentlyStreaming');
+    debugPrint(
+        '🎬 AnimatedFooter - streamingEnabled: ${widget.streamingEnabled}');
     debugPrint('🎬 AnimatedFooter - isStreaming: $isStreaming');
     debugPrint('🎬 AnimatedFooter - _wasStreaming: $_wasStreaming');
 
@@ -1547,7 +1554,8 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
         // Was streaming, now complete - animate in
         _shouldShow = true;
         _animController.forward();
-        debugPrint('🎬 AnimatedFooter - Streaming complete, animating footer in');
+        debugPrint(
+            '🎬 AnimatedFooter - Streaming complete, animating footer in');
       } else {
         // Was never streaming (loaded message) - show immediately
         _shouldShow = true;
@@ -1578,7 +1586,8 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🎬 AnimatedFooter.build - _shouldShow: $_shouldShow, isUser: ${widget.isUser}');
+    debugPrint(
+        '🎬 AnimatedFooter.build - _shouldShow: $_shouldShow, isUser: ${widget.isUser}');
     if (!_shouldShow) {
       debugPrint('🎬 AnimatedFooter.build - Returning SizedBox (not showing)');
       return const SizedBox.shrink();
@@ -1590,9 +1599,11 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
       widget.isUser,
     );
 
-    debugPrint('🎬 AnimatedFooter.build - footerWidget is null: ${footerWidget == null}');
+    debugPrint(
+        '🎬 AnimatedFooter.build - footerWidget is null: ${footerWidget == null}');
     if (footerWidget == null) {
-      debugPrint('🎬 AnimatedFooter.build - Returning SizedBox (footer is null)');
+      debugPrint(
+          '🎬 AnimatedFooter.build - Returning SizedBox (footer is null)');
       return const SizedBox.shrink();
     }
 
