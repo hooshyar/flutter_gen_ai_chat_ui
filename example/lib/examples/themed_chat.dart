@@ -25,8 +25,8 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
   StreamSubscription<String>? _streamSubscription;
   ChatTheme _selectedTheme = ChatTheme.defaultTheme;
 
-  static const _currentUser = ChatUser(id: 'user', name: 'You');
-  static const _aiUser = ChatUser(id: 'ai', name: 'AI Assistant');
+  static const _currentUser = ChatUser(id: 'user');
+  static const _aiUser = ChatUser(id: 'ai', name: 'Aria');
 
   void _onSendMessage(ChatMessage message) {
     setState(() => _isLoading = true);
@@ -176,12 +176,12 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
         messageOptions: _messageOptions,
         inputOptions: _inputOptions,
         welcomeMessageConfig: const WelcomeMessageConfig(
-          title: 'Try switching themes above!',
+          title: 'Design Playground',
+          subtitle: 'Switch themes above to see bubble styles change.',
         ),
         exampleQuestions: [
-          const ExampleQuestion(question: 'Tell me about Flutter'),
-          const ExampleQuestion(question: 'Show me a code example'),
-          const ExampleQuestion(question: 'What can you help with?'),
+          const ExampleQuestion(question: 'Send me a long response'),
+          const ExampleQuestion(question: 'How do custom themes work?'),
         ],
       ),
     );

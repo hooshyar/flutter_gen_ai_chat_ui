@@ -19,8 +19,8 @@ class _BasicChatExampleState extends State<BasicChatExample> {
   final _aiService = ExampleAiService();
   bool _isLoading = false;
 
-  static const _currentUser = ChatUser(id: 'user', name: 'You');
-  static const _aiUser = ChatUser(id: 'ai', name: 'AI Assistant');
+  static const _currentUser = ChatUser(id: 'user');
+  static const _aiUser = ChatUser(id: 'ai', name: 'Bot');
 
   void _onSendMessage(ChatMessage message) async {
     setState(() => _isLoading = true);
@@ -60,13 +60,9 @@ class _BasicChatExampleState extends State<BasicChatExample> {
         enableAnimation: false,
         enableMarkdownStreaming: false,
         welcomeMessageConfig: const WelcomeMessageConfig(
-          title: 'Welcome! Ask me anything.',
+          title: 'Hello!',
+          subtitle: 'Type a message to get started.',
         ),
-        exampleQuestions: [
-          const ExampleQuestion(question: 'Tell me about Flutter'),
-          const ExampleQuestion(question: 'Show me a code example'),
-          const ExampleQuestion(question: 'What can you help with?'),
-        ],
       ),
     );
   }

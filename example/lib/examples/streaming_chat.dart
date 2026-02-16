@@ -23,8 +23,8 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
   bool _isLoading = false;
   StreamSubscription<String>? _streamSubscription;
 
-  static const _currentUser = ChatUser(id: 'user', name: 'You');
-  static const _aiUser = ChatUser(id: 'ai', name: 'AI Assistant');
+  static const _currentUser = ChatUser(id: 'user');
+  static const _aiUser = ChatUser(id: 'ai', name: 'Copilot');
 
   void _onSendMessage(ChatMessage message) {
     setState(() => _isLoading = true);
@@ -80,13 +80,13 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
         enableMarkdownStreaming: true,
         loadingConfig: _isLoading ? const LoadingConfig() : null,
         welcomeMessageConfig: const WelcomeMessageConfig(
-          title: 'Ask me anything — responses stream in real-time.',
+          title: 'Code Assistant',
+          subtitle: 'Responses stream in with full markdown support.',
         ),
         exampleQuestions: [
-          const ExampleQuestion(question: 'Tell me about Flutter'),
-          const ExampleQuestion(question: 'Show me a code example'),
-          const ExampleQuestion(question: 'What can you help with?'),
-          const ExampleQuestion(question: 'Say hello'),
+          const ExampleQuestion(question: 'Write a Dart singleton pattern'),
+          const ExampleQuestion(question: 'Explain async/await with an example'),
+          const ExampleQuestion(question: 'Compare StatelessWidget vs StatefulWidget'),
         ],
       ),
     );

@@ -26,17 +26,17 @@ class HomeScreen extends StatelessWidget {
         children: const [
           _ExampleTile(
             title: 'Basic Chat',
-            subtitle: 'Minimal working chat with mock AI responses',
+            subtitle: 'Bare minimum — no streaming, no markdown, no extras',
             route: '/basic',
           ),
           _ExampleTile(
-            title: 'Streaming Chat',
-            subtitle: 'Streaming responses with markdown support',
+            title: 'Streaming + Markdown',
+            subtitle: 'Real-time streaming with code blocks and rich text',
             route: '/streaming',
           ),
           _ExampleTile(
-            title: 'Themed Chat',
-            subtitle: 'Theme switching with custom bubble styles',
+            title: 'Custom Themes',
+            subtitle: 'Switch between Ocean, Sunset, and Default styles',
             route: '/themed',
           ),
         ],
