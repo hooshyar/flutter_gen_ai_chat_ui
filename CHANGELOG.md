@@ -1,3 +1,12 @@
+## 2.6.2 - [2026-02-16] Streaming Dependency Upgrade
+
+### Changed
+- Bumped `flutter_streaming_text_markdown` from `^1.3.2` to `^1.4.0`
+  - Fixes setState race conditions (prevents navigation crashes)
+  - Fixes timer memory leaks in long-running chats
+  - Fixes AnimationController disposal errors
+  - 500x faster RTL/Arabic text processing
+
 ## 2.6.1 - [2026-02-16] Formatting Fix
 
 ### Fixed
