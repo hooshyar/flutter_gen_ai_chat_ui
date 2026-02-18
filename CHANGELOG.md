@@ -1,3 +1,25 @@
+## 2.7.0 - [2026-02-16] Community PRs + Issue Fixes
+
+### Added
+- **LaTeX/Math rendering** (`enableMathRendering: true` on `AiChatWidget`) — closes #25
+  - Block math: `$$...$$`
+  - Inline math: `$...$`
+  - Powered by `flutter_math_fork`; graceful fallback on parse errors
+  - New `MathMarkdown` widget exported for direct use
+- **Custom avatar builders** (`aiAvatarWidgetBuilder` / `userAvatarWidgetBuilder` on `BubbleStyle`) — closes PR #26
+  - Renders a custom widget next to the AI or user name
+  - Falls back to the default robot icon when not provided
+- **Custom AI name icon** (`aiNameIcon` on `MessageOptions`) — closes PR #34
+  - Replace the default `Icons.smart_toy_outlined` with any widget
+  - Use `SizedBox.shrink()` to hide it entirely
+
+### Fixed
+- **Word-by-word animation now works with `addMessage()`** — closes #28
+  - Previously only worked with `addStreamingMessage()` / streaming pattern
+  - Now also triggers for messages added via `addMessage()` or external state providers (e.g., Riverpod, Provider)
+  - Animation plays once per new message and stops cleanly
+  - Timers are cancelled on widget dispose (no test leaks)
+
 ## 2.6.2 - [2026-02-16] Streaming Dependency Upgrade
 
 ### Changed

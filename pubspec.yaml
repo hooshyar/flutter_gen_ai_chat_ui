@@ -1,6 +1,6 @@
 name: flutter_gen_ai_chat_ui
 description: "Modern Flutter chat UI with streaming text, markdown support, file attachments, and customizable themes. Perfect for AI assistants, customer support, and messaging apps."
-version: 2.6.2
+version: 2.7.0
 homepage: https://github.com/hooshyar/flutter_gen_ai_chat_ui
 repository: https://github.com/hooshyar/flutter_gen_ai_chat_ui
 issue_tracker: https://github.com/hooshyar/flutter_gen_ai_chat_ui/issues
