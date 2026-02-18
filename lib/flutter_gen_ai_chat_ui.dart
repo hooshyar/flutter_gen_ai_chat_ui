@@ -43,6 +43,7 @@ export 'src/widgets/custom_chat_widget.dart';
 export 'src/widgets/glassmorphic_container.dart';
 export 'src/widgets/inline_autocomplete_text_field.dart';
 export 'src/widgets/loading_widget.dart';
+export 'src/widgets/math_markdown.dart';
 export 'src/widgets/message_attachment.dart';
 export 'src/widgets/result/callout.dart';
 export 'src/widgets/result/data_table_lite.dart';

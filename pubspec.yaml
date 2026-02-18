@@ -29,6 +29,7 @@ dependencies:
   shimmer: ^3.0.0
   flutter_streaming_text_markdown: ^1.4.0
   url_launcher: ^6.3.1
+  flutter_math_fork: ^0.7.2
 
 dev_dependencies:
   flutter_test:

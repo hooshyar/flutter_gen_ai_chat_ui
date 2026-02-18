@@ -44,6 +44,7 @@ class AiChatWidget extends StatefulWidget {
     this.paginationConfig,
     this.padding,
     this.enableMarkdownStreaming = true,
+    this.enableMathRendering = false,
     this.streamingDuration = const Duration(milliseconds: 30),
     this.markdownStyleSheet,
     this.aiName = 'AI',
@@ -133,6 +134,11 @@ class AiChatWidget extends StatefulWidget {
 
   /// Whether to enable markdown streaming animations
   final bool enableMarkdownStreaming;
+
+  /// Whether to render LaTeX/math expressions using flutter_math_fork.
+  /// Supports `$...$` (inline) and `$$...$$` (block) syntax.
+  /// Defaults to false.
+  final bool enableMathRendering;
 
   /// Duration for streaming animations
   final Duration streamingDuration;
@@ -345,6 +351,7 @@ class _AiChatWidgetState extends State<AiChatWidget>
                   // Pass streaming configuration down to the renderer
                   streamingTypingSpeed: widget.streamingDuration,
                   streamingEnabled: widget.enableMarkdownStreaming,
+                  enableMathRendering: widget.enableMathRendering,
                   streamingFadeInEnabled:
                       widget.streamingFadeInEnabled ?? false,
                   streamingFadeInDuration: widget.streamingFadeInDuration ??

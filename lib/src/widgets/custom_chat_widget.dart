@@ -13,6 +13,7 @@ import '../models/example_question.dart';
 import '../models/input_options.dart';
 import '../models/welcome_message_config.dart';
 import '../utils/color_extensions.dart';
+import 'math_markdown.dart';
 import 'message_attachment.dart';
 
 /// Full-featured chat widget with streaming markdown, typing indicators, and pagination.
@@ -36,6 +37,9 @@ class CustomChatWidget extends StatefulWidget {
   final Curve streamingFadeInCurve;
   final bool streamingFadeInEnabled;
   final bool streamingWordByWord;
+
+  /// Whether to render LaTeX/math expressions ($$...$$ and $...$).
+  final bool enableMathRendering;
 
   final ChatSpacingConfig spacingConfig;
 
@@ -70,6 +74,7 @@ class CustomChatWidget extends StatefulWidget {
     this.streamingFadeInCurve = Curves.easeInOut,
     this.streamingFadeInEnabled = false,
     this.streamingWordByWord = false,
+    this.enableMathRendering = false,
     required this.spacingConfig,
   });
 
@@ -932,6 +937,14 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             fadeInCurve: widget.streamingFadeInCurve,
             wordByWord: widget.streamingWordByWord,
             showCursor: false,
+          );
+        } else if (widget.enableMathRendering) {
+          // Math-aware markdown rendering (supports $...$ and $$...$$)
+          textWidget = MathMarkdown(
+            data: message.text,
+            styleSheet: effectiveStyleSheet,
+            onTapLink: widget.messageOptions.onTapLink,
+            textStyle: textStyle,
           );
         } else {
           // Static markdown rendering when streaming is disabled
