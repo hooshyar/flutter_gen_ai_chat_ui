@@ -82,6 +82,16 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   bool _showScrollToBottom = false;
   Timer? _scrollDebounce;
 
+  /// Message IDs seen on previous render — used to detect newly added messages.
+  final Set<String> _seenMessageIds = {};
+
+  /// AI message IDs that should play word-by-word animation once.
+  /// Populated when a new AI message is detected and streamingWordByWord is true.
+  final Set<String> _pendingWordByWordIds = {};
+
+  /// Timers that clear entries from [_pendingWordByWordIds] after animation.
+  final List<Timer> _wordByWordTimers = [];
+
   /// Check if welcome message should be shown
   bool _shouldShowWelcomeMessage() {
     return widget.controller?.showWelcomeMessage == true &&
@@ -97,8 +107,51 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         widget.messageListOptions.scrollController ?? ScrollController();
     _scrollController.addListener(_handleScroll);
 
+    // Seed seen IDs with initial messages so they don't animate on first load
+    for (final msg in widget.messages) {
+      final id = _resolveMessageId(msg);
+      _seenMessageIds.add(id);
+    }
+
     // Connect scroll controller to the messages controller if available
     _connectScrollControllerToMessagesController();
+  }
+
+  /// Returns a stable ID for a message, consistent with _buildMessageContent.
+  String _resolveMessageId(ChatMessage msg) =>
+      msg.customProperties?['id'] as String? ??
+      '${msg.user.id}_${msg.createdAt.millisecondsSinceEpoch}';
+
+  /// Detect newly added AI messages and schedule word-by-word animation.
+  void _trackNewMessages() {
+    if (!widget.streamingWordByWord || !widget.streamingEnabled) return;
+    for (final msg in widget.messages) {
+      final id = _resolveMessageId(msg);
+      if (_seenMessageIds.contains(id)) continue;
+      _seenMessageIds.add(id);
+
+      // Only animate AI messages
+      final isAi = msg.customProperties?['isUserMessage'] == false ||
+          msg.customProperties?['source'] != 'user' &&
+              (msg.user.id == 'ai' ||
+                  msg.user.id == 'bot' ||
+                  msg.user.id == 'assistant');
+      if (!isAi) continue;
+
+      _pendingWordByWordIds.add(id);
+
+      // Clear after animation completes (~word count × typing speed + buffer)
+      final wordCount = msg.text.split(' ').length;
+      final msPerWord = widget.streamingTypingSpeed.inMilliseconds > 0
+          ? widget.streamingTypingSpeed.inMilliseconds
+          : 30;
+      final animDuration = Duration(milliseconds: wordCount * msPerWord + 800);
+      _wordByWordTimers.add(
+        Timer(animDuration, () {
+          if (mounted) setState(() => _pendingWordByWordIds.remove(id));
+        }),
+      );
+    }
   }
 
   void _connectScrollControllerToMessagesController() {
@@ -118,6 +171,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   @override
   void didUpdateWidget(CustomChatWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    // Detect newly added messages and queue word-by-word animation if needed
+    _trackNewMessages();
 
     // Update the controller if it changed
     if (oldWidget.messageListOptions.scrollController !=
@@ -184,6 +240,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   @override
   void dispose() {
     _scrollDebounce?.cancel();
+    for (final t in _wordByWordTimers) {
+      t.cancel();
+    }
+    _wordByWordTimers.clear();
     _scrollController.removeListener(_handleScroll);
 
     // Only dispose the scroll controller if we created it ourselves
@@ -740,8 +800,13 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
     final isCurrentlyStreaming =
         widget.controller?.currentlyStreamingMessageId == messageId;
-    final shouldAnimate =
-        isCurrentlyStreaming == true && widget.streamingEnabled;
+    // Also animate newly delivered messages when streamingWordByWord is true.
+    // This covers the addMessage() pattern where messages are added externally
+    // (e.g., via a state management provider) rather than through addStreamingMessage().
+    final shouldAnimate = widget.streamingEnabled &&
+        (isCurrentlyStreaming ||
+            (widget.streamingWordByWord &&
+                _pendingWordByWordIds.contains(messageId)));
 
     // Get appropriate text color from message options
     final textStyle = TextStyle(

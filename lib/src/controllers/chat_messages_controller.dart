@@ -23,6 +23,10 @@ class ChatMessagesController extends ChangeNotifier {
   /// The ID of the message currently being streamed
   String? get currentlyStreamingMessageId => _currentlyStreamingMessageId;
 
+  /// The ID of the most recently delivered (non-streaming) AI message.
+  /// Cleared after the first frame so the animation only plays once.
+  String? get newlyDeliveredMessageId => _newlyDeliveredMessageId;
+
   /// Creates a new chat messages controller.
   ///
   /// [initialMessages] - Optional list of messages to initialize the chat with.
@@ -137,6 +141,10 @@ class ChatMessagesController extends ChangeNotifier {
 
   /// The ID of the message currently being streamed
   String? _currentlyStreamingMessageId;
+
+  /// The ID of the most recently delivered (non-streaming) AI message.
+  /// Used to trigger one-shot word-by-word animation for addMessage() calls.
+  String? _newlyDeliveredMessageId;
 
   /// Is the user manually scrolling
   bool _isManuallyScrolling = false;
