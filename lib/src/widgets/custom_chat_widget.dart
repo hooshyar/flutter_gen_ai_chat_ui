@@ -565,8 +565,15 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Add premium icon for AI messages
-                              if (!isUser)
+                              // Avatar or fallback icon next to name
+                              if (isUser &&
+                                  bubbleStyle.userAvatarWidgetBuilder != null)
+                                bubbleStyle
+                                    .userAvatarWidgetBuilder!(message.user)
+                              else if (!isUser &&
+                                  bubbleStyle.aiAvatarWidgetBuilder != null)
+                                bubbleStyle.aiAvatarWidgetBuilder!(message.user)
+                              else if (!isUser)
                                 Padding(
                                   padding: const EdgeInsets.only(right: 6),
                                   child: Icon(

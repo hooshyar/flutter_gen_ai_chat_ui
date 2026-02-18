@@ -3,6 +3,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../ai_chat_config.dart';
 import 'chat_message.dart';
+import 'chat_user.dart';
 import 'citation.dart';
 import 'media.dart';
 
@@ -65,6 +66,14 @@ class BubbleStyle {
   /// Shadow offset for message bubbles
   final Offset? shadowOffset;
 
+  /// Optional widget builder for the AI avatar (shown next to the AI name).
+  /// Receives the AI [ChatUser] and returns a widget.
+  final Widget Function(ChatUser chatUser)? aiAvatarWidgetBuilder;
+
+  /// Optional widget builder for the user avatar (shown next to the user name).
+  /// Receives the [ChatUser] and returns a widget.
+  final Widget Function(ChatUser chatUser)? userAvatarWidgetBuilder;
+
   const BubbleStyle({
     this.userBubbleMaxWidth,
     this.aiBubbleMaxWidth,
@@ -85,6 +94,8 @@ class BubbleStyle {
     this.shadowOpacity,
     this.shadowBlurRadius,
     this.shadowOffset,
+    this.aiAvatarWidgetBuilder,
+    this.userAvatarWidgetBuilder,
   });
 
   /// Default style for message bubbles
@@ -122,6 +133,8 @@ class BubbleStyle {
     double? shadowOpacity,
     double? shadowBlurRadius,
     Offset? shadowOffset,
+    Widget Function(ChatUser)? aiAvatarWidgetBuilder,
+    Widget Function(ChatUser)? userAvatarWidgetBuilder,
   }) {
     return BubbleStyle(
       userBubbleMaxWidth: userBubbleMaxWidth ?? this.userBubbleMaxWidth,
@@ -147,6 +160,10 @@ class BubbleStyle {
       shadowOpacity: shadowOpacity ?? this.shadowOpacity,
       shadowBlurRadius: shadowBlurRadius ?? this.shadowBlurRadius,
       shadowOffset: shadowOffset ?? this.shadowOffset,
+      aiAvatarWidgetBuilder:
+          aiAvatarWidgetBuilder ?? this.aiAvatarWidgetBuilder,
+      userAvatarWidgetBuilder:
+          userAvatarWidgetBuilder ?? this.userAvatarWidgetBuilder,
     );
   }
 }
