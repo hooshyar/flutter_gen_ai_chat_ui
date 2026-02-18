@@ -234,6 +234,11 @@ class MessageOptions {
   /// Callback when link is clicked
   final MarkdownTapLinkCallback? onTapLink;
 
+  /// Custom icon widget shown next to the AI name.
+  /// Defaults to [Icons.smart_toy_outlined] when null.
+  /// Set to a [SizedBox.shrink] to hide the icon entirely.
+  final Widget? aiNameIcon;
+
   /// Whether to show copy button for AI messages
   final bool? showCopyButton;
 
@@ -342,6 +347,7 @@ class MessageOptions {
     this.userNameStyle,
     this.markdownStyleSheet,
     this.onTapLink,
+    this.aiNameIcon,
     this.showCopyButton = false,
     this.onCopy,
     this.userTextColor,
@@ -375,6 +381,7 @@ class MessageOptions {
     TextStyle? userNameStyle,
     MarkdownStyleSheet? markdownStyleSheet,
     MarkdownTapLinkCallback? onTapLink,
+    Widget? aiNameIcon,
     bool? showCopyButton,
     void Function(String)? onCopy,
     Color? userTextColor,
@@ -408,6 +415,7 @@ class MessageOptions {
         userNameStyle: userNameStyle ?? this.userNameStyle,
         markdownStyleSheet: markdownStyleSheet ?? this.markdownStyleSheet,
         onTapLink: onTapLink ?? this.onTapLink,
+        aiNameIcon: aiNameIcon ?? this.aiNameIcon,
         showCopyButton: showCopyButton ?? this.showCopyButton,
         onCopy: onCopy ?? this.onCopy,
         userTextColor: userTextColor ?? this.userTextColor,

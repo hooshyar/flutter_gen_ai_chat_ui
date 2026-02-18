@@ -576,12 +576,13 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                               else if (!isUser)
                                 Padding(
                                   padding: const EdgeInsets.only(right: 6),
-                                  child: Icon(
-                                    Icons.smart_toy_outlined,
-                                    size: 14,
-                                    color:
-                                        bubbleStyle.aiNameColor ?? primaryColor,
-                                  ),
+                                  child: widget.messageOptions.aiNameIcon ??
+                                      Icon(
+                                        Icons.smart_toy_outlined,
+                                        size: 14,
+                                        color: bubbleStyle.aiNameColor ??
+                                            primaryColor,
+                                      ),
                                 ),
                               Text(
                                 message.user.name,
