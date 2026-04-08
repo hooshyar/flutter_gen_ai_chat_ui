@@ -1,4 +1,4 @@
-/// Basic Chat — minimal working chat. No streaming, no markdown.
+// Basic Chat — minimal working chat. No streaming, no markdown.
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
@@ -20,6 +20,7 @@ class _BasicChatExampleState extends State<BasicChatExample> {
   static const _aiUser = ChatUser(id: 'ai', name: 'Bot');
 
   void _onSendMessage(ChatMessage message) async {
+    _controller.addMessage(message);
     setState(() => _isLoading = true);
     try {
       final response = await _aiService.generateResponse(message.text);
@@ -57,6 +58,30 @@ class _BasicChatExampleState extends State<BasicChatExample> {
         ),
         enableAnimation: false,
         enableMarkdownStreaming: false,
+        inputOptions: InputOptions(
+          decoration: InputDecoration(
+            hintText: 'Ask anything...',
+            hintStyle: TextStyle(
+              color: isDark ? Colors.white38 : Colors.black38,
+              fontSize: 15,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(24),
+              borderSide: BorderSide.none,
+            ),
+            filled: true,
+            fillColor: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF2F2F7),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+          sendButtonIcon: Icons.arrow_upward_rounded,
+          sendButtonColor: const Color(0xFF6366F1),
+          sendButtonIconSize: 20,
+          sendButtonPadding: const EdgeInsets.all(6),
+          textStyle: TextStyle(
+            fontSize: 15,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
         welcomeMessageConfig: WelcomeMessageConfig(
           title: 'Hello! 👋',
           titleStyle: TextStyle(
@@ -65,7 +90,7 @@ class _BasicChatExampleState extends State<BasicChatExample> {
             color: isDark ? Colors.white : Colors.black87,
           ),
           containerDecoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+            color: isDark ? const Color(0xFF2A2A3A) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),

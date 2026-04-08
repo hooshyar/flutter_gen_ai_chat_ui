@@ -8,16 +8,32 @@ CLAUDE.md
 PR_HANDLING_ULTRATHINK.md
 ULTRATHINK_ENABLE_INTERACTIVE_SELECTION.md
 
+# Internal dev docs
+DESIGN_SYSTEM_GUIDE.md
+DEVELOPMENT_ROADMAP.md
+IMPROVEMENTS.md
+PROGRESS_SUMMARY.md
+
 # IDE
 .idea/
 .vscode/
 *.iml
 
+# Git
+.gitignore
+
 # macOS derived data
 example/macos/DerivedData/
 example/macos/Pods/
 example/ios/Pods/
+example/ios/Podfile.lock
 
 # Platform build dirs in example
 example/android/.gradle/
 example/build/
+
+# Example platform files not needed for pub
+example/linux/
+example/macos/
+example/windows/
+example/web/

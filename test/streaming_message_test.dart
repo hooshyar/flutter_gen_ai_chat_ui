@@ -146,13 +146,13 @@ void main() {
       final message1 = ChatMessage(
         text: 'Hello',
         user: testUser,
-        createdAt: DateTime(2024, 1, 1, 12, 0),
+        createdAt: DateTime.utc(2024, 1, 1, 12, 0),
       );
 
       final message2 = ChatMessage(
         text: 'Hello world',
         user: testUser,
-        createdAt: DateTime(2024, 1, 1, 12, 0),
+        createdAt: DateTime.utc(2024, 1, 1, 12, 0),
       );
 
       final id1 = controller.getMessageId(message1);
@@ -160,7 +160,7 @@ void main() {
 
       // IDs should be the same since they have same user and timestamp
       expect(id1, equals(id2));
-      expect(id1, 'test_user_1704096000000');
+      expect(id1, 'test_user_1704110400000');
     });
   });
 }

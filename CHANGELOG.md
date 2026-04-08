@@ -1,3 +1,24 @@
+## 2.8.0 - [2026-04-08] Input Toolbar, Dark Mode Fix, Example Overhaul
+
+### Added
+- **`inputToolbarBuilder`** on `InputOptions` — render a custom toolbar row below the text field (ChatGPT/Claude-style action buttons)
+- **AI Actions example** — new example demonstrating `ActionController`, `AiActionProvider`, and function calling with calculator, weather, and color actions
+- **Persistent example questions** demonstrated in streaming example
+- **Regression tests** for user message display (#36) and action execution (#35)
+
+### Fixed
+- **Critical: `withOpacityCompat` color corruption** — `Color.r/g/b` return 0.0-1.0 doubles in modern Flutter; the old code used `.toInt()` which truncated them to 0 or 1, turning white into near-black. Fixed by scaling with `(r * 255).round()`. This fixes dark mode contrast across the entire package.
+- **Dark mode contrast throughout examples** — AI bubbles, welcome containers, question chips, and text colors now have proper contrast against dark backgrounds
+- **Persistent questions container** now uses theme-aware `colorScheme.surfaceContainerHigh/Low` instead of hardcoded dark colors
+- **User messages not appearing in example apps** — all examples now call `_controller.addMessage(message)` in `onSendMessage` (closes #36)
+- **Timezone-dependent test failure** — `streaming_message_test.dart` now uses `DateTime.utc()` instead of local time
+
+### Changed
+- Example app home screen redesigned with visual hierarchy (featured card + compact list), staggered animations, scrollable layout
+- All example inputs styled with rounded pill, filled background, arrow-up send button, contextual hint text
+- Themed chat example now has proper dark mode variants for Ocean and Sunset themes
+- Cleaned up 10 stale git branches (5 merged, 5 superseded)
+
 ## 2.7.0 - [2026-02-16] Community PRs + Issue Fixes
 
 ### Added

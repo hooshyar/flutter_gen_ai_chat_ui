@@ -35,11 +35,6 @@ void main() {
       // Pump a few frames to allow animation to start
       await tester.pump(const Duration(milliseconds: 10));
 
-      // Get the message text at the beginning of streaming
-      // It should be partially visible or empty at the start
-      final initialFrameFinder =
-          find.text('This is a streaming text message', findRichText: true);
-
       // Wait for animation to complete
       await tester.pumpAndSettle();
 

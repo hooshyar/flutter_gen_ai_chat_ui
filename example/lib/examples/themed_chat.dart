@@ -1,4 +1,4 @@
-/// Themed Chat — switch between Ocean, Sunset, and Default styles.
+// Themed Chat — switch between Ocean, Sunset, and Default styles.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -26,6 +26,7 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
   static const _aiUser = ChatUser(id: 'ai', name: 'Aria');
 
   void _onSendMessage(ChatMessage message) {
+    _controller.addMessage(message);
     setState(() => _isLoading = true);
 
     final messageId = 'ai_${DateTime.now().millisecondsSinceEpoch}';
@@ -66,24 +67,27 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
 
   // --- Theme-specific styles ---
 
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+
   BubbleStyle get _bubbleStyle {
+    final isDark = _isDark;
     switch (_selectedTheme) {
       case ChatTheme.ocean:
-        return const BubbleStyle(
-          userBubbleColor: Color(0xFF0077B6),
-          aiBubbleColor: Color(0xFFCAF0F8),
+        return BubbleStyle(
+          userBubbleColor: isDark ? const Color(0xFF005F8A) : const Color(0xFF0077B6),
+          aiBubbleColor: isDark ? const Color(0xFF1A2F3A) : const Color(0xFFCAF0F8),
           userBubbleTopLeftRadius: 20,
           userBubbleTopRightRadius: 20,
           aiBubbleTopLeftRadius: 20,
           aiBubbleTopRightRadius: 20,
           bottomLeftRadius: 20,
           bottomRightRadius: 4,
-          enableShadow: true,
+          enableShadow: !isDark,
         );
       case ChatTheme.sunset:
-        return const BubbleStyle(
-          userBubbleColor: Color(0xFFE85D04),
-          aiBubbleColor: Color(0xFFFFF3E0),
+        return BubbleStyle(
+          userBubbleColor: isDark ? const Color(0xFFC44D03) : const Color(0xFFE85D04),
+          aiBubbleColor: isDark ? const Color(0xFF3A2A1A) : const Color(0xFFFFF3E0),
           userBubbleTopLeftRadius: 4,
           userBubbleTopRightRadius: 16,
           aiBubbleTopLeftRadius: 16,
@@ -97,63 +101,80 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
   }
 
   Color get _userTextColor {
-    switch (_selectedTheme) {
-      case ChatTheme.ocean:
-        return Colors.white;
-      case ChatTheme.sunset:
-        return Colors.white;
-      case ChatTheme.defaultTheme:
-        return Theme.of(context).brightness == Brightness.dark
-            ? Colors.white
-            : Colors.black87;
-    }
+    return Colors.white;
   }
 
   Color get _aiTextColor {
+    final isDark = _isDark;
     switch (_selectedTheme) {
       case ChatTheme.ocean:
-        return const Color(0xFF023E8A);
+        return isDark ? const Color(0xFF90D5EC) : const Color(0xFF023E8A);
       case ChatTheme.sunset:
-        return const Color(0xFF6B3410);
+        return isDark ? const Color(0xFFFFBD73) : const Color(0xFF6B3410);
       case ChatTheme.defaultTheme:
-        return Theme.of(context).brightness == Brightness.dark
-            ? Colors.white
-            : Colors.black87;
+        return isDark ? Colors.white : Colors.black87;
     }
   }
 
   InputDecoration get _inputDecoration {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hintColor = isDark ? Colors.white38 : Colors.black38;
+    const hintSize = 15.0;
+
     switch (_selectedTheme) {
       case ChatTheme.ocean:
         return InputDecoration(
           hintText: 'Dive into a conversation...',
+          hintStyle: TextStyle(color: hintColor, fontSize: hintSize),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(24),
-            borderSide: const BorderSide(color: Color(0xFF90E0EF)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: const BorderSide(color: Color(0xFF0077B6), width: 2),
+            borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: const Color(0xFFCAF0F8).withOpacity(0.3),
+          fillColor: isDark
+              ? const Color(0xFF0A2A3A)
+              : const Color(0xFFE6F7FC),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         );
       case ChatTheme.sunset:
         return InputDecoration(
           hintText: 'Warm up a conversation...',
+          hintStyle: TextStyle(color: hintColor, fontSize: hintSize),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(4),
-            borderSide: const BorderSide(color: Color(0xFFFFBD73)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(4),
-            borderSide: const BorderSide(color: Color(0xFFE85D04), width: 2),
+            borderRadius: BorderRadius.circular(24),
+            borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: const Color(0xFFFFF3E0).withOpacity(0.3),
+          fillColor: isDark
+              ? const Color(0xFF3A2010)
+              : const Color(0xFFFFF0E0),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         );
       case ChatTheme.defaultTheme:
-        return const InputDecoration(hintText: 'Type a message...');
+        return InputDecoration(
+          hintText: 'Type a message...',
+          hintStyle: TextStyle(color: hintColor, fontSize: hintSize),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(24),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: isDark
+              ? const Color(0xFF2A2A3A)
+              : const Color(0xFFF2F2F7),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        );
+    }
+  }
+
+  Color get _sendButtonColor {
+    switch (_selectedTheme) {
+      case ChatTheme.ocean:
+        return const Color(0xFF0077B6);
+      case ChatTheme.sunset:
+        return const Color(0xFFE85D04);
+      case ChatTheme.defaultTheme:
+        return const Color(0xFF6366F1);
     }
   }
 
@@ -202,7 +223,17 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
           userTextColor: _userTextColor,
           aiTextColor: _aiTextColor,
         ),
-        inputOptions: InputOptions(decoration: _inputDecoration),
+        inputOptions: InputOptions(
+          decoration: _inputDecoration,
+          sendButtonIcon: Icons.arrow_upward_rounded,
+          sendButtonColor: _sendButtonColor,
+          sendButtonIconSize: 20,
+          sendButtonPadding: const EdgeInsets.all(6),
+          textStyle: TextStyle(
+            fontSize: 15,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
         welcomeMessageConfig: WelcomeMessageConfig(
           title: 'Design Playground 🎨',
           titleStyle: TextStyle(
@@ -211,7 +242,7 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
             color: isDark ? Colors.white : Colors.black87,
           ),
           containerDecoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+            color: isDark ? const Color(0xFF2A2A3A) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isDark

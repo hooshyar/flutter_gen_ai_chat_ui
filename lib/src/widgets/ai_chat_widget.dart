@@ -426,24 +426,16 @@ class _AiChatWidgetState extends State<AiChatWidget>
         : null;
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       decoration: BoxDecoration(
         color: isDarkMode
-            ? const Color(0xFF1E2026).withOpacityCompat(0.9)
-            : Colors.white.withOpacityCompat(0.9),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacityCompat(isDarkMode ? 0.2 : 0.06),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-            spreadRadius: -5,
-          ),
-        ],
+            ? theme.colorScheme.surfaceContainerHigh
+            : theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDarkMode
-              ? Colors.white.withOpacityCompat(0.1)
-              : Colors.black.withOpacityCompat(0.05),
+              ? Colors.white.withOpacityCompat(0.08)
+              : Colors.black.withOpacityCompat(0.06),
           width: 0.5,
         ),
       ),

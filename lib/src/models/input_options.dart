@@ -103,6 +103,12 @@ class InputOptions {
   final SmartQuotesType? smartQuotesType;
   final TextSelectionControls? selectionControls;
 
+  /// Builder for a toolbar row rendered below the text field.
+  ///
+  /// Use this to add action buttons (e.g. attachments, tools, model selector)
+  /// below the input, similar to ChatGPT or Claude interfaces.
+  final Widget Function(BuildContext context)? inputToolbarBuilder;
+
   /// Whether to enable interactive selection of text in the input field.
   ///
   /// When false, users cannot select text using touch or mouse.
@@ -176,6 +182,7 @@ class InputOptions {
     this.smartQuotesType,
     this.selectionControls,
     this.enableInteractiveSelection = true,
+    this.inputToolbarBuilder,
     this.autofocus = false,
     this.focusNode,
   });

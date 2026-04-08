@@ -31,11 +31,12 @@ extension ColorExtensions on Color {
       }
     }
 
+    // Color channels (r, g, b, a) are 0.0-1.0 doubles — scale to 0-255 ints.
     return Color.fromARGB(
-      alphaValue ?? a.toInt(),
-      red ?? r.toInt(),
-      green ?? g.toInt(),
-      blue ?? b.toInt(),
+      alphaValue ?? (a * 255).round(),
+      red ?? (r * 255).round(),
+      green ?? (g * 255).round(),
+      blue ?? (b * 255).round(),
     );
   }
 
@@ -45,12 +46,12 @@ extension ColorExtensions on Color {
   /// regardless of SDK version.
   Color withOpacityCompat(double opacity) {
     final clamped = opacity.clamp(0.0, 1.0);
-    // Use Color directly instead of withValues
+    // Color channels (r, g, b) are 0.0-1.0 doubles — scale to 0-255 ints.
     return Color.fromARGB(
       (clamped * 255).round(),
-      r.toInt(),
-      g.toInt(),
-      b.toInt(),
+      (r * 255).round(),
+      (g * 255).round(),
+      (b * 255).round(),
     );
   }
 }

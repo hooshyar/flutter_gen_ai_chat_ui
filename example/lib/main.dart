@@ -4,6 +4,7 @@ import 'home_screen.dart';
 import 'examples/basic_chat.dart';
 import 'examples/streaming_chat.dart';
 import 'examples/themed_chat.dart';
+import 'examples/actions_chat.dart';
 
 void main() {
   runApp(const ExampleApp());
@@ -47,6 +48,7 @@ class _ExampleAppState extends State<ExampleApp> {
         '/basic': (_) => const BasicChatExample(),
         '/streaming': (_) => const StreamingChatExample(),
         '/themed': (_) => const ThemedChatExample(),
+        '/actions': (_) => const ActionsChatExample(),
       },
     );
   }

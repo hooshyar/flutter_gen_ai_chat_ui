@@ -95,9 +95,7 @@ class ChatInput extends StatelessWidget {
     }
 
     // Create input content with text field and send button
-    Widget inputContent;
-    // Display the send button
-    inputContent = Row(
+    final inputRow = Row(
       // Change to center alignment for better vertical alignment
       crossAxisAlignment: CrossAxisAlignment.center,
       // Use app direction consistently
@@ -121,6 +119,20 @@ class ChatInput extends StatelessWidget {
         ),
       ],
     );
+
+    // Combine text row + optional toolbar
+    Widget inputContent;
+    if (options.inputToolbarBuilder != null) {
+      inputContent = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          inputRow,
+          options.inputToolbarBuilder!(context),
+        ],
+      );
+    } else {
+      inputContent = inputRow;
+    }
 
     // Calculate appropriate background color based on settings
     final useScaffoldBg = options.useScaffoldBackground ?? false;
