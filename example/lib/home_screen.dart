@@ -131,6 +131,13 @@ const _examples = [
     color: Color(0xFF8B5CF6),
     route: '/actions',
   ),
+  _CardData(
+    title: 'Rich Widgets',
+    description: 'Weather cards, products, charts inline',
+    icon: Icons.widgets_outlined,
+    color: Color(0xFFEC4899),
+    route: '/rich-widgets',
+  ),
 ];
 
 // -- Header --

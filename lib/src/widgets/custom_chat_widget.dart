@@ -15,6 +15,7 @@ import '../models/welcome_message_config.dart';
 import '../utils/color_extensions.dart';
 import 'math_markdown.dart';
 import 'message_attachment.dart';
+import 'result/result_renderer_registry.dart';
 
 /// Full-featured chat widget with streaming markdown, typing indicators, and pagination.
 class CustomChatWidget extends StatefulWidget {
@@ -416,6 +417,16 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       return message.customBuilder!(context, message);
     }
 
+    // Rich widget messages (resultKind or isLoading) render full-width
+    // without bubble chrome — like GenUI surfaces or ChatGPT tool results.
+    final isRichMessage =
+        message.customProperties?['resultKind'] != null ||
+        message.customProperties?['isLoading'] == true;
+
+    if (isRichMessage && !isUser) {
+      return _buildFullWidthContent(message);
+    }
+
     // Helper function to build the default bubble
     Widget buildDefaultBubble() {
       return _buildDefaultMessageBubble(message, isUser);
@@ -432,6 +443,15 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // Return default bubble if no custom builder is provided
     return buildDefaultBubble();
+  }
+
+  /// Renders rich widget content at full width without bubble decoration.
+  ///
+  /// Used for [ChatMessage.rich] and [ChatMessage.loading] messages.
+  /// The widget takes the full screen width with only horizontal padding,
+  /// no bubble background, no username header, no timestamp.
+  Widget _buildFullWidthContent(ChatMessage message) {
+    return _buildMessageContent(message, context);
   }
 
   /// Builds the default message bubble with all standard styling and features.
@@ -793,6 +813,37 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     // Use the custom builder if provided
     if (message.customBuilder != null) {
       return message.customBuilder!(context, message);
+    }
+
+    // Check for loading placeholder (ChatMessage.loading() support)
+    final isLoading =
+        message.customProperties?['isLoading'] as bool? ?? false;
+    if (isLoading) {
+      // Check for custom loading renderer by kind
+      final loadingKind =
+          message.customProperties?['loadingKind'] as String?;
+      if (loadingKind != null) {
+        final registry = ResultRendererRegistry.maybeOf(context);
+        final customLoading = registry?.buildLoading(
+          context,
+          loadingKind,
+          message.customProperties ?? {},
+        );
+        if (customLoading != null) return customLoading;
+      }
+      return _buildLoadingPlaceholder(context, message);
+    }
+
+    // Check for registered result renderer (ChatMessage.rich() support)
+    final resultKind = message.customProperties?['resultKind'] as String?;
+    if (resultKind != null) {
+      final registry = ResultRendererRegistry.maybeOf(context);
+      final resultData = message.customProperties?['resultData']
+              as Map<String, dynamic>? ??
+          {};
+      final renderedWidget =
+          registry?.buildResult(context, resultKind, resultData);
+      if (renderedWidget != null) return renderedWidget;
     }
 
     // Get the theme's brightness
@@ -1481,6 +1532,55 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // Call the onSend callback
     widget.onSend(message);
+  }
+
+  Widget _buildLoadingPlaceholder(BuildContext context, ChatMessage message) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (message.text.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                message.text,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
+              ),
+            ),
+          _ShimmerBar(widthFactor: 1.0, isDark: isDark),
+          const SizedBox(height: 8),
+          _ShimmerBar(widthFactor: 0.7, isDark: isDark),
+          const SizedBox(height: 8),
+          _ShimmerBar(widthFactor: 0.5, isDark: isDark),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShimmerBar extends StatelessWidget {
+  const _ShimmerBar({required this.widthFactor, required this.isDark});
+  final double widthFactor;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return FractionallySizedBox(
+      widthFactor: widthFactor,
+      alignment: Alignment.centerLeft,
+      child: Container(
+        height: 12,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white10 : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(6),
+        ),
+      ),
+    );
   }
 }
 

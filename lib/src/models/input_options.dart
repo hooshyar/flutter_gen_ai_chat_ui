@@ -109,6 +109,50 @@ class InputOptions {
   /// below the input, similar to ChatGPT or Claude interfaces.
   final Widget Function(BuildContext context)? inputToolbarBuilder;
 
+  /// Builder for a send/mic toggle button that receives text-empty state.
+  ///
+  /// When provided, this replaces the default send button. Receives both the
+  /// send callback and whether the text field is currently empty, enabling
+  /// mic/send toggle like ChatGPT.
+  ///
+  /// ```dart
+  /// InputOptions(
+  ///   sendOrMicBuilder: (onSend, isEmpty) => isEmpty
+  ///       ? IconButton(icon: Icon(Icons.mic), onPressed: onStartRecording)
+  ///       : IconButton(icon: Icon(Icons.send), onPressed: onSend),
+  /// )
+  /// ```
+  final Widget Function(VoidCallback onSend, bool isEmpty)? sendOrMicBuilder;
+
+  /// Builder for leading widgets inside the input row (left of text field).
+  ///
+  /// Use for mic button, attachment button, or other action icons that
+  /// should appear inline with the text field, like ChatGPT's "+" button.
+  ///
+  /// ```dart
+  /// InputOptions(
+  ///   inputLeadingBuilder: (context) => IconButton(
+  ///     icon: const Icon(Icons.attach_file),
+  ///     onPressed: () => _showAttachOptions(),
+  ///   ),
+  /// )
+  /// ```
+  final Widget Function(BuildContext context)? inputLeadingBuilder;
+
+  /// Builder for an attachment preview rendered above the input area.
+  ///
+  /// Return a widget to show a pending file/image preview before the user
+  /// sends the message. Return null or an empty widget to hide.
+  ///
+  /// ```dart
+  /// InputOptions(
+  ///   attachmentPreviewBuilder: (context) => _pendingFile != null
+  ///       ? FilePreviewChip(file: _pendingFile!, onRemove: _clearFile)
+  ///       : const SizedBox.shrink(),
+  /// )
+  /// ```
+  final Widget Function(BuildContext context)? attachmentPreviewBuilder;
+
   /// Whether to enable interactive selection of text in the input field.
   ///
   /// When false, users cannot select text using touch or mouse.
@@ -183,6 +227,9 @@ class InputOptions {
     this.selectionControls,
     this.enableInteractiveSelection = true,
     this.inputToolbarBuilder,
+    this.sendOrMicBuilder,
+    this.inputLeadingBuilder,
+    this.attachmentPreviewBuilder,
     this.autofocus = false,
     this.focusNode,
   });
@@ -436,6 +483,17 @@ class InputOptions {
       autofocus: autofocus ?? this.autofocus,
       focusNode: focusNode ?? this.focusNode,
     );
+  }
+
+  /// Builds the send area widget, supporting mic/send toggle.
+  ///
+  /// If [sendOrMicBuilder] is set, it receives both [onSend] and [isEmpty].
+  /// Otherwise falls back to [effectiveSendButtonBuilder].
+  Widget effectiveSendWidget(VoidCallback onSend, {bool isEmpty = false}) {
+    if (sendOrMicBuilder != null) {
+      return sendOrMicBuilder!(onSend, isEmpty);
+    }
+    return effectiveSendButtonBuilder(onSend);
   }
 
   /// Helper method to build an effective send button based on configuration

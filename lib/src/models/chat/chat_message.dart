@@ -57,6 +57,101 @@ class ChatMessage {
     this.errorMessage,
   });
 
+  /// Creates a rich widget message rendered by a result renderer registry.
+  ///
+  /// The [resultKind] is matched against registered builders to render a
+  /// custom widget. The [data] map is passed to the builder. If no matching
+  /// builder is found, the optional [text] is displayed as a fallback.
+  ///
+  /// ```dart
+  /// ChatMessage.rich(
+  ///   user: aiUser,
+  ///   resultKind: 'weather',
+  ///   data: {'city': 'Baghdad', 'temp': 42},
+  /// );
+  /// ```
+  factory ChatMessage.rich({
+    required ChatUser user,
+    required String resultKind,
+    required Map<String, dynamic> data,
+    DateTime? createdAt,
+    String? text,
+    String? id,
+  }) {
+    return ChatMessage(
+      text: text ?? '',
+      user: user,
+      createdAt: createdAt ?? DateTime.now(),
+      customProperties: {
+        'resultKind': resultKind,
+        'resultData': data,
+        if (id != null) 'id': id,
+      },
+    );
+  }
+
+  /// Creates a message with an inline custom widget.
+  ///
+  /// Use this when you need a one-off widget that doesn't need a registry.
+  ///
+  /// ```dart
+  /// ChatMessage.widget(
+  ///   user: aiUser,
+  ///   builder: (context) => MyCard(data: {...}),
+  /// );
+  /// ```
+  factory ChatMessage.widget({
+    required ChatUser user,
+    required Widget Function(BuildContext context) builder,
+    DateTime? createdAt,
+    String? text,
+  }) {
+    return ChatMessage(
+      text: text ?? '',
+      user: user,
+      createdAt: createdAt ?? DateTime.now(),
+      customBuilder: (context, _) => builder(context),
+    );
+  }
+
+  /// Creates a loading placeholder that can later be replaced via
+  /// `ChatMessagesController.updateMessage` with a rich widget or text.
+  ///
+  /// ```dart
+  /// // Show loading
+  /// controller.addMessage(ChatMessage.loading(
+  ///   user: aiUser,
+  ///   id: 'response-42',
+  ///   text: 'Searching for lawyers...',
+  /// ));
+  ///
+  /// // Later, replace with rich widget
+  /// controller.updateMessage(ChatMessage.rich(
+  ///   user: aiUser,
+  ///   id: 'response-42',
+  ///   resultKind: 'lawyer_search',
+  ///   data: results,
+  /// ));
+  /// ```
+  factory ChatMessage.loading({
+    required ChatUser user,
+    required String id,
+    String? text,
+    String? loadingKind,
+    DateTime? createdAt,
+  }) {
+    return ChatMessage(
+      text: text ?? '',
+      user: user,
+      createdAt: createdAt ?? DateTime.now(),
+      customProperties: {
+        'id': id,
+        'isLoading': true,
+        if (loadingKind != null) 'loadingKind': loadingKind,
+      },
+    );
+  }
+
   /// Creates a copy of this message with the given fields replaced with new values
   ChatMessage copyWith({
     String? text,

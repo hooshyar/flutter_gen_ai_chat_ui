@@ -12,6 +12,7 @@ import '../models/welcome_message_config.dart';
 import '../utils/color_extensions.dart';
 import 'chat_input.dart';
 import 'custom_chat_widget.dart';
+import 'result/result_renderer_registry.dart';
 
 /// A customizable chat widget for AI conversations.
 class AiChatWidget extends StatefulWidget {
@@ -60,6 +61,8 @@ class AiChatWidget extends StatefulWidget {
     // New parameters
     this.fileUploadOptions,
     this.spacingConfig,
+    this.resultRenderers,
+    this.resultLoadingRenderers,
   });
 
   /// The current user in the conversation
@@ -161,6 +164,36 @@ class AiChatWidget extends StatefulWidget {
 
   /// Configuration for spacing throughout the chat UI
   final ChatSpacingConfig? spacingConfig;
+
+  /// Registry of custom widget builders for rich message types.
+  ///
+  /// Messages created with [ChatMessage.rich] will be rendered by matching
+  /// their `resultKind` to a builder in this map.
+  ///
+  /// ```dart
+  /// AiChatWidget(
+  ///   resultRenderers: {
+  ///     'weather': (context, data) => WeatherCard(data: data),
+  ///     'product': (context, data) => ProductCard(data: data),
+  ///   },
+  /// );
+  /// ```
+  final Map<String, ResultBuilder>? resultRenderers;
+
+  /// Custom loading widget builders keyed by kind.
+  ///
+  /// When a `ChatMessage.loading(loadingKind: 'contract')` is rendered,
+  /// the matching builder is used instead of the default shimmer bars.
+  ///
+  /// ```dart
+  /// AiChatWidget(
+  ///   resultLoadingRenderers: {
+  ///     'contract': (context, data) => ContractLoadingWidget(),
+  ///     'lawyer_search': (context, data) => SearchingLawyersWidget(),
+  ///   },
+  /// )
+  /// ```
+  final Map<String, ResultBuilder>? resultLoadingRenderers;
 
   @override
   State<AiChatWidget> createState() => _AiChatWidgetState();
@@ -296,7 +329,8 @@ class _AiChatWidgetState extends State<AiChatWidget>
   }
 
   @override
-  Widget build(final BuildContext context) => ListenableBuilder(
+  Widget build(final BuildContext context) {
+    Widget result = ListenableBuilder(
         listenable: widget.controller,
         builder: (final context, final child) => Container(
           width: widget.maxWidth,
@@ -390,28 +424,50 @@ class _AiChatWidgetState extends State<AiChatWidget>
                         ),
                         child: _buildChatInput(),
                       )
-                    : Material(
-                        elevation: widget.inputOptions?.materialElevation ?? 0,
-                        color:
-                            widget.inputOptions?.useScaffoldBackground == true
-                                ? Theme.of(context).scaffoldBackgroundColor
-                                : widget.inputOptions?.materialColor,
-                        shape: widget.inputOptions?.materialShape ??
-                            RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(22),
-                              side: BorderSide.none,
-                            ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Container(
-                          padding: widget.inputOptions?.materialPadding ??
-                              const EdgeInsets.all(8.0),
-                          child: _buildChatInput(),
+                    : Padding(
+                        padding: EdgeInsets.only(
+                          bottom:
+                              MediaQuery.of(context).padding.bottom,
+                        ),
+                        child: Material(
+                          elevation:
+                              widget.inputOptions?.materialElevation ?? 0,
+                          color: widget.inputOptions?.useScaffoldBackground ==
+                                  true
+                              ? Theme.of(context).scaffoldBackgroundColor
+                              : widget.inputOptions?.materialColor,
+                          shape: widget.inputOptions?.materialShape ??
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(22),
+                                side: BorderSide.none,
+                              ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Container(
+                            padding: widget.inputOptions?.materialPadding ??
+                                const EdgeInsets.all(8.0),
+                            child: _buildChatInput(),
+                          ),
                         ),
                       ),
             ],
           ),
         ),
       );
+
+    // Wrap with ResultRendererRegistry if renderers are provided
+    final hasRenderers = widget.resultRenderers?.isNotEmpty ?? false;
+    final hasLoadingRenderers =
+        widget.resultLoadingRenderers?.isNotEmpty ?? false;
+    if (hasRenderers || hasLoadingRenderers) {
+      result = ResultRendererRegistry(
+        builders: widget.resultRenderers ?? const {},
+        loadingBuilders: widget.resultLoadingRenderers ?? const {},
+        child: result,
+      );
+    }
+
+    return result;
+  }
 
   // Welcome message is now handled in CustomChatWidget as part of the message list
 

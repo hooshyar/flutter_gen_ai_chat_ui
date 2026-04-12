@@ -6,7 +6,7 @@ import '../models/file_upload_options.dart';
 import '../models/input_options.dart';
 
 /// A custom chat input widget that supports extensive customization options.
-class ChatInput extends StatelessWidget {
+class ChatInput extends StatefulWidget {
   const ChatInput({
     super.key,
     required this.controller,
@@ -32,7 +32,49 @@ class ChatInput extends StatelessWidget {
   final FileUploadOptions? fileUploadOptions;
 
   @override
+  State<ChatInput> createState() => _ChatInputState();
+}
+
+class _ChatInputState extends State<ChatInput> {
+  bool _isEmpty = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _isEmpty = widget.controller.text.trim().isEmpty;
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void didUpdateWidget(ChatInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onTextChanged);
+      widget.controller.addListener(_onTextChanged);
+      _isEmpty = widget.controller.text.trim().isEmpty;
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    final empty = widget.controller.text.trim().isEmpty;
+    if (empty != _isEmpty) {
+      setState(() => _isEmpty = empty);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final options = widget.options;
+    final onSend = widget.onSend;
+    final controller = widget.controller;
+    final focusNode = widget.focusNode;
+    final fileUploadOptions = widget.fileUploadOptions;
     // Always use the app's text direction from context for consistency
     final appDirection = Directionality.of(context);
 
@@ -104,6 +146,10 @@ class ChatInput extends StatelessWidget {
         // Add file upload button if enabled
         if (fileUploadOptions?.enabled == true) _buildFileUploadButton(context),
 
+        // Leading builder (mic, attach, etc.) inside the input row
+        if (options.inputLeadingBuilder != null)
+          options.inputLeadingBuilder!(context),
+
         Flexible(
           child: textField,
         ),
@@ -115,19 +161,23 @@ class ChatInput extends StatelessWidget {
                   24, // Base height approximation
           // Center the button vertically
           alignment: Alignment.center,
-          child: options.effectiveSendButtonBuilder(onSend),
+          child: options.effectiveSendWidget(onSend, isEmpty: _isEmpty),
         ),
       ],
     );
 
-    // Combine text row + optional toolbar
+    // Combine: attachment preview (above) + text row + toolbar (below)
     Widget inputContent;
-    if (options.inputToolbarBuilder != null) {
+    final hasToolbar = options.inputToolbarBuilder != null;
+    final hasPreview = options.attachmentPreviewBuilder != null;
+
+    if (hasToolbar || hasPreview) {
       inputContent = Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (hasPreview) options.attachmentPreviewBuilder!(context),
           inputRow,
-          options.inputToolbarBuilder!(context),
+          if (hasToolbar) options.inputToolbarBuilder!(context),
         ],
       );
     } else {
@@ -264,7 +314,7 @@ class ChatInput extends StatelessWidget {
 
   // Build the file upload button
   Widget _buildFileUploadButton(BuildContext context) {
-    final options = fileUploadOptions!;
+    final options = widget.fileUploadOptions!;
 
     // Use custom builder if provided
     if (options.customUploadButtonBuilder != null) {
@@ -293,9 +343,9 @@ class ChatInput extends StatelessWidget {
   void _handleFileSelection(BuildContext context) {
     // This function will be a placeholder - the actual file selection
     // will be implemented by the developer using the package
-    if (fileUploadOptions?.onFilesSelected != null) {
+    if (widget.fileUploadOptions?.onFilesSelected != null) {
       // Call the developer's file selection handler
-      fileUploadOptions!.onFilesSelected!([]);
+      widget.fileUploadOptions!.onFilesSelected!([]);
     } else {
       // Show a placeholder message if no handler is provided
       ScaffoldMessenger.of(context).showSnackBar(

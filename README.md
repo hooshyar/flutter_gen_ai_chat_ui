@@ -58,7 +58,24 @@ A modern, high-performance Flutter chat UI kit for building beautiful messaging 
 - 🔄 AI typing indicators like modern chatbot interfaces
 - 📜 Streaming markdown rendering for code and rich content
 
-### 🚀 **NEW: AI Actions System** 
+### 🚀 **NEW: Rich Widget Messages**
+- 🧩 **`ChatMessage.rich()`** - Render custom widgets (cards, forms, charts) inline in chat — full-width, no bubble
+- 🎯 **Result Renderer Registry** - Register builders by type, AI responses auto-render matching widgets
+- 🔧 **`ChatMessage.widget()`** - One-off inline widgets without a registry
+- 📦 **Zero Config Fallback** - Unmatched types fall through to text rendering gracefully
+
+### 🎤 **Input Customization**
+- 🎙️ **`sendOrMicBuilder`** - Mic/send toggle that auto-switches based on text field empty state (ChatGPT-style)
+- 📎 **`inputLeadingBuilder`** - Icons inside the input row, left of text field (attach, mic, etc.)
+- 🖼️ **`attachmentPreviewBuilder`** - File/image preview strip above the input area
+- ⬇️ **Safe area support** - Input respects device home indicator on all paths
+
+### ⏳ **Streaming Loading States**
+- 💫 **`ChatMessage.loading()`** - Shimmer placeholder that morphs into rich widget via `controller.updateMessage()`
+- 🏷️ **`loadingKind`** - Per-kind custom loading widgets (e.g., contract spinner, lawyer search animation)
+- 🎨 **`resultLoadingRenderers`** - Register custom loading UIs per widget type
+
+### AI Actions System
 - ⚡ **Function Calling Support** - AI can execute predefined actions with parameters
 - 🎨 **Generative UI** - Actions render custom widgets showing execution status
 - ✋ **Human-in-the-Loop** - Automatic confirmation dialogs for sensitive operations

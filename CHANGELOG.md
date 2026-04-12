@@ -1,3 +1,75 @@
+## 2.11.0 - [2026-04-11] Mic/Send Toggle + Streaming Rich Widgets + Per-Kind Loading
+
+### Added
+- **`sendOrMicBuilder`** on `InputOptions` — receives both `onSend` callback and `isEmpty` bool, enabling ChatGPT-style mic/send toggle that auto-switches based on text field content.
+- **`ChatMessage.loading()`** factory — creates a shimmer placeholder that can be replaced in-place via `controller.updateMessage()` with a rich widget or text.
+- **`loadingKind`** parameter on `ChatMessage.loading()` — specify which type of loading widget to render (e.g., `'contract'`, `'lawyer_search'`).
+- **`resultLoadingRenderers`** on `AiChatWidget` — register custom loading widgets per kind. When a `ChatMessage.loading(loadingKind: 'contract')` is rendered, the matching builder shows a custom loading state instead of default shimmer.
+- **`loadingBuilders`** on `ResultRendererRegistry` — per-kind loading widget map with `buildLoading()` method.
+- **Default shimmer bars** — messages with `isLoading: true` but no matching `loadingKind` renderer show animated shimmer placeholders.
+
+### Changed
+- **`ChatInput`** converted from `StatelessWidget` to `StatefulWidget` — listens to `TextEditingController` changes to track empty state for mic/send toggle. Non-breaking: same constructor API.
+- **Rich messages render full-width** — `ChatMessage.rich()` and `ChatMessage.loading()` messages bypass bubble decoration entirely. No background, no border radius, no username header, no max-width constraint. The widget controls its own layout edge-to-edge.
+
+### Fixed
+- **Safe area bottom padding** — Material input path now respects device safe area (home indicator). Input was previously clipped behind the bottom bar on iPhone X+ devices.
+
+### Notes
+- Zero breaking changes — all new parameters are optional with null defaults
+- Rich messages auto-detect via `customProperties['resultKind']` or `customProperties['isLoading']`; existing text messages are unaffected
+- 50 new tests across all features
+
+## 2.10.0 - [2026-04-11] Input Customization + Rich Message ID
+
+### Added
+- **`inputLeadingBuilder`** on `InputOptions` — render widgets (mic, attach, etc.) inside the input row, to the left of the text field. ChatGPT-style inline action buttons.
+- **`attachmentPreviewBuilder`** on `InputOptions` — render a file/image preview strip above the input area before sending.
+- **`id`** parameter on `ChatMessage.rich()` — explicit message ID for stable tracking via `customProperties['id']`.
+
+### Notes
+- Zero breaking changes — all new parameters are optional with null defaults
+- Existing `inputToolbarBuilder` (below input) still works alongside new builders
+
+## 2.9.0 - [2026-04-10] Rich Widget Messages
+
+### Added
+- **`ChatMessage.rich()`** factory — render custom widgets by type via `ResultRendererRegistry`. AI responses can now include interactive cards, forms, and data visualizations inline in chat.
+- **`ChatMessage.widget()`** factory — render a one-off custom widget inline without needing a registry.
+- **`resultRenderers`** parameter on `AiChatWidget` — register widget builders by kind string. Messages created with `ChatMessage.rich()` are automatically rendered by matching builders.
+- **`ResultRendererRegistry` wired into rendering pipeline** — the existing registry (exported since v2.5) is now actually used in `_buildMessageContent()`. Falls through to text rendering when no matching builder is found.
+- 12 new tests covering rich message factories, registry rendering, and fallback behavior.
+
+### Example
+```dart
+// Register renderers
+AiChatWidget(
+  resultRenderers: {
+    'weather': (context, data) => WeatherCard(city: data['city']),
+    'product': (context, data) => ProductCard(data: data),
+  },
+  // ...existing params
+);
+
+// AI sends a rich message
+controller.addMessage(ChatMessage.rich(
+  user: aiUser,
+  resultKind: 'weather',
+  data: {'city': 'Baghdad', 'temp': 42},
+));
+
+// Or a one-off widget
+controller.addMessage(ChatMessage.widget(
+  user: aiUser,
+  builder: (context) => const MyCustomCard(),
+));
+```
+
+### Notes
+- Zero breaking changes — all new APIs are additive
+- Existing `customBuilder` and `customProperties` behavior unchanged
+- `ResultRendererRegistry` was previously exported but unused; now functional
+
 ## 2.8.0 - [2026-04-08] Input Toolbar, Dark Mode Fix, Example Overhaul
 
 ### Added
