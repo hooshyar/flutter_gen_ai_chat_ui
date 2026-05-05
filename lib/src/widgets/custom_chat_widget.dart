@@ -419,8 +419,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // Rich widget messages (resultKind or isLoading) render full-width
     // without bubble chrome — like GenUI surfaces or ChatGPT tool results.
-    final isRichMessage =
-        message.customProperties?['resultKind'] != null ||
+    final isRichMessage = message.customProperties?['resultKind'] != null ||
         message.customProperties?['isLoading'] == true;
 
     if (isRichMessage && !isUser) {
@@ -816,12 +815,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     }
 
     // Check for loading placeholder (ChatMessage.loading() support)
-    final isLoading =
-        message.customProperties?['isLoading'] as bool? ?? false;
+    final isLoading = message.customProperties?['isLoading'] as bool? ?? false;
     if (isLoading) {
       // Check for custom loading renderer by kind
-      final loadingKind =
-          message.customProperties?['loadingKind'] as String?;
+      final loadingKind = message.customProperties?['loadingKind'] as String?;
       if (loadingKind != null) {
         final registry = ResultRendererRegistry.maybeOf(context);
         final customLoading = registry?.buildLoading(
@@ -838,9 +835,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     final resultKind = message.customProperties?['resultKind'] as String?;
     if (resultKind != null) {
       final registry = ResultRendererRegistry.maybeOf(context);
-      final resultData = message.customProperties?['resultData']
-              as Map<String, dynamic>? ??
-          {};
+      final resultData =
+          message.customProperties?['resultData'] as Map<String, dynamic>? ??
+              {};
       final renderedWidget =
           registry?.buildResult(context, resultKind, resultData);
       if (renderedWidget != null) return renderedWidget;

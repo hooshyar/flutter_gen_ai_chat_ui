@@ -331,128 +331,124 @@ class _AiChatWidgetState extends State<AiChatWidget>
   @override
   Widget build(final BuildContext context) {
     Widget result = ListenableBuilder(
-        listenable: widget.controller,
-        builder: (final context, final child) => Container(
-          width: widget.maxWidth,
-          constraints: widget.maxWidth != null
-              ? BoxConstraints(maxWidth: widget.maxWidth!)
-              : null,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Show persistent example questions if enabled and welcome message is hidden
-              if (!widget.controller.showWelcomeMessage &&
-                  widget.persistentExampleQuestions &&
-                  widget.exampleQuestions.isNotEmpty) ...[
-                Container(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.15,
-                  ),
-                  margin: const EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    top: 4,
-                    bottom: 12,
-                  ),
-                  child: _buildPersistentExampleQuestions(context),
+      listenable: widget.controller,
+      builder: (final context, final child) => Container(
+        width: widget.maxWidth,
+        constraints: widget.maxWidth != null
+            ? BoxConstraints(maxWidth: widget.maxWidth!)
+            : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Show persistent example questions if enabled and welcome message is hidden
+            if (!widget.controller.showWelcomeMessage &&
+                widget.persistentExampleQuestions &&
+                widget.exampleQuestions.isNotEmpty) ...[
+              Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.15,
                 ),
-              ],
-              Expanded(
-                child: CustomChatWidget(
-                  controller: widget.controller,
-                  currentUser: widget.currentUser,
-                  messages: widget.messages ?? widget.controller.messages,
-                  onSend: _handleSend,
-                  messageOptions:
-                      widget.messageOptions ?? const MessageOptions(),
-                  inputOptions: widget.inputOptions ?? const InputOptions(),
-                  typingUsers: _getEffectiveTypingUsers(),
-                  messageListOptions:
-                      (widget.messageListOptions ?? const MessageListOptions())
-                          .copyWith(
-                    scrollController: _effectiveScrollController,
-                  ),
-                  readOnly: widget.readOnly,
-                  quickReplyOptions:
-                      widget.quickReplyOptions ?? const QuickReplyOptions(),
-                  scrollToBottomOptions: widget.scrollToBottomOptions ??
-                      const ScrollToBottomOptions(),
-                  typingIndicator: (widget.loadingConfig?.isLoading ?? false)
-                      ? widget.loadingConfig?.loadingIndicator
-                      : null,
-                  welcomeMessageConfig: widget.welcomeMessageConfig,
-                  exampleQuestions: widget.exampleQuestions,
-                  // Pass streaming configuration down to the renderer
-                  streamingTypingSpeed: widget.streamingDuration,
-                  streamingEnabled: widget.enableMarkdownStreaming,
-                  enableMathRendering: widget.enableMathRendering,
-                  streamingFadeInEnabled:
-                      widget.streamingFadeInEnabled ?? false,
-                  streamingFadeInDuration: widget.streamingFadeInDuration ??
-                      const Duration(milliseconds: 260),
-                  streamingFadeInCurve:
-                      widget.streamingFadeInCurve ?? Curves.easeInOut,
-                  streamingWordByWord: widget.streamingWordByWord ?? false,
-                  spacingConfig:
-                      widget.spacingConfig ?? const ChatSpacingConfig(),
+                margin: const EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 4,
+                  bottom: 12,
+                ),
+                child: _buildPersistentExampleQuestions(context),
+              ),
+            ],
+            Expanded(
+              child: CustomChatWidget(
+                controller: widget.controller,
+                currentUser: widget.currentUser,
+                messages: widget.messages ?? widget.controller.messages,
+                onSend: _handleSend,
+                messageOptions: widget.messageOptions ?? const MessageOptions(),
+                inputOptions: widget.inputOptions ?? const InputOptions(),
+                typingUsers: _getEffectiveTypingUsers(),
+                messageListOptions:
+                    (widget.messageListOptions ?? const MessageListOptions())
+                        .copyWith(
+                  scrollController: _effectiveScrollController,
+                ),
+                readOnly: widget.readOnly,
+                quickReplyOptions:
+                    widget.quickReplyOptions ?? const QuickReplyOptions(),
+                scrollToBottomOptions: widget.scrollToBottomOptions ??
+                    const ScrollToBottomOptions(),
+                typingIndicator: (widget.loadingConfig?.isLoading ?? false)
+                    ? widget.loadingConfig?.loadingIndicator
+                    : null,
+                welcomeMessageConfig: widget.welcomeMessageConfig,
+                exampleQuestions: widget.exampleQuestions,
+                // Pass streaming configuration down to the renderer
+                streamingTypingSpeed: widget.streamingDuration,
+                streamingEnabled: widget.enableMarkdownStreaming,
+                enableMathRendering: widget.enableMathRendering,
+                streamingFadeInEnabled: widget.streamingFadeInEnabled ?? false,
+                streamingFadeInDuration: widget.streamingFadeInDuration ??
+                    const Duration(milliseconds: 260),
+                streamingFadeInCurve:
+                    widget.streamingFadeInCurve ?? Curves.easeInOut,
+                streamingWordByWord: widget.streamingWordByWord ?? false,
+                spacingConfig:
+                    widget.spacingConfig ?? const ChatSpacingConfig(),
+              ),
+            ),
+            // Loading indicator overlay
+            if ((widget.loadingConfig?.isLoading ?? false) &&
+                (widget.loadingConfig?.showCenteredIndicator ?? false))
+              Container(
+                color: Colors.black26,
+                child: Center(
+                  child: widget.loadingConfig?.loadingIndicator ??
+                      const CircularProgressIndicator(),
                 ),
               ),
-              // Loading indicator overlay
-              if ((widget.loadingConfig?.isLoading ?? false) &&
-                  (widget.loadingConfig?.showCenteredIndicator ?? false))
-                Container(
-                  color: Colors.black26,
-                  child: Center(
-                    child: widget.loadingConfig?.loadingIndicator ??
-                        const CircularProgressIndicator(),
-                  ),
-                ),
-              // Input at bottom instead of positioned
-              if (!widget.readOnly)
-                (widget.inputOptions?.useOuterContainer == false)
-                    ? Container(
-                        // Bottom sheet style container
-                        width: double.infinity,
-                        decoration: widget.inputOptions?.containerDecoration,
-                        padding: EdgeInsets.only(
-                          left: widget.inputOptions?.padding?.left ?? 16,
-                          right: widget.inputOptions?.padding?.right ?? 16,
-                          top: widget.inputOptions?.padding?.top ?? 16,
-                          bottom: (widget.inputOptions?.padding?.bottom ?? 16) +
-                              MediaQuery.of(context).viewInsets.bottom +
-                              MediaQuery.of(context).padding.bottom,
-                        ),
-                        child: _buildChatInput(),
-                      )
-                    : Padding(
-                        padding: EdgeInsets.only(
-                          bottom:
-                              MediaQuery.of(context).padding.bottom,
-                        ),
-                        child: Material(
-                          elevation:
-                              widget.inputOptions?.materialElevation ?? 0,
-                          color: widget.inputOptions?.useScaffoldBackground ==
-                                  true
-                              ? Theme.of(context).scaffoldBackgroundColor
-                              : widget.inputOptions?.materialColor,
-                          shape: widget.inputOptions?.materialShape ??
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(22),
-                                side: BorderSide.none,
-                              ),
-                          clipBehavior: Clip.antiAlias,
-                          child: Container(
-                            padding: widget.inputOptions?.materialPadding ??
-                                const EdgeInsets.all(8.0),
-                            child: _buildChatInput(),
-                          ),
+            // Input at bottom instead of positioned
+            if (!widget.readOnly)
+              (widget.inputOptions?.useOuterContainer == false)
+                  ? Container(
+                      // Bottom sheet style container
+                      width: double.infinity,
+                      decoration: widget.inputOptions?.containerDecoration,
+                      padding: EdgeInsets.only(
+                        left: widget.inputOptions?.padding?.left ?? 16,
+                        right: widget.inputOptions?.padding?.right ?? 16,
+                        top: widget.inputOptions?.padding?.top ?? 16,
+                        bottom: (widget.inputOptions?.padding?.bottom ?? 16) +
+                            MediaQuery.of(context).viewInsets.bottom +
+                            MediaQuery.of(context).padding.bottom,
+                      ),
+                      child: _buildChatInput(),
+                    )
+                  : Padding(
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).padding.bottom,
+                      ),
+                      child: Material(
+                        elevation: widget.inputOptions?.materialElevation ?? 0,
+                        color:
+                            widget.inputOptions?.useScaffoldBackground == true
+                                ? Theme.of(context).scaffoldBackgroundColor
+                                : widget.inputOptions?.materialColor,
+                        shape: widget.inputOptions?.materialShape ??
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
+                              side: BorderSide.none,
+                            ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Container(
+                          padding: widget.inputOptions?.materialPadding ??
+                              const EdgeInsets.all(8.0),
+                          child: _buildChatInput(),
                         ),
                       ),
-            ],
-          ),
+                    ),
+          ],
         ),
-      );
+      ),
+    );
 
     // Wrap with ResultRendererRegistry if renderers are provided
     final hasRenderers = widget.resultRenderers?.isNotEmpty ?? false;
