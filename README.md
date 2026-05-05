@@ -376,7 +376,7 @@ The send button is now hardcoded to always be visible by design, regardless of t
 By default:
 - The send button is always shown regardless of text input
 - Focus is maintained when tapping outside the input field
-- The keyboard's send button is disabled by default to prevent focus issues
+- The keyboard's send button is disabled by default to prevent focus issues on mobile
 
 ```dart
 // Configure input options to ensure a consistent typing experience
@@ -384,10 +384,21 @@ InputOptions(
   // Prevent losing focus when tapping outside
   unfocusOnTapOutside: false,
   
-  // Use newline for Enter key to prevent keyboard focus issues
+  // Use newline for Enter key to prevent keyboard focus issues on mobile.
+  // Hardware Enter on desktop/web still sends — see "Enter key behavior" below.
   textInputAction: TextInputAction.newline,
 )
 ```
+
+#### Enter key behavior (version 2.11.1+)
+
+With `sendOnEnter: true` (the default), pressing Enter on a hardware keyboard sends the message. This works on macOS, Windows, Linux, web, and on iOS/Android devices with an attached physical keyboard.
+
+- **Enter** — sends the current message.
+- **Shift+Enter** — inserts a newline (ChatGPT/Claude style).
+- **Numpad Enter** — sends.
+- During CJK / IME composition, Enter commits the composition instead of sending.
+- Set `sendOnEnter: false` to disable; Enter then always inserts a newline.
 
 ### Scroll Behavior Configuration
 

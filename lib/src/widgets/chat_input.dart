@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/file_upload_options.dart';
 import '../models/input_options.dart';
@@ -66,6 +67,43 @@ class _ChatInputState extends State<ChatInput> {
     if (empty != _isEmpty) {
       setState(() => _isEmpty = empty);
     }
+  }
+
+  // Intercepts hardware Enter so `sendOnEnter: true` works on desktop, web,
+  // and any platform with an attached physical keyboard. The TextField's
+  // `onSubmitted` only fires on soft-keyboard submit with non-newline
+  // textInputAction, which leaves hardware Enter unhandled in multi-line
+  // mode. Wrapping the TextField in a Focus(onKeyEvent:) preempts
+  // EditableText's internal newline shortcut.
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    // Ignore key-up and key-repeat. Acting on repeat would fire `onSend`
+    // continuously while the user holds Enter.
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    final isEnter = event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter;
+    if (!isEnter) return KeyEventResult.ignored;
+
+    if (!widget.options.sendOnEnter) return KeyEventResult.ignored;
+
+    // Shift+Enter falls through so EditableText inserts a newline.
+    if (HardwareKeyboard.instance.isShiftPressed) {
+      return KeyEventResult.ignored;
+    }
+
+    // CJK / IME composing: Enter commits composition; don't send.
+    if (widget.controller.value.composing.isValid) {
+      return KeyEventResult.ignored;
+    }
+
+    final text = widget.controller.text;
+    if (text.trim().isEmpty) return KeyEventResult.ignored;
+
+    widget.onSend();
+    // Mirror the soft-keyboard submit path so consumers get a consistent
+    // onSubmitted signal regardless of input source.
+    widget.options.onSubmitted?.call(text);
+    return KeyEventResult.handled;
   }
 
   @override
@@ -135,6 +173,16 @@ class _ChatInputState extends State<ChatInput> {
         child: textField,
       );
     }
+
+    // Hardware Enter handling for desktop, web, and devices with attached
+    // physical keyboards. canRequestFocus:false keeps focus on the TextField;
+    // skipTraversal:true keeps tab order unchanged.
+    textField = Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: _handleKeyEvent,
+      child: textField,
+    );
 
     // Create input content with text field and send button
     final inputRow = Row(

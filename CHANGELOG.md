@@ -1,3 +1,18 @@
+## 2.11.1 - [2026-05-04] Hardware Enter Sends on Desktop / Web
+
+### Fixed
+- **`sendOnEnter: true` now actually works on macOS, Windows, Linux, web, and any device with an attached physical keyboard** (closes #38). Previously `sendOnEnter` only fired via the soft keyboard's submit action, so on desktop hardware Enter just inserted a newline. `ChatInput` now wraps its `TextField` in a `Focus(onKeyEvent:)` that intercepts Enter and `numpadEnter` before `EditableText`'s internal newline shortcut runs.
+- Shift+Enter falls through to insert a newline (ChatGPT/Claude style).
+- Held-Enter (`KeyRepeatEvent`) does not fire `onSend` repeatedly.
+- IME composing range is respected — Enter during CJK composition commits the composition rather than sending.
+
+### Changed
+- `options.onSubmitted` now also fires when hardware Enter sends, mirroring the soft-keyboard submit path. Consumers using `onSubmitted` for analytics will see additional events on desktop where they previously saw none.
+
+### Notes
+- Zero breaking changes — no public API surface changed. The default `textInputAction: TextInputAction.newline` is preserved (the documented mobile focus-issue fix is unaffected).
+- The `Focus` wrapper uses `canRequestFocus: false` and `skipTraversal: true` so focus and tab order are unchanged.
+
 ## 2.11.0 - [2026-04-11] Mic/Send Toggle + Streaming Rich Widgets + Per-Kind Loading
 
 ### Added
