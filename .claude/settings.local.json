@@ -6,7 +6,8 @@
       "Bash(flutter analyze:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git fetch *)"
     ],
     "deny": []
   }
