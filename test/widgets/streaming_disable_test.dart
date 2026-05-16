@@ -15,7 +15,8 @@ void main() {
       aiUser = ChatUser(id: 'ai', firstName: 'AI');
     });
 
-    testWidgets('Should disable streaming when enableMarkdownStreaming is false',
+    testWidgets(
+        'Should disable streaming when enableMarkdownStreaming is false',
         (WidgetTester tester) async {
       // Arrange: Create chat widget with streaming disabled
       await tester.pumpWidget(
@@ -26,8 +27,8 @@ void main() {
               aiUser: aiUser,
               controller: controller,
               onSendMessage: (message) {},
-              enableAnimation: true,  // Keep animation enabled
-              enableMarkdownStreaming: false,  // But disable streaming
+              enableAnimation: true, // Keep animation enabled
+              enableMarkdownStreaming: false, // But disable streaming
               streamingWordByWord: false,
               streamingDuration: const Duration(seconds: 0),
             ),
@@ -41,30 +42,35 @@ void main() {
       // Act: Add a markdown message that would normally stream
       controller.addMessage(
         ChatMessage(
-          text: '# Hello World\n\nThis is **bold** text with streaming disabled.',
+          text:
+              '# Hello World\n\nThis is **bold** text with streaming disabled.',
           user: aiUser,
           createdAt: DateTime.now(),
           isMarkdown: true,
           customProperties: {
             'id': 'test_msg_1',
-            'isStreaming': true,  // This would normally trigger streaming
+            'isStreaming': true, // This would normally trigger streaming
           },
         ),
       );
 
       // Start streaming to simulate the typical flow
       controller.setStreamingMessage('test_msg_1');
-      
+
       // Pump once - text should be immediately visible (no streaming)
       await tester.pump();
 
       // Assert: The markdown should be rendered immediately without streaming
       // Look for Markdown widget which indicates non-streaming rendering
       expect(find.byType(Markdown), findsOneWidget);
-      
+
       // The text should be immediately available
       expect(find.textContaining('Hello World'), findsOneWidget);
       expect(find.textContaining('bold'), findsOneWidget);
+
+      // Drain the post-render scroll timer (300ms) scheduled by addMessage.
+      // Without this, the test framework reports a pending Timer.
+      await tester.pump(const Duration(milliseconds: 350));
     });
 
     testWidgets('Should disable streaming when enableAnimation is false',
@@ -78,8 +84,8 @@ void main() {
               aiUser: aiUser,
               controller: controller,
               onSendMessage: (message) {},
-              enableAnimation: false,  // Disable animation
-              enableMarkdownStreaming: true,  // Keep markdown streaming enabled
+              enableAnimation: false, // Disable animation
+              enableMarkdownStreaming: true, // Keep markdown streaming enabled
               streamingWordByWord: false,
               streamingDuration: const Duration(seconds: 0),
             ),
@@ -106,14 +112,17 @@ void main() {
 
       // Start streaming
       controller.setStreamingMessage('test_msg_2');
-      
+
       // Pump once - text should be immediately visible
       await tester.pump();
 
       // Assert: CustomChatWidget should be rendered (this shows our fix worked)
       expect(find.byType(CustomChatWidget), findsOneWidget);
-      
+
       // The important thing is that streaming is disabled, which our code logic handles
+
+      // Drain the post-render scroll timer scheduled by addMessage.
+      await tester.pump(const Duration(milliseconds: 350));
     });
 
     testWidgets('Should still stream when both flags are enabled',
@@ -155,7 +164,7 @@ void main() {
 
       // Start streaming
       controller.setStreamingMessage('test_msg_3');
-      
+
       // Pump once
       await tester.pump();
 
@@ -164,6 +173,9 @@ void main() {
       // We can't easily test the actual streaming animation in unit tests,
       // but we can verify the correct widget type is used
       expect(find.byType(CustomChatWidget), findsOneWidget);
+
+      // Drain the post-render scroll timer scheduled by addMessage.
+      await tester.pump(const Duration(milliseconds: 350));
     });
 
     testWidgets('Should handle streamingWordByWord false correctly',
@@ -179,7 +191,7 @@ void main() {
               onSendMessage: (message) {},
               enableAnimation: true,
               enableMarkdownStreaming: true,
-              streamingWordByWord: false,  // Disable word-by-word
+              streamingWordByWord: false, // Disable word-by-word
               streamingDuration: const Duration(milliseconds: 50),
             ),
           ),
@@ -207,6 +219,9 @@ void main() {
 
       // Assert: Should still render the message
       expect(find.byType(CustomChatWidget), findsOneWidget);
+
+      // Drain the post-render scroll timer scheduled by addMessage.
+      await tester.pump(const Duration(milliseconds: 350));
     });
 
     testWidgets('Should respect zero duration streaming',
@@ -223,7 +238,7 @@ void main() {
               enableAnimation: true,
               enableMarkdownStreaming: true,
               streamingWordByWord: false,
-              streamingDuration: Duration.zero,  // Instant streaming
+              streamingDuration: Duration.zero, // Instant streaming
             ),
           ),
         ),
@@ -250,6 +265,9 @@ void main() {
 
       // Assert: CustomChatWidget should be rendered
       expect(find.byType(CustomChatWidget), findsOneWidget);
+
+      // Drain the post-render scroll timer scheduled by addMessage.
+      await tester.pump(const Duration(milliseconds: 350));
     });
   });
 }

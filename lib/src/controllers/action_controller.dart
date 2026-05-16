@@ -347,18 +347,26 @@ class ActionController extends ChangeNotifier {
       execution.completer.complete(result);
     }
 
-    // Remove from active executions after a shorter delay for better memory management
-    Timer(const Duration(seconds: 2), () {
+    // Remove from active executions after a short delay so consumers can read
+    // the final status before it disappears. Tracked via [_cleanupTimers] so
+    // [dispose] can cancel pending timers — otherwise widget tests that
+    // dispose this controller within 2s of completion hit "Timer still
+    // pending after dispose" (iter 3 audit).
+    late Timer cleanupTimer;
+    cleanupTimer = Timer(const Duration(seconds: 2), () {
+      _cleanupTimers.remove(cleanupTimer);
+      if (!mounted) return;
       _executions.remove(execution.id);
-      if (mounted) {
-        // Check if controller is still mounted
-        notifyListeners();
-      }
+      notifyListeners();
     });
+    _cleanupTimers.add(cleanupTimer);
 
     notifyListeners();
     return result;
   }
+
+  /// Tracked post-completion cleanup timers (iter 3). Cancelled on [dispose].
+  final Set<Timer> _cleanupTimers = {};
 
   /// Whether the controller is still mounted/active
   bool mounted = true;
@@ -538,6 +546,14 @@ class ActionController extends ChangeNotifier {
   @override
   void dispose() {
     mounted = false;
+
+    // Cancel pending post-completion cleanup timers (iter 3) so test
+    // teardown is clean.
+    for (final t in _cleanupTimers) {
+      t.cancel();
+    }
+    _cleanupTimers.clear();
+
     _eventController.close();
 
     // Cancel all running executions

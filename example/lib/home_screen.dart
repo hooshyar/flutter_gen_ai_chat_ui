@@ -138,6 +138,13 @@ const _examples = [
     color: Color(0xFFEC4899),
     route: '/rich-widgets',
   ),
+  _CardData(
+    title: 'RTL Chat',
+    description: 'Arabic streaming with bidi auto-detect',
+    icon: Icons.translate_rounded,
+    color: Color(0xFF0EA5E9),
+    route: '/rtl',
+  ),
 ];
 
 // -- Header --
@@ -160,10 +167,10 @@ class _Header extends StatelessWidget {
               Text(
                 'Flutter Gen AI\nChat UI',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.8,
-                  height: 1.15,
-                ),
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.8,
+                      height: 1.15,
+                    ),
               ),
               const SizedBox(height: 8),
               Container(
@@ -263,17 +270,17 @@ class _FeaturedCard extends StatelessWidget {
               Text(
                 'Streaming + Markdown',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3,
-                ),
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                    ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Word-by-word streaming with code blocks, tables, and rich text rendering. The full experience.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: isDark ? Colors.white54 : Colors.black45,
-                  height: 1.5,
-                ),
+                      color: isDark ? Colors.white54 : Colors.black45,
+                      height: 1.5,
+                    ),
               ),
               const SizedBox(height: 16),
               Row(
@@ -375,8 +382,8 @@ class _CompactCard extends StatelessWidget {
                     Text(
                       data.title,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                     Text(
                       data.description,

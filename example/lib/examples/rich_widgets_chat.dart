@@ -133,7 +133,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
         controller: _controller,
         onSendMessage: _onSendMessage,
         // Register rich widget renderers by kind
-        resultRenderers: {
+        resultRenderers: const {
           'weather': _buildWeatherCard,
           'product': _buildProductCard,
           'order_status': _buildOrderStatusCard,
@@ -382,7 +382,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withOpacityCompat(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.local_shipping,
@@ -414,7 +414,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withOpacityCompat(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -479,7 +479,8 @@ class _WeatherDetail extends StatelessWidget {
       children: [
         Icon(icon, color: Colors.white70, size: 16),
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+        Text(label,
+            style: const TextStyle(color: Colors.white70, fontSize: 13)),
       ],
     );
   }
@@ -514,15 +515,15 @@ class _StatsWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _Bar(height: 40, label: 'Mon', color: const Color(0xFF6366F1)),
-              _Bar(height: 65, label: 'Tue', color: const Color(0xFF6366F1)),
-              _Bar(height: 35, label: 'Wed', color: const Color(0xFF6366F1)),
-              _Bar(
+              const _Bar(height: 40, label: 'Mon', color: Color(0xFF6366F1)),
+              const _Bar(height: 65, label: 'Tue', color: Color(0xFF6366F1)),
+              const _Bar(height: 35, label: 'Wed', color: Color(0xFF6366F1)),
+              const _Bar(
                   height: 80,
                   label: 'Thu',
-                  color: const Color(0xFF6366F1),
+                  color: Color(0xFF6366F1),
                   highlight: true),
-              _Bar(height: 55, label: 'Fri', color: const Color(0xFF6366F1)),
+              const _Bar(height: 55, label: 'Fri', color: Color(0xFF6366F1)),
               _Bar(height: 25, label: 'Sat', color: Colors.grey.shade400),
               _Bar(height: 20, label: 'Sun', color: Colors.grey.shade400),
             ],
@@ -562,7 +563,7 @@ class _Bar extends StatelessWidget {
           width: 28,
           height: height,
           decoration: BoxDecoration(
-            color: highlight ? color : color.withOpacity(0.5),
+            color: highlight ? color : color.withOpacityCompat(0.5),
             borderRadius: BorderRadius.circular(6),
           ),
         ),

@@ -74,8 +74,10 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
     switch (_selectedTheme) {
       case ChatTheme.ocean:
         return BubbleStyle(
-          userBubbleColor: isDark ? const Color(0xFF005F8A) : const Color(0xFF0077B6),
-          aiBubbleColor: isDark ? const Color(0xFF1A2F3A) : const Color(0xFFCAF0F8),
+          userBubbleColor:
+              isDark ? const Color(0xFF005F8A) : const Color(0xFF0077B6),
+          aiBubbleColor:
+              isDark ? const Color(0xFF1A2F3A) : const Color(0xFFCAF0F8),
           userBubbleTopLeftRadius: 20,
           userBubbleTopRightRadius: 20,
           aiBubbleTopLeftRadius: 20,
@@ -86,8 +88,10 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
         );
       case ChatTheme.sunset:
         return BubbleStyle(
-          userBubbleColor: isDark ? const Color(0xFFC44D03) : const Color(0xFFE85D04),
-          aiBubbleColor: isDark ? const Color(0xFF3A2A1A) : const Color(0xFFFFF3E0),
+          userBubbleColor:
+              isDark ? const Color(0xFFC44D03) : const Color(0xFFE85D04),
+          aiBubbleColor:
+              isDark ? const Color(0xFF3A2A1A) : const Color(0xFFFFF3E0),
           userBubbleTopLeftRadius: 4,
           userBubbleTopRightRadius: 16,
           aiBubbleTopLeftRadius: 16,
@@ -131,10 +135,9 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: isDark
-              ? const Color(0xFF0A2A3A)
-              : const Color(0xFFE6F7FC),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          fillColor: isDark ? const Color(0xFF0A2A3A) : const Color(0xFFE6F7FC),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         );
       case ChatTheme.sunset:
         return InputDecoration(
@@ -145,10 +148,9 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: isDark
-              ? const Color(0xFF3A2010)
-              : const Color(0xFFFFF0E0),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          fillColor: isDark ? const Color(0xFF3A2010) : const Color(0xFFFFF0E0),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         );
       case ChatTheme.defaultTheme:
         return InputDecoration(
@@ -159,10 +161,9 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: isDark
-              ? const Color(0xFF2A2A3A)
-              : const Color(0xFFF2F2F7),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          fillColor: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF2F2F7),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         );
     }
   }
@@ -193,10 +194,8 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
               segments: const [
                 ButtonSegment(
                     value: ChatTheme.defaultTheme, label: Text('Default')),
-                ButtonSegment(
-                    value: ChatTheme.ocean, label: Text('Ocean')),
-                ButtonSegment(
-                    value: ChatTheme.sunset, label: Text('Sunset')),
+                ButtonSegment(value: ChatTheme.ocean, label: Text('Ocean')),
+                ButtonSegment(value: ChatTheme.sunset, label: Text('Sunset')),
               ],
               selected: {_selectedTheme},
               onSelectionChanged: (s) =>
@@ -245,9 +244,7 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
             color: isDark ? const Color(0xFF2A2A3A) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark
-                  ? const Color(0xFF2A2A3A)
-                  : const Color(0xFFE5E7EB),
+              color: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),
             ),
           ),
           questionsSectionTitle: 'Switch themes above, then try:',

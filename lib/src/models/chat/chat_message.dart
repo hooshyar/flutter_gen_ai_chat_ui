@@ -4,7 +4,37 @@ import 'media.dart';
 import 'message_reaction.dart';
 import 'quick_reply.dart';
 
-/// Represents a message in the chat.
+/// Represents a single message in the chat.
+///
+/// `ChatMessage` is an immutable value type. Mutate via [copyWith]. The
+/// [text] field is required (use an empty string for placeholder bubbles);
+/// optional fields cover markdown, media attachments, reactions, quick
+/// replies, custom builders, send/error state, and free-form
+/// [customProperties] used by the streaming and rich-widget pipelines.
+///
+/// Use the named factories for non-text bubbles:
+/// - [ChatMessage.rich] — render a registered widget by `resultKind`.
+/// - [ChatMessage.widget] — render an inline one-off widget.
+/// - [ChatMessage.loading] — placeholder that you later replace via
+///   `ChatMessagesController.updateMessage`.
+///
+/// Example:
+/// ```dart
+/// final me = ChatUser(id: 'me', firstName: 'You');
+/// final hello = ChatMessage(
+///   text: 'Hello, AI!',
+///   user: me,
+///   createdAt: DateTime.now(),
+/// );
+///
+/// // Markdown / code-fenced response from the AI:
+/// final reply = ChatMessage(
+///   text: '**Hi there!** Here is some `code`.',
+///   user: aiUser,
+///   createdAt: DateTime.now(),
+///   isMarkdown: true,
+/// );
+/// ```
 class ChatMessage {
   /// The text content of the message
   final String text;
@@ -42,6 +72,11 @@ class ChatMessage {
   /// Optional error message if there was an error
   final String? errorMessage;
 
+  /// Creates a chat message.
+  ///
+  /// [text], [user] and [createdAt] are required. Pass `isMarkdown: true` to
+  /// render markdown / code-fences in the bubble. All other parameters are
+  /// optional and document themselves on the corresponding fields.
   const ChatMessage({
     required this.text,
     required this.user,

@@ -6,12 +6,54 @@ import '../models/chat/models.dart';
 
 /// Controller for managing chat messages and their states.
 ///
-/// This controller handles message operations such as adding, updating,
-/// and loading more messages. It also manages the welcome message state
-/// and loading states for pagination.
+/// `ChatMessagesController` is the canonical message store for an
+/// `AiChatWidget`. It is a [ChangeNotifier] and is owned by the consumer
+/// across rebuilds (same pattern as `TextEditingController`).
+///
+/// The controller exposes `addMessage`, `updateMessage`, `clearMessages`
+/// and `scrollToBottom` for the common chat flow, plus pagination
+/// (`loadMore`, `resetPagination`), streaming helpers
+/// (`addStreamingMessage`, `setStreamingMessage`, `stopStreamingMessage`),
+/// and scroll-targeting helpers
+/// (`scrollToMessage`, `forceScrollToFirstMessageInChain`).
+///
+/// Streaming usage:
+/// ```dart
+/// // 1. Add an empty AI message with a stable id.
+/// const responseId = 'response-42';
+/// controller.addMessage(ChatMessage(
+///   user: aiUser,
+///   text: '',
+///   createdAt: DateTime.now(),
+///   customProperties: {'id': responseId, 'isStreaming': true},
+/// ));
+///
+/// // 2. As tokens arrive, replace the text in-place.
+/// await for (final delta in tokenStream) {
+///   accumulated += delta;
+///   controller.updateMessage(ChatMessage(
+///     user: aiUser,
+///     text: accumulated,
+///     createdAt: DateTime.now(),
+///     customProperties: {'id': responseId, 'isStreaming': true},
+///   ));
+/// }
+///
+/// // 3. Flip isStreaming to false to end the animation.
+/// controller.stopStreamingMessage(responseId);
+/// ```
+///
+/// Always call [dispose] when the owning widget is removed; pending scroll
+/// and streaming-simulation timers are cancelled in `dispose`.
 class ChatMessagesController extends ChangeNotifier {
   // Track if the controller is still mounted to prevent race conditions
   bool _mounted = true;
+
+  /// Whether this controller has not yet been disposed.
+  ///
+  /// Becomes false inside [dispose] and stays false afterwards. Used
+  /// internally to short-circuit scheduled callbacks that would otherwise
+  /// notify a disposed controller.
   bool get mounted => _mounted;
 
   // Track streaming state to prevent scroll issues
@@ -109,14 +151,23 @@ class ChatMessagesController extends ChangeNotifier {
     }
   }
 
+  /// Active timers scheduled by [simulateStreamingCompletion]. Tracked so
+  /// [dispose] can cancel them and avoid `Timer still pending` failures in
+  /// widget tests that exercise the demo / simulation path.
+  final Set<Timer> _simulateStreamingTimers = {};
+
   /// Simulates streaming completion after a delay (useful for demos)
   void simulateStreamingCompletion(String messageId,
       {Duration delay = const Duration(seconds: 3)}) {
-    Timer(delay, () {
+    if (!_mounted) return;
+    late Timer timer;
+    timer = Timer(delay, () {
+      _simulateStreamingTimers.remove(timer);
       if (mounted) {
         stopStreamingMessage(messageId);
       }
     });
+    _simulateStreamingTimers.add(timer);
   }
 
   /// Callback for loading more messages (backward compatibility)
@@ -132,6 +183,14 @@ class ChatMessagesController extends ChangeNotifier {
   ScrollController? _scrollController;
   VoidCallback? _scrollListener;
   Timer? _pendingScrollTimer;
+
+  /// Timer that fires the delayed scroll after a new message is rendered.
+  /// Tracked so [dispose] can cancel it and prevent dangling timers in tests.
+  Timer? _scrollAfterRenderTimer;
+
+  /// Timer that resets the manual-scroll flag after the user finishes
+  /// interacting with the scroll view. Tracked so [dispose] can cancel it.
+  Timer? _manualScrollResetTimer;
 
   /// The ID of the first message in the current AI response
   String? _currentResponseFirstMessageId;
@@ -157,7 +216,12 @@ class ChatMessagesController extends ChangeNotifier {
   String?
       _lastScrollOperation; // Track the last scroll operation to prevent conflicts
 
-  /// Sets the scroll controller for auto-scrolling
+  /// Wires a [ScrollController] up to this controller for auto-scrolling.
+  ///
+  /// The widget calls this once during build; consumers normally do not need
+  /// to invoke it. Installs a listener that tracks manual scrolling so that
+  /// automatic scroll-to-bottom does not fight the user mid-drag. Any prior
+  /// scroll controller is detached cleanly.
   void setScrollController(ScrollController controller) {
     if (!_mounted) return;
 
@@ -177,8 +241,14 @@ class ChatMessagesController extends ChangeNotifier {
           _lastManualScrollTime = DateTime.now();
           debugPrint('USER SCROLL: Manual scrolling detected');
         } else if (_isManuallyScrolling) {
-          // Reset after a short delay to allow animations to complete
-          Future.delayed(const Duration(milliseconds: 300), () {
+          // Reset after a short delay to allow animations to complete.
+          // Tracked via _manualScrollResetTimer so dispose() can cancel it
+          // and tests don't leave dangling timers after widget teardown.
+          _manualScrollResetTimer?.cancel();
+          _manualScrollResetTimer =
+              Timer(const Duration(milliseconds: 300), () {
+            _manualScrollResetTimer = null;
+            if (!_mounted) return;
             if (DateTime.now()
                     .difference(_lastManualScrollTime)
                     .inMilliseconds >=
@@ -231,6 +301,13 @@ class ChatMessagesController extends ChangeNotifier {
     return _getMessageId(message);
   }
 
+  /// Adds an agent-authored message without running the response-tracking
+  /// or auto-scroll logic that [addMessage] applies.
+  ///
+  /// Use this for messages emitted by the agent surface (`AgentOrchestrator`,
+  /// `ActionController`) where the orchestrator has already taken
+  /// responsibility for response grouping. Prefer [addMessage] for ordinary
+  /// chat responses.
   void addAgentMessage(ChatMessage message) {
     final messageId = _getMessageId(message);
     if (!_messageCache.containsKey(messageId)) {
@@ -476,8 +553,12 @@ class ChatMessagesController extends ChangeNotifier {
     // Add a tracking variable to prevent multiple scroll actions
     var hasScrolled = false;
 
-    // Longer delay to ensure messages have time to render
-    Future.delayed(scrollDelay, () {
+    // Longer delay to ensure messages have time to render.
+    // Tracked via _scrollAfterRenderTimer so dispose() can cancel it and
+    // tests don't leave dangling timers after widget teardown.
+    _scrollAfterRenderTimer?.cancel();
+    _scrollAfterRenderTimer = Timer(scrollDelay, () {
+      _scrollAfterRenderTimer = null;
       // Check if the controller is still mounted (prevents race conditions)
       if (!mounted) {
         debugPrint('SCROLL ABORTED: Controller disposed');
@@ -1037,7 +1118,12 @@ class ChatMessagesController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Handles an example question by creating and adding appropriate messages.
+  /// Submits an example question as if the user had typed and sent it.
+  ///
+  /// Hides the welcome message and adds [question] as a user-authored
+  /// [ChatMessage]. The chat widget's `onSendMessage` callback is **not**
+  /// invoked by this method — consumers wiring example questions to a real
+  /// API should listen to the controller and call their send pipeline.
   void handleExampleQuestion(
       String question, ChatUser currentUser, ChatUser aiUser) {
     hideWelcomeMessage();
@@ -1050,13 +1136,21 @@ class ChatMessagesController extends ChangeNotifier {
     );
   }
 
+  /// Hides the welcome message overlay and notifies listeners.
+  ///
+  /// Called automatically the first time a message is sent through
+  /// [handleExampleQuestion]; consumers can also call it directly to dismiss
+  /// the welcome panel programmatically.
   void hideWelcomeMessage() {
     _showWelcomeMessage = false;
     notifyListeners();
   }
 
-  /// Scrolls to a specific message directly with maximum reliability
-  /// This is a more direct approach for ensuring the first message is visible
+  /// Jumps to the very top of the list (no animation).
+  ///
+  /// Useful when entering a new conversation or when an animated scroll has
+  /// drifted off-target. No-ops if the scroll controller is not attached
+  /// or the controller has been disposed.
   void forceScrollToTop() {
     if (!_mounted || _scrollController?.hasClients != true) return;
 
@@ -1069,7 +1163,18 @@ class ChatMessagesController extends ChangeNotifier {
     }
   }
 
-  /// Find first message in a response chain and force scroll to it with extra reliability
+  /// Animates to the first message in the response chain identified by
+  /// [responseId], so the start of a multi-part AI response stays in view.
+  ///
+  /// Messages participate in a chain by setting
+  /// `customProperties['responseId']` to the same value; the first message
+  /// additionally sets `customProperties['isStartOfResponse'] = true`.
+  /// This is the mechanism that powers
+  /// `ScrollBehaviorConfig.scrollToFirstResponseMessage`.
+  ///
+  /// No-ops if no scroll controller is attached, the controller is
+  /// disposed, the user is currently manually scrolling, or no matching
+  /// message exists.
   void forceScrollToFirstMessageInChain(String responseId) {
     if (!_mounted || _scrollController?.hasClients != true) return;
 
@@ -1193,6 +1298,22 @@ class ChatMessagesController extends ChangeNotifier {
     // Cancel any pending scroll timer to prevent memory leaks
     _pendingScrollTimer?.cancel();
     _pendingScrollTimer = null;
+
+    // Cancel the post-render scroll timer (replaces the prior untracked
+    // Future.delayed) so tests don't hit "Timer still pending" after teardown.
+    _scrollAfterRenderTimer?.cancel();
+    _scrollAfterRenderTimer = null;
+
+    // Cancel the manual-scroll reset timer (replaces the prior untracked
+    // Future.delayed) for the same reason.
+    _manualScrollResetTimer?.cancel();
+    _manualScrollResetTimer = null;
+
+    // Cancel any pending simulate-streaming-completion timers (iter 3).
+    for (final t in _simulateStreamingTimers) {
+      t.cancel();
+    }
+    _simulateStreamingTimers.clear();
 
     // Remove scroll listener to prevent memory leaks
     if (_scrollController != null && _scrollListener != null) {

@@ -1,5 +1,5 @@
 name: flutter_gen_ai_chat_ui
-description: "Modern Flutter chat UI with streaming text, markdown support, file attachments, and customizable themes. Perfect for AI assistants, customer support, and messaging apps."
+description: "AI chat UI for Flutter. Streaming text, markdown, LaTeX, rich inline widgets, function-calling/agent surface, RTL, theming. ChatGPT/Claude/Gemini ready."
 version: 2.11.1
 homepage: https://github.com/hooshyar/flutter_gen_ai_chat_ui
 repository: https://github.com/hooshyar/flutter_gen_ai_chat_ui
@@ -7,7 +7,7 @@ issue_tracker: https://github.com/hooshyar/flutter_gen_ai_chat_ui/issues
 documentation: https://github.com/hooshyar/flutter_gen_ai_chat_ui/blob/main/README.md
 funding:
   - https://github.com/sponsors/hooshyar
-topics: [flutter, chat-ui, ai-chat, messaging, streaming]
+topics: [ai, chat, llm, streaming, agent, markdown, rtl, openai, anthropic, gemini]
 
 platforms:
   android:
@@ -25,9 +25,9 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_markdown_plus: ^1.0.3
-  google_fonts: ^8.0.1
+  google_fonts: ^8.1.0
   shimmer: ^3.0.0
-  flutter_streaming_text_markdown: ^1.4.0
+  flutter_streaming_text_markdown: ^1.8.0
   url_launcher: ^6.3.1
   flutter_math_fork: ^0.7.2
 

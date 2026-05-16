@@ -1,0 +1,72 @@
+name: CI
+
+# Lightweight CI gate for the flutter_gen_ai_chat_ui package.
+#
+# What this catches:
+#   - Formatter drift (`dart format --set-exit-if-changed`). The local
+#     `flutter analyze` step does NOT catch formatter drift, and pub.dev's
+#     `pana` deducts 10 points if any file is unformatted (iter-7 of the
+#     internal maintenance log surfaced this as a real recurring risk
+#     introduced by dartdoc edits).
+#   - Static analyzer warnings (`flutter analyze`).
+#   - Unit + widget test regressions (`flutter test`).
+#
+# Intentionally not in scope here:
+#   - `dart pub publish --dry-run` (the user controls releases and
+#     gitignored-file state).
+#   - `pana` (slow; runs locally as part of the release-prep checklist).
+#   - Integration tests under `example/integration_test/` (require a
+#     running device/simulator; gated by the package's "do not run app on
+#     simulators in CI" policy).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  analyze-format-test:
+    name: Analyze, format, and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Print Flutter and Dart versions
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        # The leading `dart format --set-exit-if-changed` is the iter-8
+        # guardrail. If any file is unformatted this step fails the build
+        # before analyze/tests run, surfacing the issue immediately.
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        run: flutter analyze --fatal-infos
+
+      - name: Analyze example app
+        # The example/ directory has its own pubspec and is outside the
+        # package's analyzer scope. Iter-10 surfaced 9 lints there that
+        # the main `flutter analyze` step did not catch, so we gate
+        # example-app regressions explicitly.
+        run: |
+          cd example
+          flutter pub get
+          flutter analyze --fatal-infos
+
+      - name: Test
+        run: flutter test --reporter expanded

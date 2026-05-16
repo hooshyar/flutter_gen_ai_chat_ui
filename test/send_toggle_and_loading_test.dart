@@ -89,8 +89,7 @@ void main() {
       textController.dispose();
     });
 
-    testWidgets('falls back to default send button when null',
-        (tester) async {
+    testWidgets('falls back to default send button when null', (tester) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
@@ -172,8 +171,7 @@ void main() {
       final after = DateTime.now();
 
       expect(
-        msg.createdAt
-            .isAfter(before.subtract(const Duration(seconds: 1))),
+        msg.createdAt.isAfter(before.subtract(const Duration(seconds: 1))),
         isTrue,
       );
       expect(
@@ -223,8 +221,7 @@ void main() {
               controller: controller,
               onSendMessage: (_) {},
               resultRenderers: {
-                'weather': (context, data) =>
-                    Text('Weather: ${data['city']}'),
+                'weather': (context, data) => Text('Weather: ${data['city']}'),
               },
             ),
           ),
@@ -384,8 +381,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(
-          find.text('Generating your contract...'), findsOneWidget);
+      expect(find.text('Generating your contract...'), findsOneWidget);
 
       controller.dispose();
     });
@@ -403,8 +399,7 @@ void main() {
               controller: controller,
               onSendMessage: (_) {},
               resultLoadingRenderers: {
-                'contract': (context, data) =>
-                    const Text('Generating...'),
+                'contract': (context, data) => const Text('Generating...'),
               },
             ),
           ),
@@ -427,8 +422,7 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('custom loading replaced by rich widget',
-        (tester) async {
+    testWidgets('custom loading replaced by rich widget', (tester) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
@@ -470,15 +464,13 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(
-          find.text('Contract: Employment Agreement'), findsOneWidget);
+      expect(find.text('Contract: Employment Agreement'), findsOneWidget);
       expect(find.text('Drafting contract...'), findsNothing);
 
       controller.dispose();
     });
 
-    testWidgets('no loadingKind renders default shimmer',
-        (tester) async {
+    testWidgets('no loadingKind renders default shimmer', (tester) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(

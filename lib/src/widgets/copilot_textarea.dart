@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -89,6 +91,10 @@ class _CopilotTextareaState extends State<CopilotTextarea> {
   bool _isLoadingSuggestions = false;
   String _lastTextForSuggestions = '';
 
+  /// Tracked debounce timer for AI suggestion fetches (iter 3). Cancelled on
+  /// dispose so widget tests don't leave a pending timer after teardown.
+  Timer? _suggestionDebounceTimer;
+
   @override
   void initState() {
     super.initState();
@@ -99,7 +105,14 @@ class _CopilotTextareaState extends State<CopilotTextarea> {
 
   @override
   void dispose() {
-    _hideSuggestions();
+    _suggestionDebounceTimer?.cancel();
+    _suggestionDebounceTimer = null;
+    // Inline overlay cleanup — calling _hideSuggestions() here would invoke
+    // setState() during dispose, which trips the `defunct` assertion in
+    // Element.markNeedsBuild (pre-existing bug; iter 3).
+    _suggestionOverlay?.remove();
+    _suggestionOverlay = null;
+    _showSuggestions = false;
     _focusNode
       ..removeListener(_onFocusChanged)
       ..dispose();
@@ -130,8 +143,12 @@ class _CopilotTextareaState extends State<CopilotTextarea> {
   }
 
   void _debounceGetSuggestions() {
-    // Simple debouncing - could be enhanced with a proper debouncer
-    Future.delayed(const Duration(milliseconds: 500), () {
+    // Tracked debounce timer (iter 3) — replaces an untracked Future.delayed
+    // so dispose can cancel the pending fetch.
+    _suggestionDebounceTimer?.cancel();
+    _suggestionDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+      _suggestionDebounceTimer = null;
+      if (!mounted) return;
       if (_controller.text == _lastTextForSuggestions) return;
       _getSuggestions();
     });

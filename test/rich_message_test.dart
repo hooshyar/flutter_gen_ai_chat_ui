@@ -44,10 +44,14 @@ void main() {
       );
       final after = DateTime.now();
 
-      expect(msg.createdAt.isAfter(before.subtract(const Duration(seconds: 1))),
-          isTrue,);
-      expect(msg.createdAt.isBefore(after.add(const Duration(seconds: 1))),
-          isTrue,);
+      expect(
+        msg.createdAt.isAfter(before.subtract(const Duration(seconds: 1))),
+        isTrue,
+      );
+      expect(
+        msg.createdAt.isBefore(after.add(const Duration(seconds: 1))),
+        isTrue,
+      );
     });
 
     test('uses provided createdAt', () {

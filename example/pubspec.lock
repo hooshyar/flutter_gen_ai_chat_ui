@@ -105,7 +105,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "2.8.0"
+    version: "2.11.1"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -134,10 +134,10 @@ packages:
     dependency: transitive
     description:
       name: flutter_streaming_text_markdown
-      sha256: ca254c2070936b63ca449725f83df6dbdfd82cb6d47587aecea9629fa19efb68
+      sha256: "6adbf88aa938b20196b92a5cbfd577b8ed9b8469099e04c28918d646b06d48a9"
       url: "https://pub.dev"
     source: hosted
-    version: "1.4.0"
+    version: "1.8.0"
   flutter_svg:
     dependency: transitive
     description:
@@ -165,18 +165,18 @@ packages:
     dependency: transitive
     description:
       name: google_fonts
-      sha256: c30eef5e7cd26eb89cc8065b4390ac86ce579f2fcdbe35220891c6278b5460da
+      sha256: "4e9391085e524954a51e3625b7c9c7e9851dc3f376603208bb45c24b9a66255d"
       url: "https://pub.dev"
     source: hosted
-    version: "8.0.1"
+    version: "8.1.0"
   gpt_markdown:
     dependency: transitive
     description:
       name: gpt_markdown
-      sha256: a0c6f8a89b405d0ea781734e090cce41df2a1240a7ee9f185556fce22a9f7919
+      sha256: c14c2a4599a67df5b6a984808cbb7631b8d15c91984ffdd7998597b93a6ff136
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.3"
+    version: "1.1.7"
   http:
     dependency: transitive
     description:

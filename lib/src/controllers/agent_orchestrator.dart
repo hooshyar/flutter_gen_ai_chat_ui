@@ -3,40 +3,113 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../models/ai_agent.dart';
 
-/// Multi-agent orchestration system similar to CopilotKit's CoAgents framework
-/// Manages agent coordination, routing, and collaborative problem-solving
+/// Multi-agent orchestration system similar to CopilotKit's CoAgents.
+///
+/// `AgentOrchestrator` registers a fleet of [AIAgent]s, scores them on each
+/// incoming [AgentRequest], routes the request to the best match, surfaces
+/// the response on a broadcast stream, and supports delegation between
+/// agents and (optionally) multi-agent collaboration sessions.
+///
+/// The orchestrator is a [ChangeNotifier]; consumers own its lifecycle and
+/// must call [dispose] when finished. [dispose] cancels per-agent state
+/// subscriptions, closes both broadcast streams, and disposes every
+/// registered agent in turn.
+///
+/// Example:
+/// ```dart
+/// final orchestrator = AgentOrchestrator();
+/// await orchestrator.registerAgent(TextAnalysisAgent());
+/// await orchestrator.registerAgent(CodeAnalysisAgent());
+///
+/// final response = await orchestrator.processRequest(AgentRequest(
+///   id: 'r1',
+///   query: 'Refactor this Python function',
+///   type: AgentRequestType.standard,
+///   timestamp: DateTime.now(),
+/// ));
+/// debugPrint(response.content);
+///
+/// // Streaming variant:
+/// await for (final partial in orchestrator.streamResponse(request)) {
+///   debugPrint(partial.content);
+/// }
+///
+/// await orchestrator.dispose();
+/// ```
 class AgentOrchestrator extends ChangeNotifier {
   final Map<String, AIAgent> _agents = {};
   final Map<String, AgentCollaboration> _activeCollaborations = {};
+  // Per-agent subscriptions to each registered agent's state stream. Tracked so
+  // that unregisterAgent can cancel cleanly, and dispose() can cancel all
+  // before closing the orchestrator's own broadcast controllers — otherwise
+  // an agent emitting on its way down (e.g. inside its own dispose) would
+  // forward to a closed controller and throw "Cannot add events after
+  // closing".
+  final Map<String, StreamSubscription<AgentState>> _agentStateSubscriptions =
+      {};
   final StreamController<AgentResponse> _responseStreamController =
       StreamController<AgentResponse>.broadcast();
   final StreamController<AgentState> _stateStreamController =
       StreamController<AgentState>.broadcast();
+  bool _disposed = false;
 
-  // Orchestrator configuration
+  /// Maximum number of in-flight requests the orchestrator will accept
+  /// concurrently. Currently advisory; reserved for future back-pressure
+  /// support.
   final int maxConcurrentRequests;
+
+  /// Per-request timeout. Currently advisory; reserved for future
+  /// orchestration-level timeout enforcement.
   final Duration requestTimeout;
+
+  /// Whether multi-agent collaboration is allowed.
+  ///
+  /// When false, [startCollaboration] throws an [UnsupportedError].
   final bool enableCollaboration;
 
+  /// Creates an [AgentOrchestrator].
+  ///
+  /// All parameters are optional. The defaults are tuned for interactive
+  /// chat use: 10 concurrent requests, 30 second timeout, collaboration on.
   AgentOrchestrator({
     this.maxConcurrentRequests = 10,
     this.requestTimeout = const Duration(seconds: 30),
     this.enableCollaboration = true,
   });
 
-  // Getters
+  /// All currently registered agents, in insertion order.
   List<AIAgent> get agents => _agents.values.toList();
+
+  /// All active collaboration sessions started via [startCollaboration].
   List<AgentCollaboration> get activeCollaborations =>
       _activeCollaborations.values.toList();
+
+  /// Broadcast stream of every [AgentResponse] the orchestrator emits,
+  /// including responses returned synchronously via [processRequest] and
+  /// chunks yielded by [streamResponse].
   Stream<AgentResponse> get responseStream => _responseStreamController.stream;
+
+  /// Broadcast stream of every [AgentState] emitted by registered agents.
+  ///
+  /// The orchestrator forwards each agent's state stream onto this single
+  /// merged stream while the agent is registered.
   Stream<AgentState> get stateStream => _stateStreamController.stream;
 
   /// Register an agent with the orchestrator
   Future<void> registerAgent(AIAgent agent) async {
+    // If an agent with this id was previously registered, cancel its old
+    // subscription before overwriting (defensive against re-registration).
+    await _agentStateSubscriptions.remove(agent.id)?.cancel();
     _agents[agent.id] = agent;
 
-    // Listen to agent state changes
-    agent.streamState().listen(_stateStreamController.add);
+    // Listen to agent state changes. Track the subscription so it can be
+    // cancelled in unregisterAgent / dispose. Forwarding via a closure
+    // (rather than tear-off) lets us drop events after the orchestrator is
+    // disposed, in case the agent emits during its own teardown.
+    _agentStateSubscriptions[agent.id] = agent.streamState().listen((state) {
+      if (_disposed || _stateStreamController.isClosed) return;
+      _stateStreamController.add(state);
+    });
 
     // Initialize agent
     await agent.initialize({
@@ -51,6 +124,10 @@ class AgentOrchestrator extends ChangeNotifier {
   Future<void> unregisterAgent(String agentId) async {
     final agent = _agents[agentId];
     if (agent != null) {
+      // Cancel the agent's state subscription before disposing the agent so
+      // any final emissions from the agent's dispose path don't forward to
+      // the orchestrator's stream.
+      await _agentStateSubscriptions.remove(agentId)?.cancel();
       await agent.dispose();
       _agents.remove(agentId);
       notifyListeners();
@@ -165,17 +242,21 @@ class AgentOrchestrator extends ChangeNotifier {
     return collaboration;
   }
 
-  /// Get agent by ID
+  /// Returns the agent registered under [agentId], or `null` if not found.
   AIAgent? getAgent(String agentId) => _agents[agentId];
 
-  /// Get agents by capability
+  /// Returns every registered agent whose `capabilities` list contains
+  /// [capability]. Matching is case-sensitive.
   List<AIAgent> getAgentsByCapability(String capability) {
     return _agents.values
         .where((agent) => agent.capabilities.contains(capability))
         .toList();
   }
 
-  /// Get available agents (not busy)
+  /// Returns every registered agent currently in [AgentStatus.idle].
+  ///
+  /// Useful for showing a "ready" indicator or for picking a free agent
+  /// when the routing scorer comes up empty.
   List<AIAgent> getAvailableAgents() {
     return _agents.values
         .where((agent) => agent.status == AgentStatus.idle)
@@ -334,8 +415,24 @@ class AgentOrchestrator extends ChangeNotifier {
     );
   }
 
+  /// Releases all resources held by this orchestrator.
+  ///
+  /// Cancels every per-agent state subscription, closes the response and
+  /// state broadcast streams, and calls `dispose` on each registered
+  /// agent. Safe to call multiple times; subsequent calls are no-ops on
+  /// already-closed controllers.
   @override
   void dispose() {
+    _disposed = true;
+
+    // Cancel every per-agent state subscription FIRST. This guarantees that
+    // any state an agent emits as it's torn down below cannot forward to
+    // _stateStreamController (which we're about to close).
+    for (final sub in _agentStateSubscriptions.values) {
+      sub.cancel();
+    }
+    _agentStateSubscriptions.clear();
+
     _responseStreamController.close();
     _stateStreamController.close();
 
@@ -349,9 +446,18 @@ class AgentOrchestrator extends ChangeNotifier {
   }
 }
 
-/// Exception thrown by the agent system
+/// Exception thrown when agent routing, delegation, or collaboration fails.
+///
+/// `processRequest` translates these into an error [AgentResponse] for
+/// callers so the public API never throws on a normal agent failure.
+/// `_routeRequest` and `_handleDelegation` may throw [AgentException]
+/// directly when there is no possible recovery (e.g. no agents
+/// registered, missing delegation target).
 class AgentException implements Exception {
+  /// Human-readable failure description.
   final String message;
+
+  /// Creates an [AgentException] with the given [message].
   const AgentException(this.message);
 
   @override

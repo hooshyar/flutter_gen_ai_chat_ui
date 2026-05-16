@@ -40,13 +40,12 @@ void main() {
       // Find the TextField and check if it has focus
       final textField = find.byType(TextField);
       expect(textField, findsOneWidget);
-      
+
       final textFieldWidget = tester.widget<TextField>(textField);
       expect(textFieldWidget.autofocus, isTrue);
     });
 
-    testWidgets('Should not autofocus by default',
-        (WidgetTester tester) async {
+    testWidgets('Should not autofocus by default', (WidgetTester tester) async {
       // Arrange
       await tester.pumpWidget(
         MaterialApp(
@@ -68,7 +67,7 @@ void main() {
       // Act & Assert
       final textField = find.byType(TextField);
       expect(textField, findsOneWidget);
-      
+
       final textFieldWidget = tester.widget<TextField>(textField);
       expect(textFieldWidget.autofocus, isFalse);
     });
@@ -77,7 +76,7 @@ void main() {
         (WidgetTester tester) async {
       // Arrange
       final customFocusNode = FocusNode();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -100,10 +99,10 @@ void main() {
       // Act & Assert
       final textField = find.byType(TextField);
       expect(textField, findsOneWidget);
-      
+
       final textFieldWidget = tester.widget<TextField>(textField);
       expect(textFieldWidget.focusNode, equals(customFocusNode));
-      
+
       // Clean up
       customFocusNode.dispose();
     });
@@ -134,7 +133,7 @@ void main() {
       // Act & Assert
       final textField = find.byType(TextField);
       expect(textField, findsOneWidget);
-      
+
       final textFieldWidget = tester.widget<TextField>(textField);
       expect(textFieldWidget.autofocus, isTrue);
     });
@@ -165,7 +164,7 @@ void main() {
       // Act & Assert
       final textField = find.byType(TextField);
       expect(textField, findsOneWidget);
-      
+
       final textFieldWidget = tester.widget<TextField>(textField);
       expect(textFieldWidget.autofocus, isTrue);
     });
@@ -174,7 +173,7 @@ void main() {
         (WidgetTester tester) async {
       // Arrange
       final customFocusNode = FocusNode();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -198,10 +197,10 @@ void main() {
       // Act & Assert
       final textField = find.byType(TextField);
       expect(textField, findsOneWidget);
-      
+
       final textFieldWidget = tester.widget<TextField>(textField);
       expect(textFieldWidget.focusNode, equals(customFocusNode));
-      
+
       // Clean up
       customFocusNode.dispose();
     });

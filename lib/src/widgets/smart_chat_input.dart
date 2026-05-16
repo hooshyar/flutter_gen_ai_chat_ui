@@ -67,6 +67,10 @@ class _SmartChatInputState extends State<SmartChatInput>
 
     if (widget.autoFocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Guard against the widget being disposed before the next frame —
+        // `_focusNode` is disposed in `dispose()` and calling
+        // `requestFocus()` on a disposed FocusNode throws.
+        if (!mounted) return;
         _focusNode.requestFocus();
       });
     }

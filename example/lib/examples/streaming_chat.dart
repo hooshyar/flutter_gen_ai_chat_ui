@@ -160,9 +160,7 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
             color: isDark ? const Color(0xFF2A2A3A) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark
-                  ? const Color(0xFF2A2A3A)
-                  : const Color(0xFFE5E7EB),
+              color: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),
             ),
           ),
           questionsSectionTitle: 'Try asking:',
@@ -175,7 +173,8 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
         exampleQuestions: const [
           ExampleQuestion(question: 'Write a Dart singleton pattern'),
           ExampleQuestion(question: 'Explain async/await with an example'),
-          ExampleQuestion(question: 'Compare StatelessWidget vs StatefulWidget'),
+          ExampleQuestion(
+              question: 'Compare StatelessWidget vs StatefulWidget'),
         ],
         inputOptions: InputOptions(
           textController: _textController,
@@ -187,16 +186,20 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
               fontWeight: FontWeight.w400,
             ),
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
           containerDecoration: BoxDecoration(
             color: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF4F4F8),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.08),
             ),
           ),
-          containerPadding: const EdgeInsets.only(top: 4, bottom: 0, left: 4, right: 8),
+          containerPadding:
+              const EdgeInsets.only(top: 4, bottom: 0, left: 4, right: 8),
           sendButtonIcon: Icons.arrow_upward_rounded,
           sendButtonColor: const Color(0xFF6366F1),
           sendButtonIconSize: 20,
@@ -211,8 +214,10 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
           showCopyButton: true,
           showTime: true,
           bubbleStyle: BubbleStyle(
-            userBubbleColor: isDark ? const Color(0xFF4338CA) : const Color(0xFF6366F1),
-            aiBubbleColor: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF5F5FF),
+            userBubbleColor:
+                isDark ? const Color(0xFF4338CA) : const Color(0xFF6366F1),
+            aiBubbleColor:
+                isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF5F5FF),
             userBubbleTopLeftRadius: 18,
             userBubbleTopRightRadius: 18,
             aiBubbleTopLeftRadius: 18,
@@ -221,7 +226,8 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
             bottomRightRadius: 4,
           ),
           userTextColor: Colors.white,
-          aiTextColor: isDark ? Colors.white.withValues(alpha: 0.95) : Colors.black87,
+          aiTextColor:
+              isDark ? Colors.white.withValues(alpha: 0.95) : Colors.black87,
         ),
       ),
     );

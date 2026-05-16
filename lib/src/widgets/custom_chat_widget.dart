@@ -165,8 +165,14 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     if (widget.controller != null) {
       widget.controller!.setScrollController(_scrollController);
 
-      // Attempt an initial scroll to bottom after widget is built
+      // Attempt an initial scroll to bottom after widget is built.
+      // Guard with `mounted` — the State may be disposed between scheduling
+      // and the next frame (e.g. parent rebuilds with a different widget),
+      // and `widget.controller`'s `_scrollController` would already be
+      // detached. The mounted check also makes the closure safe against
+      // touching `widget` after unmount.
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         if (widget.messages.isNotEmpty) {
           widget.controller!.scrollToBottom();
         }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
@@ -120,6 +121,11 @@ class _AnimatedBubbleState extends State<AnimatedBubble>
   late AnimationController _controller;
   late AnimationController _hoverController;
 
+  /// Tracked start-delay timer (iter 3). Cancelled on dispose so widget tests
+  /// that unmount an AnimatedBubble before its initial delay elapses don't
+  /// fail with "Timer still pending after dispose".
+  Timer? _startDelayTimer;
+
   @override
   void initState() {
     super.initState();
@@ -133,15 +139,22 @@ class _AnimatedBubbleState extends State<AnimatedBubble>
     );
 
     // Start animation with delay
-    Future.delayed(widget.delay, () {
-      if (mounted) {
-        _controller.forward();
-      }
-    });
+    if (widget.delay == Duration.zero) {
+      _controller.forward();
+    } else {
+      _startDelayTimer = Timer(widget.delay, () {
+        _startDelayTimer = null;
+        if (mounted) {
+          _controller.forward();
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
+    _startDelayTimer?.cancel();
+    _startDelayTimer = null;
     _controller.dispose();
     _hoverController.dispose();
     super.dispose();

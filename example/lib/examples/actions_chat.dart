@@ -44,7 +44,8 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
         final expr = params['expression'] as String;
         final result = _evaluateExpression(expr);
         if (result != null) {
-          return ActionResult.createSuccess({'expression': expr, 'result': result});
+          return ActionResult.createSuccess(
+              {'expression': expr, 'result': result});
         }
         return ActionResult.createFailure('Could not evaluate "$expr"');
       },
@@ -72,8 +73,14 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
         final units = params['units'] as String? ?? 'celsius';
         final random = Random();
         final tempC = 15 + random.nextInt(20);
-        final temp = units == 'fahrenheit' ? (tempC * 9 / 5 + 32).round() : tempC;
-        final conditions = ['Sunny', 'Partly Cloudy', 'Overcast', 'Light Rain'][random.nextInt(4)];
+        final temp =
+            units == 'fahrenheit' ? (tempC * 9 / 5 + 32).round() : tempC;
+        final conditions = [
+          'Sunny',
+          'Partly Cloudy',
+          'Overcast',
+          'Light Rain'
+        ][random.nextInt(4)];
         return ActionResult.createSuccess({
           'city': city,
           'temperature': temp,
@@ -107,7 +114,8 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
           'nature': '#66BB6A',
           'love': '#EC407A',
         };
-        final hex = colors[mood] ?? '#${Random().nextInt(0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+        final hex = colors[mood] ??
+            '#${Random().nextInt(0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
         return ActionResult.createSuccess({'mood': mood, 'color': hex});
       },
     ));
@@ -115,18 +123,24 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
 
   double? _evaluateExpression(String expr) {
     final cleaned = expr.replaceAll(' ', '');
-    final match = RegExp(r'^(-?\d+\.?\d*)([\+\-\*\/])(-?\d+\.?\d*)$').firstMatch(cleaned);
+    final match =
+        RegExp(r'^(-?\d+\.?\d*)([\+\-\*\/])(-?\d+\.?\d*)$').firstMatch(cleaned);
     if (match == null) return null;
     final a = double.tryParse(match.group(1)!);
     final op = match.group(2)!;
     final b = double.tryParse(match.group(3)!);
     if (a == null || b == null) return null;
     switch (op) {
-      case '+': return a + b;
-      case '-': return a - b;
-      case '*': return a * b;
-      case '/': return b != 0 ? a / b : null;
-      default: return null;
+      case '+':
+        return a + b;
+      case '-':
+        return a - b;
+      case '*':
+        return a * b;
+      case '/':
+        return b != 0 ? a / b : null;
+      default:
+        return null;
     }
   }
 
@@ -139,16 +153,24 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
       String response;
 
       if (text.startsWith('/calculate ') || text.contains('calculate')) {
-        final expr = text.replaceFirst('/calculate ', '').replaceFirst(RegExp(r'.*calculate\s*'), '');
-        final result = await _actionController.executeAction('calculate', {'expression': expr});
+        final expr = text
+            .replaceFirst('/calculate ', '')
+            .replaceFirst(RegExp(r'.*calculate\s*'), '');
+        final result = await _actionController
+            .executeAction('calculate', {'expression': expr});
         if (result.success) {
           final data = result.data as Map<String, dynamic>;
-          response = '**Calculator**\n\n`${data['expression']}` = **${data['result']}**';
+          response =
+              '**Calculator**\n\n`${data['expression']}` = **${data['result']}**';
         } else {
-          response = 'Could not calculate that. Try something like "calculate 5 + 3".';
+          response =
+              'Could not calculate that. Try something like "calculate 5 + 3".';
         }
       } else if (text.startsWith('/weather ') || text.contains('weather')) {
-        final city = text.replaceFirst('/weather ', '').replaceFirst(RegExp(r'.*weather\s*(in\s*)?'), '').trim();
+        final city = text
+            .replaceFirst('/weather ', '')
+            .replaceFirst(RegExp(r'.*weather\s*(in\s*)?'), '')
+            .trim();
         final result = await _actionController.executeAction('get_weather', {
           'city': city.isNotEmpty ? city : 'London',
         });
@@ -162,7 +184,10 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
           response = 'Could not get weather. Try "/weather London".';
         }
       } else if (text.startsWith('/color ') || text.contains('color')) {
-        final mood = text.replaceFirst('/color ', '').replaceFirst(RegExp(r'.*color\s*(for\s*)?'), '').trim();
+        final mood = text
+            .replaceFirst('/color ', '')
+            .replaceFirst(RegExp(r'.*color\s*(for\s*)?'), '')
+            .trim();
         final result = await _actionController.executeAction('generate_color', {
           'mood': mood.isNotEmpty ? mood : 'calm',
         });
@@ -229,9 +254,8 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
               color: isDark ? const Color(0xFF2A2A3A) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark
-                    ? const Color(0xFF2A2A3A)
-                    : const Color(0xFFE5E7EB),
+                color:
+                    isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),
               ),
             ),
             questionsSectionTitle: 'Try these actions:',
@@ -258,8 +282,10 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
                 borderSide: BorderSide.none,
               ),
               filled: true,
-              fillColor: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF2F2F7),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              fillColor:
+                  isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF2F2F7),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
             sendButtonIcon: Icons.arrow_upward_rounded,
             sendButtonColor: const Color(0xFF8B5CF6),
@@ -274,8 +300,10 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
             showCopyButton: true,
             showTime: true,
             bubbleStyle: BubbleStyle(
-              userBubbleColor: isDark ? const Color(0xFF6D28D9) : const Color(0xFF8B5CF6),
-              aiBubbleColor: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF5F0FF),
+              userBubbleColor:
+                  isDark ? const Color(0xFF6D28D9) : const Color(0xFF8B5CF6),
+              aiBubbleColor:
+                  isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF5F0FF),
               userBubbleTopLeftRadius: 18,
               userBubbleTopRightRadius: 18,
               aiBubbleTopLeftRadius: 18,
@@ -284,7 +312,8 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
               bottomRightRadius: 4,
             ),
             userTextColor: Colors.white,
-            aiTextColor: isDark ? Colors.white.withValues(alpha: 0.95) : Colors.black87,
+            aiTextColor:
+                isDark ? Colors.white.withValues(alpha: 0.95) : Colors.black87,
           ),
         ),
       ),

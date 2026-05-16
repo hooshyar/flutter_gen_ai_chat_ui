@@ -1,3 +1,37 @@
+## [Unreleased]
+
+### Fixed
+- `ChatMessagesController.simulateStreamingCompletion` no longer leaks a pending `Timer` after `dispose()`. Widget tests using the simulation path can exit cleanly without `pumpAndSettle`.
+- `ChatMessagesController` post-render scroll and manual-scroll-reset timers are now tracked and cancelled in `dispose()` (replaces prior untracked `Future.delayed` calls).
+- `ActionController` no longer leaks the 2-second post-completion cleanup `Timer` if the controller is disposed before the timer fires.
+- Internal `StreamingTextWidget` no longer leaks its recursive step `Timer` on dispose.
+- Internal `AnimatedBubble` no longer leaks its start-delay `Timer` on dispose.
+- `CopilotTextarea` no longer leaks its 500ms suggestion-debounce timer on dispose, and no longer crashes the widget tree when unmounted while a suggestion overlay is visible.
+- `AgentOrchestrator` now tracks per-agent state-stream subscriptions and cancels them on `unregisterAgent` / `dispose` (before closing its own broadcast controllers). Fixes a latent "Cannot add events after closing" risk when an agent emits state from within its own `dispose`. Re-registering an agent under an existing id now also cancels the orphaned subscription instead of silently leaking it.
+
+### Changed
+- Dartdoc coverage raised on the highest-traffic public types: `AiChatWidget`, `ChatMessagesController`, `ChatMessage`, `AiActionProvider`, `AiActionConfig`, `AiActionHook`, `AiActionBuilder`, and `AgentOrchestrator` now carry class-level summaries, primary-constructor docs, runnable code-example blocks, and documented public getters / methods (units, nullability, and when-to-use guidance). `dart doc --validate-links` is clean.
+
+### Tests
+- Added 19 unit tests covering `AgentOrchestrator` (registration, routing, delegation, collaboration, streaming, error wrapping, and dispose). Public API behaviour pinned: routing prefers capability matches; delegation with missing target metadata returns an error response rather than throwing.
+- Added 3 stream-subscription-lifecycle regression tests pinning the orchestrator's per-agent subscription tracking, dispose ordering, and re-registration cancellation.
+- Added 5 regression tests pinning timer-lifecycle fixes across `ChatMessagesController`, `ActionController`, `StreamingTextWidget`, `AnimatedBubble`, and `CopilotTextarea`.
+- Added 21 unit tests covering the shipped example agents (`TextAnalysisAgent`, `CodeAnalysisAgent`, `GeneralAssistantAgent`) — `canHandle` routing, happy-path execution, dispose-no-leaks, and agent-specific assertions including delegation routing.
+- Added 2 frame-callback lifecycle regression tests pinning the `addPostFrameCallback` `mounted` guards in `SmartChatInput` and `CustomChatWidget`. Net test count: 278 to 328.
+
+### Dependencies
+- Raised `flutter_streaming_text_markdown` floor from `^1.4.0` to `^1.8.0`. Picks up the 1.7.0 Arabic/RTL word-splitting fix and emoji-resume fix that consumers of this package's RTL surface will benefit from. No code change required — the existing API surface used by `AnimatedTextMessage` / `MessageContentText` / `CustomChatWidget` is unchanged across 1.4 → 1.8.
+- Raised `google_fonts` floor from `^8.0.1` to `^8.1.0`. Picks up the 8.0.2 async-exception-handling fix.
+
+### Tooling
+- Added `.github/workflows/ci.yml`: runs `dart format --set-exit-if-changed`, `flutter analyze --fatal-infos`, and `flutter test` on push and PR to `main`. The formatter step exists because `flutter analyze` does not catch formatter drift, and pana's lint+format check (50/50 of the pub.dev score) silently dropped to 40/50 during iter 6 from a dartdoc edit that exceeded 80 columns. CI now turns that class of regression into a 5-second red check.
+
+### Notes
+- pana score: 160/160 baseline (run with `pana --no-warning`). All 11 sections perfect including dartdoc, formatting, dependencies, and platform support.
+- Zero breaking changes — no public API surface changed, no exports added or removed. Backwards compatible from 2.11.x.
+- Discoverability: package now ships an `AGENTS.md` at the repo root (LLM-friendly quick reference for AI coding assistants) and an expanded `topics:` list in `pubspec.yaml` (10 tags covering AI, agents, LLM, streaming, markdown, RTL). Pubspec description rewritten for keyword density.
+- README install snippet updated to `^2.11.1` (matches actual current version).
+
 ## 2.11.1 - [2026-05-04] Hardware Enter Sends on Desktop / Web
 
 ### Fixed

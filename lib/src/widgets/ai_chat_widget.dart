@@ -15,7 +15,47 @@ import 'custom_chat_widget.dart';
 import 'result/result_renderer_registry.dart';
 
 /// A customizable chat widget for AI conversations.
+///
+/// `AiChatWidget` is the entry point of the package's classic chat surface.
+/// It renders a scrollable message list, a configurable input row, optional
+/// welcome message and example questions, and animated streaming responses.
+///
+/// Messages are managed through a [ChatMessagesController] that the consumer
+/// owns across rebuilds (same pattern as `TextEditingController`). To stream
+/// an AI response, call `controller.addMessage(...)` with a message id, then
+/// repeatedly call `controller.updateMessage(...)` with the accumulated text.
+///
+/// To enable agent / tool-use, wrap `AiChatWidget` in an `AiActionProvider`.
+/// To render full-width custom widgets in place of text bubbles (rich result
+/// cards, tables, callouts), use `ChatMessage.rich(...)` plus the
+/// [resultRenderers] registry.
+///
+/// Example:
+/// ```dart
+/// final controller = ChatMessagesController();
+/// final me = ChatUser(id: 'me', firstName: 'You');
+/// final ai = ChatUser(id: 'ai', firstName: 'Assistant');
+///
+/// AiChatWidget(
+///   currentUser: me,
+///   aiUser: ai,
+///   controller: controller,
+///   onSendMessage: (message) async {
+///     // Echo the user's input back as the AI response.
+///     controller.addMessage(ChatMessage(
+///       text: 'You said: ${message.text}',
+///       user: ai,
+///       createdAt: DateTime.now(),
+///     ));
+///   },
+/// );
+/// ```
 class AiChatWidget extends StatefulWidget {
+  /// Creates an [AiChatWidget].
+  ///
+  /// [currentUser], [aiUser], [controller] and [onSendMessage] are required.
+  /// All other parameters are optional and have sensible defaults documented
+  /// on the individual fields.
   const AiChatWidget({
     super.key,
     // Required parameters similar to Dila
@@ -149,11 +189,25 @@ class AiChatWidget extends StatefulWidget {
   /// Style sheet for markdown rendering
   final MarkdownStyleSheet? markdownStyleSheet;
 
-  /// Optional fade-in configuration for streaming text
-  /// If not provided, fade-in is disabled for a simpler default.
+  /// Duration of the fade-in animation applied to streamed words.
+  ///
+  /// When null, fade-in is disabled and streamed text appears immediately.
   final Duration? streamingFadeInDuration;
+
+  /// Animation curve used for the streamed-word fade-in.
+  ///
+  /// Only takes effect when [streamingFadeInDuration] is non-null.
   final Curve? streamingFadeInCurve;
+
+  /// Whether to fade in streamed words. Defaults to false (no fade) when null.
   final bool? streamingFadeInEnabled;
+
+  /// Whether streaming animates word-by-word.
+  ///
+  /// When true, partial updates from `updateMessage` are split on whitespace
+  /// and revealed one word at a time. When false (or null), the entire
+  /// delta appears at once. Effective only when [enableMarkdownStreaming] is
+  /// also true.
   final bool? streamingWordByWord;
 
   /// Configuration for scroll behavior

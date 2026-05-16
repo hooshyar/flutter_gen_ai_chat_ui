@@ -70,8 +70,10 @@ class _BasicChatExampleState extends State<BasicChatExample> {
               borderSide: BorderSide.none,
             ),
             filled: true,
-            fillColor: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF2F2F7),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            fillColor:
+                isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF2F2F7),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
           sendButtonIcon: Icons.arrow_upward_rounded,
           sendButtonColor: const Color(0xFF6366F1),

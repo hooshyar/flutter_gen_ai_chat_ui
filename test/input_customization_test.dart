@@ -89,8 +89,7 @@ void main() {
       expect(rowAncestor, findsWidgets);
     });
 
-    testWidgets(
-        'leading widget taps are handled correctly (onPressed fires)',
+    testWidgets('leading widget taps are handled correctly (onPressed fires)',
         (tester) async {
       final controller = ChatMessagesController();
       var tapped = false;

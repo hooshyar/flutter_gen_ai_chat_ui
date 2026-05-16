@@ -14,11 +14,15 @@ A modern, high-performance Flutter chat UI kit for building beautiful messaging 
 **🚀 Production Ready** | **📱 Cross-Platform** | **⚡ High Performance** | **🎨 Fully Customizable**
 
 ## Table of Contents
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Why this package?](#why-this-package)
+- [Streaming AI responses](#streaming-ai-responses)
+- [Live Examples](#-live-examples)
 - [Features](#features)
 - [Performance & Features](#-performance--features)
-- [Installation](#installation)
-- [Quick Start](#basic-usage)
-- [Live Examples](#-live-examples)
+- [Works Great With](#-works-great-with)
+- [RTL & Bidirectional Languages](#rtl--bidirectional-languages)
 - [Configuration Options](#configuration-options)
 - [AI Actions System](#-ai-actions-system)
 - [Advanced Features](#advanced-features)
@@ -38,6 +42,166 @@ A modern, high-performance Flutter chat UI kit for building beautiful messaging 
     </td>
   </tr>
 </table>
+
+## Installation
+
+Add this to your package's pubspec.yaml file:
+
+```yaml
+dependencies:
+  flutter_gen_ai_chat_ui: ^2.11.1
+```
+
+Then run:
+
+```bash
+flutter pub get
+```
+
+## Quick Start
+
+```dart
+import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
+
+class ChatScreen extends StatefulWidget {
+  @override
+  _ChatScreenState createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  final _controller = ChatMessagesController();
+  final _currentUser = ChatUser(id: 'user', firstName: 'User');
+  final _aiUser = ChatUser(id: 'ai', firstName: 'AI Assistant');
+  bool _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('AI Chat')),
+      body: AiChatWidget(
+        // Required parameters
+        currentUser: _currentUser,
+        aiUser: _aiUser,
+        controller: _controller,
+        onSendMessage: _handleSendMessage,
+
+        // Optional parameters
+        loadingConfig: LoadingConfig(isLoading: _isLoading),
+        inputOptions: InputOptions(
+          hintText: 'Ask me anything...',
+          sendOnEnter: true,
+        ),
+        welcomeMessageConfig: WelcomeMessageConfig(
+          title: 'Welcome to AI Chat',
+          questionsSectionTitle: 'Try asking me:',
+        ),
+        exampleQuestions: [
+          ExampleQuestion(question: "What can you help me with?"),
+          ExampleQuestion(question: "Tell me about your features"),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleSendMessage(ChatMessage message) async {
+    setState(() => _isLoading = true);
+
+    try {
+      // Your AI service logic here
+      await Future.delayed(Duration(seconds: 1)); // Simulating API call
+
+      // Add AI response
+      _controller.addMessage(ChatMessage(
+        text: "This is a response to: ${message.text}",
+        user: _aiUser,
+        createdAt: DateTime.now(),
+      ));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+}
+```
+
+## Why this package?
+
+Three Flutter chat UI packages dominate searches: `flutter_gen_ai_chat_ui`, `flutter_chat_ui`, and `dash_chat_2`. They target different shapes of app. If you have an LLM in the loop, this package was designed for that shape.
+
+| Concern | `flutter_gen_ai_chat_ui` | `flutter_chat_ui` | `dash_chat_2` |
+|---|---|---|---|
+| Word-by-word streaming animation | Built-in | No | No |
+| Markdown + code highlight in messages | Built-in | Manual | Manual |
+| LaTeX / math rendering | Opt-in flag | No | No |
+| Rich inline widget messages (full-width, no bubble) | `ChatMessage.rich()` | Custom bubble only | No |
+| AI tool-use / function-calling UI | `AiActionProvider` | No | No |
+| Human-in-the-loop confirmation | Built-in | No | No |
+| Mic/send toggle (ChatGPT-style) | `sendOrMicBuilder` | No | No |
+| RTL out of the box | Yes | Partial | Partial |
+| AI welcome screen + example questions | Built-in | No | No |
+| Cross-platform incl. desktop hardware Enter | All 6 | All 6 | Mobile-focused |
+
+For general-purpose peer-to-peer chat with no AI features, `flutter_chat_ui` is a lighter choice. The features above are this package's reason to exist.
+
+## Streaming AI responses
+
+ChatGPT/Claude-style word-by-word streaming is built in. It is gated by **two** flags — both must be on:
+
+- `enableMarkdownStreaming: true` — master gate for the animation pipeline.
+- `streamingWordByWord: true` — word-vs-character animation (default is character).
+
+Push an empty message with a stable id, then call `updateMessage` with a fresh `ChatMessage` carrying that same id each time your LLM emits a chunk. The controller matches on id and replaces the entry in place.
+
+```dart
+AiChatWidget(
+  currentUser: me,
+  aiUser: ai,
+  controller: controller,
+  onSendMessage: handleSend,
+  enableMarkdownStreaming: true,
+  streamingWordByWord: true,
+  streamingDuration: const Duration(milliseconds: 30),
+);
+
+Future<void> streamReply(String prompt) async {
+  final id = DateTime.now().microsecondsSinceEpoch.toString();
+  controller.addMessage(ChatMessage(
+    text: '',
+    user: ai,
+    createdAt: DateTime.now(),
+    customProperties: {'id': id, 'isStreaming': true},
+  ));
+
+  final buffer = StringBuffer();
+  await for (final chunk in myStreamingLlm(prompt)) {
+    buffer.write(chunk);
+    controller.updateMessage(ChatMessage(
+      text: buffer.toString(),
+      user: ai,
+      createdAt: DateTime.now(),
+      customProperties: {'id': id, 'isStreaming': true},
+    ));
+  }
+  controller.stopStreamingMessage(id);
+}
+```
+
+Full runnable screen: [`example/lib/examples/streaming_chat.dart`](https://github.com/hooshyar/flutter_gen_ai_chat_ui/blob/main/example/lib/examples/streaming_chat.dart). Before v2.4.2 the two flags were silently ignored — set both, or leave both default.
+
+## 🎮 Live Examples
+
+Explore all features with our comprehensive example app:
+- **Basic Chat**: Simple send & receive, no streaming
+- **Streaming + Markdown**: Real-time word-by-word animations with code blocks
+- **Custom Themes**: Ocean, Sunset, and Default bubble styles
+- **AI Actions**: Calculator, weather, color — function calling with generative UI
+- **Rich Widgets**: Weather cards, products, charts rendered inline as bubbles
+- **RTL Chat**: Arabic streaming with bidirectional auto-detection
+
+To run the example app:
+```bash
+cd example/
+flutter run
+```
 
 ## Features
 
@@ -117,109 +281,35 @@ A modern, high-performance Flutter chat UI kit for building beautiful messaging 
 - **Use Cases**: Customer support, AI assistants, team chat, social messaging
 - **Industries**: SaaS, E-commerce, Healthcare, Education, Gaming
 
-## Installation
+## RTL & Bidirectional Languages
 
-Add this to your package's pubspec.yaml file:
+The package ships first-class support for right-to-left scripts (Arabic, Hebrew, Persian, Urdu, Kurdish) — no extra dependency, no extra widget.
 
-```yaml
-dependencies:
-  flutter_gen_ai_chat_ui: ^2.4.2
-```
+- **Locale-aware layout** — wrap the chat in `Directionality(textDirection: TextDirection.rtl, ...)` (or rely on your app's `Localizations`) and every surface mirrors: input row, send button, scroll, bubble alignment, copy button.
+- **Per-message bidi auto-detect** — each bubble's `TextDirection` is inferred from its content (Arabic chars → RTL, ASCII → LTR), so mixed conversations render correctly in a single thread without per-message config.
+- **Arabic word-splitting for streaming** — word-by-word streaming animates by whole Arabic words, not by code points (powered by `flutter_streaming_text_markdown` 1.7.0+).
+- **Markdown still works** — headings, code blocks, blockquotes, tables all render bidi-correctly inside RTL bubbles.
 
-Then run:
-
-```bash
-flutter pub get
-```
-
-## Why Choose This Package?
-
-✅ **Superior Performance**: Optimized for large conversations with efficient message rendering  
-✅ **Modern UI**: Beautiful, customizable interfaces that match current design trends  
-✅ **Streaming Text**: Smooth word-by-word animations like ChatGPT and Claude  
-✅ **File Support**: Complete file attachment system with image, document, and media support  
-✅ **Production Ready**: Stable API with comprehensive testing and documentation  
-✅ **Framework Agnostic**: Works with any backend - REST APIs, WebSockets, Firebase, Supabase
-
-## 🎮 Live Examples
-
-Explore all features with our comprehensive example app:
-- **Basic Chat**: Simple ChatGPT-style interface
-- **Streaming Text**: Real-time word-by-word animations  
-- **File Attachments**: Upload images, documents, videos
-- **Custom Themes**: Light, dark, and glassmorphic styles
-- **Advanced Features**: Scroll behavior, markdown, code highlighting
-
-To run the example app:
-```bash
-cd example/
-flutter run
-```
-
-## Quick Start
+Minimal RTL setup:
 
 ```dart
-import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
-
-class ChatScreen extends StatefulWidget {
-  @override
-  _ChatScreenState createState() => _ChatScreenState();
-}
-
-class _ChatScreenState extends State<ChatScreen> {
-  final _controller = ChatMessagesController();
-  final _currentUser = ChatUser(id: 'user', firstName: 'User');
-  final _aiUser = ChatUser(id: 'ai', firstName: 'AI Assistant');
-  bool _isLoading = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('AI Chat')),
-      body: AiChatWidget(
-        // Required parameters
-        currentUser: _currentUser,
-        aiUser: _aiUser,
-        controller: _controller,
-        onSendMessage: _handleSendMessage,
-        
-        // Optional parameters
-        loadingConfig: LoadingConfig(isLoading: _isLoading),
-        inputOptions: InputOptions(
-          hintText: 'Ask me anything...',
-          sendOnEnter: true,
-        ),
-        welcomeMessageConfig: WelcomeMessageConfig(
-          title: 'Welcome to AI Chat',
-          questionsSectionTitle: 'Try asking me:',
-        ),
-        exampleQuestions: [
-          ExampleQuestion(question: "What can you help me with?"),
-          ExampleQuestion(question: "Tell me about your features"),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _handleSendMessage(ChatMessage message) async {
-    setState(() => _isLoading = true);
-    
-    try {
-      // Your AI service logic here
-      await Future.delayed(Duration(seconds: 1)); // Simulating API call
-      
-      // Add AI response
-      _controller.addMessage(ChatMessage(
-        text: "This is a response to: ${message.text}",
-        user: _aiUser,
-        createdAt: DateTime.now(),
-      ));
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-}
+Directionality(
+  textDirection: TextDirection.rtl,
+  child: AiChatWidget(
+    currentUser: ChatUser(id: 'user', name: 'أنت'),
+    aiUser: ChatUser(id: 'ai', name: 'المساعد'),
+    controller: controller,
+    onSendMessage: handleSend,
+    enableMarkdownStreaming: true,
+    exampleQuestions: const [
+      ExampleQuestion(question: 'ما هي عاصمة العراق؟'),
+      ExampleQuestion(question: 'اكتب لي قصيدة قصيرة'),
+    ],
+  ),
+)
 ```
+
+Full working screen with streaming Arabic markdown and example questions: [`example/lib/examples/rtl_chat.dart`](https://github.com/hooshyar/flutter_gen_ai_chat_ui/blob/main/example/lib/examples/rtl_chat.dart).
 
 ## Configuration Options
 

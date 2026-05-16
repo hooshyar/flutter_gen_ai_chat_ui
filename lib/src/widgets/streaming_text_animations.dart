@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -179,6 +180,12 @@ class _StreamingTextWidgetState extends State<StreamingTextWidget>
   late List<String> _textParts;
   int _currentIndex = 0;
 
+  /// Active recursive-step timer for [_animateNextPart]. Tracked so [dispose]
+  /// can cancel it — otherwise widget tests that dispose this widget while
+  /// the streaming animation is mid-flight fail with "Timer still pending
+  /// after dispose" (iter 3 audit).
+  Timer? _stepTimer;
+
   @override
   void initState() {
     super.initState();
@@ -248,7 +255,11 @@ class _StreamingTextWidgetState extends State<StreamingTextWidget>
       ..reset()
       ..forward();
 
-    Future.delayed(widget.config.delay, () {
+    // Tracked Timer (iter 3) — replaces an untracked Future.delayed so we can
+    // cancel pending steps on dispose.
+    _stepTimer?.cancel();
+    _stepTimer = Timer(widget.config.delay, () {
+      _stepTimer = null;
       if (mounted && widget.isStreaming) {
         _animateNextPart();
       }
@@ -515,6 +526,8 @@ class _StreamingTextWidgetState extends State<StreamingTextWidget>
 
   @override
   void dispose() {
+    _stepTimer?.cancel();
+    _stepTimer = null;
     _controller.dispose();
     super.dispose();
   }
