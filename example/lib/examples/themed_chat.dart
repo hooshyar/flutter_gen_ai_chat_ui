@@ -205,6 +205,7 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
         ),
       ),
       body: AiChatWidget(
+        maxWidth: 720,
         currentUser: _currentUser,
         aiUser: _aiUser,
         controller: _controller,

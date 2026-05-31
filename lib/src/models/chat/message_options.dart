@@ -254,6 +254,14 @@ class MessageOptions {
   /// Whether to show copy button for AI messages
   final bool? showCopyButton;
 
+  /// Label for the copy button. Defaults to `'Copy'`. Set this to localize the
+  /// button (e.g. `'نسخ'` for Arabic).
+  final String? copyButtonLabel;
+
+  /// Snackbar text shown after a message is copied. Defaults to
+  /// `'Message copied to clipboard'`. Set this to localize the confirmation.
+  final String? copiedToClipboardText;
+
   /// Callback when message is copied
   final void Function(String)? onCopy;
 
@@ -363,6 +371,8 @@ class MessageOptions {
     this.onTapLink,
     this.aiNameIcon,
     this.showCopyButton = false,
+    this.copyButtonLabel,
+    this.copiedToClipboardText,
     this.onCopy,
     this.userTextColor,
     this.aiTextColor,
@@ -399,6 +409,8 @@ class MessageOptions {
     MarkdownTapLinkCallback? onTapLink,
     Widget? aiNameIcon,
     bool? showCopyButton,
+    String? copyButtonLabel,
+    String? copiedToClipboardText,
     void Function(String)? onCopy,
     Color? userTextColor,
     Color? aiTextColor,
@@ -435,6 +447,9 @@ class MessageOptions {
         onTapLink: onTapLink ?? this.onTapLink,
         aiNameIcon: aiNameIcon ?? this.aiNameIcon,
         showCopyButton: showCopyButton ?? this.showCopyButton,
+        copyButtonLabel: copyButtonLabel ?? this.copyButtonLabel,
+        copiedToClipboardText:
+            copiedToClipboardText ?? this.copiedToClipboardText,
         onCopy: onCopy ?? this.onCopy,
         userTextColor: userTextColor ?? this.userTextColor,
         aiTextColor: aiTextColor ?? this.aiTextColor,

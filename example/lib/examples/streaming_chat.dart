@@ -151,6 +151,7 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
     return Scaffold(
       appBar: AppBar(title: const Text('Streaming + Markdown')),
       body: AiChatWidget(
+        maxWidth: 720,
         currentUser: _currentUser,
         aiUser: _aiUser,
         controller: _controller,

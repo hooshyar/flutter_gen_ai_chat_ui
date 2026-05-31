@@ -760,8 +760,11 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
                                         SnackBar(
-                                          content: const Text(
-                                              'Message copied to clipboard'),
+                                          content: Text(
+                                            widget.messageOptions
+                                                    .copiedToClipboardText ??
+                                                'Message copied to clipboard',
+                                          ),
                                           duration: const Duration(seconds: 2),
                                           behavior: SnackBarBehavior.floating,
                                           shape: RoundedRectangleBorder(
@@ -791,7 +794,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          'Copy',
+                                          widget.messageOptions
+                                                  .copyButtonLabel ??
+                                              'Copy',
                                           style: TextStyle(
                                             fontSize: 12,
                                             letterSpacing: 0.1,

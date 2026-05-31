@@ -232,6 +232,7 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
         ),
         controller: _actionController,
         child: AiChatWidget(
+          maxWidth: 720,
           currentUser: _currentUser,
           aiUser: _aiUser,
           controller: _controller,

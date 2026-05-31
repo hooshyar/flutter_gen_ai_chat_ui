@@ -113,7 +113,7 @@ class _RtlChatExampleState extends State<RtlChatExample> {
     for (final word in words) {
       accumulated += (accumulated.isEmpty ? '' : ' ') + word;
       yield accumulated;
-      await Future<void>.delayed(const Duration(milliseconds: 45));
+      await Future<void>.delayed(const Duration(milliseconds: 22));
     }
   }
 
@@ -135,6 +135,7 @@ class _RtlChatExampleState extends State<RtlChatExample> {
       child: Scaffold(
         appBar: AppBar(title: const Text('RTL Chat (عربي)')),
         body: AiChatWidget(
+          maxWidth: 720,
           currentUser: _currentUser,
           aiUser: _aiUser,
           controller: _controller,
@@ -142,6 +143,7 @@ class _RtlChatExampleState extends State<RtlChatExample> {
           enableMarkdownStreaming: true,
           streamingWordByWord: true,
           persistentExampleQuestions: true,
+          persistentExampleQuestionsTitle: 'أسئلة مقترحة',
           loadingConfig: LoadingConfig(
             isLoading: _isLoading,
             loadingIndicator: const LoadingWidget(
@@ -203,7 +205,17 @@ class _RtlChatExampleState extends State<RtlChatExample> {
           ),
           messageOptions: MessageOptions(
             showCopyButton: true,
+            copyButtonLabel: 'نسخ',
+            copiedToClipboardText: 'تم نسخ الرسالة',
             showTime: true,
+            // Localized relative timestamp instead of the default "Just now".
+            timeFormat: (dt) {
+              final mins = DateTime.now().difference(dt).inMinutes;
+              if (mins < 1) return 'الآن';
+              if (mins < 60) return 'قبل $mins دقيقة';
+              final hrs = mins ~/ 60;
+              return 'قبل $hrs ساعة';
+            },
             bubbleStyle: BubbleStyle(
               userBubbleColor:
                   isDark ? const Color(0xFF4338CA) : const Color(0xFF6366F1),

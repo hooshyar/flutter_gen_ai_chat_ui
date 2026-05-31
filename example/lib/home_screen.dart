@@ -182,7 +182,7 @@ class _Header extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  'v2.7.0',
+                  'v2.12.0',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,

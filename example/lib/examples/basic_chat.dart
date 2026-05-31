@@ -46,6 +46,7 @@ class _BasicChatExampleState extends State<BasicChatExample> {
     return Scaffold(
       appBar: AppBar(title: const Text('Basic Chat')),
       body: AiChatWidget(
+        maxWidth: 720,
         currentUser: _currentUser,
         aiUser: _aiUser,
         controller: _controller,

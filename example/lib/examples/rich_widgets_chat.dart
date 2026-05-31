@@ -128,6 +128,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
         centerTitle: true,
       ),
       body: AiChatWidget(
+        maxWidth: 720,
         currentUser: _currentUser,
         aiUser: _aiUser,
         controller: _controller,

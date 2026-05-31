@@ -1,3 +1,18 @@
+## [2.13.0] - 2026-05-31
+
+Zero breaking changes. Localization hooks + responsive layout, driven by a live audit of the example app.
+
+### Added
+- **`AiChatWidget.maxWidth` now centers the chat column** on wide viewports instead of hugging the left edge. On narrow screens the column is clamped to the available width (no overflow), so this is a no-op on phones. Makes the widget look correct out of the box on web/desktop/tablet.
+- **`MessageOptions.copyButtonLabel`** and **`MessageOptions.copiedToClipboardText`** — localize the AI-message copy button and its confirmation snackbar (e.g. `'نسخ'` / `'تم نسخ الرسالة'` for Arabic). Default to `'Copy'` / `'Message copied to clipboard'`.
+- **`AiChatWidget.persistentExampleQuestionsTitle`** — localize the header above the persistent example-questions bar (defaults to `'Suggested Questions'`). Previously hardcoded English.
+
+### Changed
+- Example app polish: constrained + centered chat columns (`maxWidth: 720`) across all six demos, snappier mock streaming, corrected version badge, and the RTL demo is now fully Arabic-localized (header, copy button, relative timestamp) using the new hooks above.
+
+### Tests
+- Added 7 tests (`test/i18n_and_layout_test.dart`): custom/default copy label, custom/default persistent-questions title, `copyWith` propagation of the new labels, and `maxWidth` centering + no-overflow on narrow viewports. Net test count: 342 to 349.
+
 ## [2.12.0] - 2026-05-31
 
 Zero breaking changes. Two additive features close long-standing issue requests, plus the accumulated maintenance work below.

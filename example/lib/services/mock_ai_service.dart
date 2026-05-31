@@ -24,7 +24,7 @@ class ExampleAiService {
 
   /// Generate a response with a simulated delay.
   Future<String> generateResponse(String query) async {
-    await Future.delayed(Duration(milliseconds: 500 + _random.nextInt(1000)));
+    await Future.delayed(Duration(milliseconds: 250 + _random.nextInt(350)));
 
     switch (style) {
       case ResponseStyle.plain:
@@ -219,7 +219,7 @@ class ExampleAiService {
     for (final word in words) {
       accumulated += (accumulated.isEmpty ? '' : ' ') + word;
       yield accumulated;
-      await Future.delayed(Duration(milliseconds: 20 + _random.nextInt(60)));
+      await Future.delayed(Duration(milliseconds: 12 + _random.nextInt(26)));
     }
   }
 }

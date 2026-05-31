@@ -79,6 +79,7 @@ class AiChatWidget extends StatefulWidget {
     this.welcomeMessageConfig,
     this.exampleQuestions = const [],
     this.persistentExampleQuestions = false,
+    this.persistentExampleQuestionsTitle = 'Suggested Questions',
     this.enableAnimation = true,
     this.maxWidth,
     this.loadingConfig,
@@ -160,6 +161,11 @@ class AiChatWidget extends StatefulWidget {
 
   /// Whether to show example questions persistently
   final bool persistentExampleQuestions;
+
+  /// Title shown above the persistent example-questions bar. Defaults to
+  /// `'Suggested Questions'`. Set this to localize the header (e.g. an Arabic
+  /// or Kurdish string for RTL apps).
+  final String persistentExampleQuestionsTitle;
 
   /// Whether to enable animations
   final bool enableAnimation;
@@ -528,6 +534,14 @@ class _AiChatWidgetState extends State<AiChatWidget>
       ),
     );
 
+    // When a maxWidth is set, center the constrained chat column so it sits
+    // in the middle of wide (desktop / web) viewports instead of hugging the
+    // left edge. On narrow screens the Container is clamped to the available
+    // width, so this is a no-op there.
+    if (widget.maxWidth != null) {
+      result = Center(child: result);
+    }
+
     // Wrap with ResultRendererRegistry if renderers are provided
     final hasRenderers = widget.resultRenderers?.isNotEmpty ?? false;
     final hasLoadingRenderers =
@@ -576,7 +590,7 @@ class _AiChatWidgetState extends State<AiChatWidget>
           Padding(
             padding: const EdgeInsets.only(left: 8, right: 8, bottom: 12),
             child: Text(
-              'Suggested Questions',
+              widget.persistentExampleQuestionsTitle,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
