@@ -19,6 +19,7 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
   final _aiService = ExampleAiService(style: ResponseStyle.markdown);
   bool _isLoading = false;
   StreamSubscription<String>? _streamSub;
+  String? _currentStreamingId;
 
   static const _currentUser = ChatUser(id: 'user', name: 'You');
   static const _aiUser = ChatUser(id: 'ai', name: 'Copilot');
@@ -28,6 +29,7 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
     setState(() => _isLoading = true);
 
     final messageId = 'ai_${DateTime.now().millisecondsSinceEpoch}';
+    _currentStreamingId = messageId;
     final aiMessage = ChatMessage(
       text: '',
       user: _aiUser,
@@ -54,6 +56,18 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
         setState(() => _isLoading = false);
       },
     );
+  }
+
+  // Cancels the in-flight response. Wired to AiChatWidget.onCancelGenerating,
+  // which surfaces a stop button in the input while _isLoading is true.
+  void _onCancelGenerating() {
+    _streamSub?.cancel();
+    _streamSub = null;
+    final id = _currentStreamingId;
+    if (id != null) {
+      _controller.stopStreamingMessage(id);
+    }
+    setState(() => _isLoading = false);
   }
 
   void _insertPrompt(String text) {
@@ -149,6 +163,9 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
             texts: ['Generating code...', 'Compiling thoughts...'],
           ),
         ),
+        // Surfaces a stop button in the input while generating; tapping it
+        // cancels the stream and finalizes the partial message.
+        onCancelGenerating: _onCancelGenerating,
         welcomeMessageConfig: WelcomeMessageConfig(
           title: 'Code Assistant',
           titleStyle: TextStyle(

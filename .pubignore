@@ -14,6 +14,9 @@ DEVELOPMENT_ROADMAP.md
 IMPROVEMENTS.md
 PROGRESS_SUMMARY.md
 
+# Internal issue-review dossier + screenshots (not package content)
+docs/
+
 # IDE
 .idea/
 .vscode/

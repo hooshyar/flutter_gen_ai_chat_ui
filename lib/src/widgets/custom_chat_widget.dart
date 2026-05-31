@@ -726,7 +726,12 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                                         .timeFormat!(message.createdAt)
                                     : _defaultTimestampFormat(
                                         message.createdAt),
-                                style: widget.messageOptions.timeTextStyle ??
+                                style: (isUser
+                                        ? widget
+                                            .messageOptions.userTimeTextStyle
+                                        : widget
+                                            .messageOptions.aiTimeTextStyle) ??
+                                    widget.messageOptions.timeTextStyle ??
                                     TextStyle(
                                       fontSize: 11,
                                       letterSpacing: 0.1,

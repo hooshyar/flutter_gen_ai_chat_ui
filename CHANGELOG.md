@@ -1,4 +1,10 @@
-## [Unreleased]
+## [2.12.0] - 2026-05-31
+
+Zero breaking changes. Two additive features close long-standing issue requests, plus the accumulated maintenance work below.
+
+### Added
+- **Stop-generating button** (#39). New `AiChatWidget(onCancelGenerating: ...)` callback. When it's non-null and `loadingConfig.isLoading` is true, the input's send button is automatically replaced by a stop button so users can cancel an in-flight response; tapping it invokes your callback (where you cancel your own stream / HTTP request). Customize via `InputOptions.cancelButtonBuilder` (full custom widget) or `InputOptions.stopButtonIcon` / `stopButtonColor` (default button). Send-on-Enter (hardware and soft keyboard) is suppressed while the stop button is showing. The streaming example (`example/lib/examples/streaming_chat.dart`) now wires it up end-to-end.
+- **Per-bubble timestamp styles** (#29). `MessageOptions.userTimeTextStyle` and `MessageOptions.aiTimeTextStyle` let you style the timestamp differently on user vs AI bubbles (e.g. a light timestamp on a colored user bubble). Both fall back to the shared `timeTextStyle`, which falls back to the built-in default — fully backward compatible.
 
 ### Fixed
 - `ChatMessagesController.simulateStreamingCompletion` no longer leaks a pending `Timer` after `dispose()`. Widget tests using the simulation path can exit cleanly without `pumpAndSettle`.
@@ -18,6 +24,7 @@
 - Added 5 regression tests pinning timer-lifecycle fixes across `ChatMessagesController`, `ActionController`, `StreamingTextWidget`, `AnimatedBubble`, and `CopilotTextarea`.
 - Added 21 unit tests covering the shipped example agents (`TextAnalysisAgent`, `CodeAnalysisAgent`, `GeneralAssistantAgent`) — `canHandle` routing, happy-path execution, dispose-no-leaks, and agent-specific assertions including delegation routing.
 - Added 2 frame-callback lifecycle regression tests pinning the `addPostFrameCallback` `mounted` guards in `SmartChatInput` and `CustomChatWidget`. Net test count: 278 to 328.
+- Added 12 tests for the new stop-generating button and per-bubble timestamp styles (`test/stop_generating_test.dart`): stop-button visibility (generating + callback present/absent, loading on/off, toggle back to send), tap-invokes-callback, custom `cancelButtonBuilder`, `effectiveStopButtonBuilder` fallbacks, independent user/AI timestamp colors, and shared-style fallback. Net test count: 330 to 342.
 
 ### Dependencies
 - Raised `flutter_streaming_text_markdown` floor from `^1.4.0` to `^1.8.0`. Picks up the 1.7.0 Arabic/RTL word-splitting fix and emoji-resume fix that consumers of this package's RTL surface will benefit from. No code change required — the existing API surface used by `AnimatedTextMessage` / `MessageContentText` / `CustomChatWidget` is unchanged across 1.4 → 1.8.

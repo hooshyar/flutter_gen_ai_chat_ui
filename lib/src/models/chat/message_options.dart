@@ -191,8 +191,20 @@ class MessageOptions {
   /// Whether to show message timestamp
   final bool showTime;
 
-  /// Style for the timestamp text
+  /// Style for the timestamp text (applies to both user and AI bubbles unless
+  /// overridden by [userTimeTextStyle] / [aiTimeTextStyle]).
   final TextStyle? timeTextStyle;
+
+  /// Style for the timestamp text on **user** bubbles.
+  ///
+  /// Takes precedence over [timeTextStyle] for user messages. Useful when a
+  /// colored user bubble makes the shared timestamp hard to read.
+  final TextStyle? userTimeTextStyle;
+
+  /// Style for the timestamp text on **AI** bubbles.
+  ///
+  /// Takes precedence over [timeTextStyle] for AI messages.
+  final TextStyle? aiTimeTextStyle;
 
   /// Function to format the timestamp
   final String Function(DateTime)? timeFormat;
@@ -337,6 +349,8 @@ class MessageOptions {
     this.containerColor,
     this.showTime = true,
     this.timeTextStyle,
+    this.userTimeTextStyle,
+    this.aiTimeTextStyle,
     this.timeFormat,
     this.timestampSpacing,
     this.maxReactions = 5,
@@ -371,6 +385,8 @@ class MessageOptions {
     Color? containerColor,
     bool? showTime,
     TextStyle? timeTextStyle,
+    TextStyle? userTimeTextStyle,
+    TextStyle? aiTimeTextStyle,
     String Function(DateTime)? timeFormat,
     double? timestampSpacing,
     int? maxReactions,
@@ -405,6 +421,8 @@ class MessageOptions {
         containerColor: containerColor ?? this.containerColor,
         showTime: showTime ?? this.showTime,
         timeTextStyle: timeTextStyle ?? this.timeTextStyle,
+        userTimeTextStyle: userTimeTextStyle ?? this.userTimeTextStyle,
+        aiTimeTextStyle: aiTimeTextStyle ?? this.aiTimeTextStyle,
         timeFormat: timeFormat ?? this.timeFormat,
         timestampSpacing: timestampSpacing ?? this.timestampSpacing,
         maxReactions: maxReactions ?? this.maxReactions,

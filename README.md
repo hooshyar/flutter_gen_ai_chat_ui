@@ -49,7 +49,7 @@ Add this to your package's pubspec.yaml file:
 
 ```yaml
 dependencies:
-  flutter_gen_ai_chat_ui: ^2.11.1
+  flutter_gen_ai_chat_ui: ^2.12.0
 ```
 
 Then run:
@@ -490,6 +490,34 @@ With `sendOnEnter: true` (the default), pressing Enter on a hardware keyboard se
 - During CJK / IME composition, Enter commits the composition instead of sending.
 - Set `sendOnEnter: false` to disable; Enter then always inserts a newline.
 
+#### Stop / cancel generating (version 2.12.0+)
+
+Provide an `onCancelGenerating` callback and the send button automatically turns into a **stop button** whenever `loadingConfig.isLoading` is `true`. The package doesn't run the generation itself, so the callback is where you cancel your own stream / HTTP request.
+
+```dart
+StreamSubscription<String>? _streamSub;
+String? _currentId;
+bool _isLoading = false;
+
+AiChatWidget(
+  // ...
+  loadingConfig: LoadingConfig(isLoading: _isLoading),
+  onCancelGenerating: () {
+    _streamSub?.cancel();                       // stop your own work
+    if (_currentId != null) {
+      _controller.stopStreamingMessage(_currentId!); // finalize the partial bubble
+    }
+    setState(() => _isLoading = false);
+  },
+)
+```
+
+- The stop button only appears when `onCancelGenerating != null` **and** `isLoading == true`. Otherwise the normal send button is shown.
+- Send-on-Enter (hardware and soft keyboard) is suppressed while the stop button is visible, so users can't queue a new message behind the in-flight one.
+- Customize the button with `InputOptions(stopButtonIcon: ..., stopButtonColor: ...)`, or replace it entirely with `InputOptions(cancelButtonBuilder: (onCancel) => ...)`.
+
+See `example/lib/examples/streaming_chat.dart` for a full working implementation.
+
 ### Scroll Behavior Configuration
 
 Control how the chat widget scrolls when new messages are added:
@@ -533,7 +561,14 @@ MessageOptions(
   // Basic options
   showTime: true,
   showUserName: true,
-  
+
+  // Timestamp styling. `timeTextStyle` applies to both bubbles; the per-bubble
+  // overrides (2.12.0+) take precedence when set — handy when a colored user
+  // bubble makes the shared timestamp hard to read.
+  timeTextStyle: const TextStyle(fontSize: 11, color: Colors.grey),
+  userTimeTextStyle: const TextStyle(fontSize: 11, color: Colors.white70),
+  aiTimeTextStyle: const TextStyle(fontSize: 11, color: Colors.black45),
+
   // Styling
   bubbleStyle: BubbleStyle(
     userBubbleColor: Colors.blue.withOpacityCompat(0.1),

@@ -68,6 +68,35 @@ class InputOptions {
   final double? sendButtonIconSize;
   final EdgeInsets? sendButtonPadding;
 
+  // Stop / cancel-generating button customization
+  //
+  // When the chat is generating a response (driven by
+  // `AiChatWidget(loadingConfig: LoadingConfig(isLoading: true))`) and an
+  // `AiChatWidget.onCancelGenerating` callback is supplied, the send button is
+  // replaced by a stop button so the user can cancel the in-flight response.
+
+  /// Custom builder for the stop button shown while a response is generating.
+  ///
+  /// Receives the cancel callback. When null, a default stop [IconButton] is
+  /// rendered using [stopButtonIcon], [stopButtonColor], and
+  /// [sendButtonIconSize] / [sendButtonPadding].
+  ///
+  /// ```dart
+  /// InputOptions(
+  ///   cancelButtonBuilder: (onCancel) => IconButton(
+  ///     icon: const Icon(Icons.stop_circle),
+  ///     onPressed: onCancel,
+  ///   ),
+  /// )
+  /// ```
+  final Widget Function(VoidCallback onCancel)? cancelButtonBuilder;
+
+  /// Icon for the default stop button. Defaults to [Icons.stop_rounded].
+  final IconData stopButtonIcon;
+
+  /// Color for the default stop button icon.
+  final Color? stopButtonColor;
+
   // Text input behavior
   final TextInputType? keyboardType;
   final TextCapitalization textCapitalization;
@@ -200,6 +229,9 @@ class InputOptions {
     this.sendButtonIcon = Icons.send,
     this.sendButtonIconSize = 24.0,
     this.sendButtonPadding = const EdgeInsets.all(4.0),
+    this.cancelButtonBuilder,
+    this.stopButtonIcon = Icons.stop_rounded,
+    this.stopButtonColor,
     this.keyboardType = TextInputType.multiline,
     this.textCapitalization = TextCapitalization.sentences,
     this.textInputAction = TextInputAction.newline,
@@ -382,6 +414,9 @@ class InputOptions {
     IconData? sendButtonIcon,
     double? sendButtonIconSize,
     EdgeInsets? sendButtonPadding,
+    Widget Function(VoidCallback onCancel)? cancelButtonBuilder,
+    IconData? stopButtonIcon,
+    Color? stopButtonColor,
     TextInputType? keyboardType,
     TextCapitalization? textCapitalization,
     TextInputAction? textInputAction,
@@ -450,6 +485,9 @@ class InputOptions {
       sendButtonIcon: sendButtonIcon ?? this.sendButtonIcon,
       sendButtonIconSize: sendButtonIconSize ?? this.sendButtonIconSize,
       sendButtonPadding: sendButtonPadding ?? this.sendButtonPadding,
+      cancelButtonBuilder: cancelButtonBuilder ?? this.cancelButtonBuilder,
+      stopButtonIcon: stopButtonIcon ?? this.stopButtonIcon,
+      stopButtonColor: stopButtonColor ?? this.stopButtonColor,
       keyboardType: keyboardType ?? this.keyboardType,
       textCapitalization: textCapitalization ?? this.textCapitalization,
       textInputAction: textInputAction ?? this.textInputAction,
@@ -512,6 +550,27 @@ class InputOptions {
       ),
       padding: sendButtonPadding,
       onPressed: onSend,
+    );
+  }
+
+  /// Builds the stop button shown while a response is generating.
+  ///
+  /// Uses [cancelButtonBuilder] when provided, otherwise a default stop
+  /// [IconButton] using [stopButtonIcon] / [stopButtonColor].
+  Widget effectiveStopButtonBuilder(VoidCallback onCancel) {
+    if (cancelButtonBuilder != null) {
+      return cancelButtonBuilder!(onCancel);
+    }
+
+    return IconButton(
+      icon: Icon(
+        stopButtonIcon,
+        size: sendButtonIconSize,
+        color: stopButtonColor,
+      ),
+      padding: sendButtonPadding,
+      tooltip: 'Stop generating',
+      onPressed: onCancel,
     );
   }
 }

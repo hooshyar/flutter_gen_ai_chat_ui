@@ -15,6 +15,8 @@ class ChatInput extends StatefulWidget {
     required this.options,
     this.focusNode,
     this.fileUploadOptions,
+    this.isGenerating = false,
+    this.onCancelGenerating,
   });
 
   /// The text editing controller.
@@ -31,6 +33,15 @@ class ChatInput extends StatefulWidget {
 
   /// Optional file upload options.
   final FileUploadOptions? fileUploadOptions;
+
+  /// Whether a response is currently being generated.
+  ///
+  /// When true and [onCancelGenerating] is provided, the send button is
+  /// replaced by a stop button.
+  final bool isGenerating;
+
+  /// Callback invoked when the user taps the stop button to cancel generation.
+  final VoidCallback? onCancelGenerating;
 
   @override
   State<ChatInput> createState() => _ChatInputState();
@@ -85,6 +96,13 @@ class _ChatInputState extends State<ChatInput> {
     if (!isEnter) return KeyEventResult.ignored;
 
     if (!widget.options.sendOnEnter) return KeyEventResult.ignored;
+
+    // While a response is generating and a cancel handler is wired, the send
+    // button is replaced by a stop button — don't let Enter send a new
+    // message in that state.
+    if (widget.isGenerating && widget.onCancelGenerating != null) {
+      return KeyEventResult.ignored;
+    }
 
     // Shift+Enter falls through so EditableText inserts a newline.
     if (HardwareKeyboard.instance.isShiftPressed) {
@@ -145,8 +163,13 @@ class _ChatInputState extends State<ChatInput> {
       onTap: options.onTap,
       onEditingComplete: options.onEditingComplete,
       onSubmitted: (text) {
-        // Implement sendOnEnter functionality
-        if (options.sendOnEnter && controller.text.trim().isNotEmpty) {
+        // Implement sendOnEnter functionality. Suppressed while generating so a
+        // soft-keyboard submit doesn't queue a new message behind the stop UI.
+        final generating =
+            widget.isGenerating && widget.onCancelGenerating != null;
+        if (options.sendOnEnter &&
+            !generating &&
+            controller.text.trim().isNotEmpty) {
           onSend();
         }
         // Forward to the original onSubmitted if provided
@@ -209,7 +232,9 @@ class _ChatInputState extends State<ChatInput> {
                   24, // Base height approximation
           // Center the button vertically
           alignment: Alignment.center,
-          child: options.effectiveSendWidget(onSend, isEmpty: _isEmpty),
+          child: (widget.isGenerating && widget.onCancelGenerating != null)
+              ? options.effectiveStopButtonBuilder(widget.onCancelGenerating!)
+              : options.effectiveSendWidget(onSend, isEmpty: _isEmpty),
         ),
       ],
     );

@@ -103,6 +103,7 @@ class AiChatWidget extends StatefulWidget {
     this.spacingConfig,
     this.resultRenderers,
     this.resultLoadingRenderers,
+    this.onCancelGenerating,
   });
 
   /// The current user in the conversation
@@ -168,6 +169,29 @@ class AiChatWidget extends StatefulWidget {
 
   /// Configuration for loading states
   final LoadingConfig? loadingConfig;
+
+  /// Callback invoked when the user taps the stop button to cancel an
+  /// in-flight response.
+  ///
+  /// When this is non-null and `loadingConfig.isLoading` is true, the input's
+  /// send button is replaced by a stop button. Use it to cancel your own
+  /// streaming subscription / HTTP request, e.g.:
+  ///
+  /// ```dart
+  /// AiChatWidget(
+  ///   loadingConfig: LoadingConfig(isLoading: _isLoading),
+  ///   onCancelGenerating: () {
+  ///     _streamSub?.cancel();
+  ///     _controller.stopStreamingMessage(_currentId);
+  ///     setState(() => _isLoading = false);
+  ///   },
+  /// )
+  /// ```
+  ///
+  /// The package does not run the generation itself, so cancelling the
+  /// underlying work is the consumer's responsibility — this callback is the
+  /// hook to do it from.
+  final VoidCallback? onCancelGenerating;
 
   /// Configuration for pagination
   final PaginationConfig? paginationConfig;
@@ -640,6 +664,8 @@ class _AiChatWidgetState extends State<AiChatWidget>
       options: widget.inputOptions ?? const InputOptions(),
       focusNode: _inputFocusNode,
       fileUploadOptions: widget.fileUploadOptions,
+      isGenerating: widget.loadingConfig?.isLoading ?? false,
+      onCancelGenerating: widget.onCancelGenerating,
     );
   }
 
