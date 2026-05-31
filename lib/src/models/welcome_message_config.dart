@@ -21,6 +21,7 @@ class WelcomeMessageConfig {
     this.questionSpacing = 12.0,
     this.animation = const Duration(milliseconds: 500),
     this.builder,
+    this.centerVertically = false,
   });
 
   /// The title text of the welcome message
@@ -59,6 +60,15 @@ class WelcomeMessageConfig {
   /// Custom builder function to create a welcome message widget
   final Widget Function()? builder;
 
+  /// Whether to center the welcome message vertically while the conversation
+  /// is empty.
+  ///
+  /// By default (false) the welcome message sits at the bottom of the chat
+  /// area, just above the input. Set to true to center it in the available
+  /// space instead — a more balanced empty state on tall screens. Once the
+  /// first message is sent, normal message layout resumes regardless.
+  final bool centerVertically;
+
   /// Creates a copy of this config with the given fields replaced with new values
   WelcomeMessageConfig copyWith({
     String? title,
@@ -73,6 +83,7 @@ class WelcomeMessageConfig {
     double? questionSpacing,
     Duration? animation,
     Widget Function()? builder,
+    bool? centerVertically,
   }) {
     return WelcomeMessageConfig(
       title: title ?? this.title,
@@ -91,6 +102,7 @@ class WelcomeMessageConfig {
       questionSpacing: questionSpacing ?? this.questionSpacing,
       animation: animation ?? this.animation,
       builder: builder ?? this.builder,
+      centerVertically: centerVertically ?? this.centerVertically,
     );
   }
 }

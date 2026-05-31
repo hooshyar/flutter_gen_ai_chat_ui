@@ -151,6 +151,7 @@ class _RtlChatExampleState extends State<RtlChatExample> {
             ),
           ),
           welcomeMessageConfig: WelcomeMessageConfig(
+            centerVertically: true,
             title: 'أهلاً وسهلاً 👋',
             titleStyle: TextStyle(
               fontSize: 24,

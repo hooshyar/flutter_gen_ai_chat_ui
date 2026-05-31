@@ -163,6 +163,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
         ),
         enableMarkdownStreaming: false,
         welcomeMessageConfig: WelcomeMessageConfig(
+          centerVertically: true,
           title: 'Rich Widget Messages',
           titleStyle: TextStyle(
             fontSize: 22,

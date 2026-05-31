@@ -12,6 +12,20 @@ void main() {
   runApp(const ExampleApp());
 }
 
+/// Snappy, uniform page transitions across platforms. The default per-platform
+/// builders (notably the slow horizontal slide on web/desktop) made navigating
+/// between demos feel sluggish; a short fade reads as instant.
+const _fastPageTransitions = PageTransitionsTheme(
+  builders: {
+    TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+    TargetPlatform.iOS: FadeUpwardsPageTransitionsBuilder(),
+    TargetPlatform.macOS: FadeUpwardsPageTransitionsBuilder(),
+    TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+    TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+    TargetPlatform.fuchsia: FadeUpwardsPageTransitionsBuilder(),
+  },
+);
+
 class ExampleApp extends StatefulWidget {
   const ExampleApp({super.key});
 
@@ -39,11 +53,13 @@ class _ExampleAppState extends State<ExampleApp> {
         colorSchemeSeed: const Color(0xFF6366F1),
         useMaterial3: true,
         brightness: Brightness.light,
+        pageTransitionsTheme: _fastPageTransitions,
       ),
       darkTheme: ThemeData(
         colorSchemeSeed: const Color(0xFF6366F1),
         useMaterial3: true,
         brightness: Brightness.dark,
+        pageTransitionsTheme: _fastPageTransitions,
       ),
       home: HomeScreen(onToggleTheme: _toggleTheme),
       routes: {

@@ -153,6 +153,83 @@ void main() {
     });
   });
 
+  group('Welcome centerVertically', () {
+    testWidgets('centers welcome (SingleChildScrollView) when empty + opted in',
+        (tester) async {
+      final controller = ChatMessagesController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AiChatWidget(
+              currentUser: humanUser,
+              aiUser: aiUser,
+              controller: controller,
+              onSendMessage: (_) {},
+              welcomeMessageConfig: const WelcomeMessageConfig(
+                title: 'Welcome here',
+                centerVertically: true,
+              ),
+              exampleQuestions: const [
+                ExampleQuestion(question: 'Q1'),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Welcome here'), findsOneWidget);
+      // Centered path uses a SingleChildScrollView, not the message ListView.
+      final scroller = find.descendant(
+        of: find.byType(AiChatWidget),
+        matching: find.byType(SingleChildScrollView),
+      );
+      expect(scroller, findsWidgets);
+
+      // Once a message arrives, normal list layout resumes.
+      controller.addMessage(ChatMessage(
+        text: 'hi',
+        user: humanUser,
+        createdAt: DateTime.now(),
+      ));
+      controller.hideWelcomeMessage();
+      await tester.pumpAndSettle();
+      expect(find.byType(ListView), findsWidgets);
+
+      controller.dispose();
+    });
+
+    testWidgets('default (false) keeps welcome in the list', (tester) async {
+      final controller = ChatMessagesController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AiChatWidget(
+              currentUser: humanUser,
+              aiUser: aiUser,
+              controller: controller,
+              onSendMessage: (_) {},
+              welcomeMessageConfig: const WelcomeMessageConfig(
+                title: 'Welcome here',
+              ),
+              exampleQuestions: const [
+                ExampleQuestion(question: 'Q1'),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Welcome here'), findsOneWidget);
+      expect(find.byType(ListView), findsWidgets);
+
+      controller.dispose();
+    });
+  });
+
   group('maxWidth centering', () {
     testWidgets('content is constrained and centered on wide viewports',
         (tester) async {

@@ -235,6 +235,7 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
           ),
         ),
         welcomeMessageConfig: WelcomeMessageConfig(
+          centerVertically: true,
           title: 'Design Playground 🎨',
           titleStyle: TextStyle(
             fontSize: 24,

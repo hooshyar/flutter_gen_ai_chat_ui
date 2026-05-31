@@ -168,6 +168,7 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
         // cancels the stream and finalizes the partial message.
         onCancelGenerating: _onCancelGenerating,
         welcomeMessageConfig: WelcomeMessageConfig(
+          centerVertically: true,
           title: 'Code Assistant',
           titleStyle: TextStyle(
             fontSize: 24,

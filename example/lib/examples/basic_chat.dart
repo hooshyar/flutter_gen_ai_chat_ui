@@ -86,6 +86,7 @@ class _BasicChatExampleState extends State<BasicChatExample> {
           ),
         ),
         welcomeMessageConfig: WelcomeMessageConfig(
+          centerVertically: true,
           title: 'Hello! 👋',
           titleStyle: TextStyle(
             fontSize: 24,

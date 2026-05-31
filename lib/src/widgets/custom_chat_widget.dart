@@ -293,6 +293,30 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   Widget _buildMessageList() {
     final paginationConfig = widget.messageListOptions.paginationConfig;
 
+    // Empty-conversation welcome: optionally center it vertically instead of
+    // anchoring to the bottom of the (reverse) list, which leaves a large gap
+    // above on tall screens. Opt-in via WelcomeMessageConfig.centerVertically.
+    if ((widget.welcomeMessageConfig?.centerVertically ?? false) &&
+        _shouldShowWelcomeMessage() &&
+        widget.messages.isEmpty &&
+        (widget.typingUsers?.isEmpty ?? true) &&
+        !widget.messageListOptions.isLoadingMore) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            controller: _scrollController,
+            physics: widget.messageListOptions.scrollPhysics ??
+                const BouncingScrollPhysics(),
+            padding: widget.spacingConfig.messageListPadding,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(child: _buildWelcomeMessage()),
+            ),
+          );
+        },
+      );
+    }
+
     // Build loading header/footer if needed
     Widget? loadingWidget;
     Widget? noMoreMessagesWidget;
@@ -899,15 +923,24 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       final effectiveStyleSheet = widget.messageOptions.markdownStyleSheet ??
           MarkdownStyleSheet(
             p: textStyle,
+            // Inline `code` — subtle tinted chip.
             code: TextStyle(
               fontFamily: 'monospace',
-              backgroundColor: (isDark ? Colors.black : Colors.grey[200])
-                  ?.withOpacityCompat(0.3),
+              fontSize: (textStyle.fontSize ?? 14) * 0.92,
+              color: textStyle.color,
+              backgroundColor: (isDark ? Colors.white : Colors.black)
+                  .withOpacityCompat(isDark ? 0.10 : 0.06),
             ),
+            // Fenced code blocks — a padded, rounded, bordered card that reads
+            // as a distinct block rather than flat inline text.
+            codeblockPadding: const EdgeInsets.all(14),
             codeblockDecoration: BoxDecoration(
-              color: (isDark ? Colors.black : Colors.grey[200])
-                  ?.withOpacityCompat(0.3),
-              borderRadius: BorderRadius.circular(4),
+              color: isDark ? const Color(0xFF15151F) : const Color(0xFFF4F4F8),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: (isDark ? Colors.white : Colors.black)
+                    .withOpacityCompat(0.08),
+              ),
             ),
           );
 

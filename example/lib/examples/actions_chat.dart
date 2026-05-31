@@ -245,6 +245,7 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
             ),
           ),
           welcomeMessageConfig: WelcomeMessageConfig(
+            centerVertically: true,
             title: 'AI Actions Demo',
             titleStyle: TextStyle(
               fontSize: 24,

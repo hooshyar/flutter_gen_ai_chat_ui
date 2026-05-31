@@ -1,3 +1,17 @@
+## [2.14.0] - 2026-05-31
+
+Zero breaking changes. Visual-polish release — the remaining items from the live example-app audit.
+
+### Added
+- **`WelcomeMessageConfig.centerVertically`** (default `false`) — center the welcome/empty-state vertically while the conversation is empty, instead of anchoring it to the bottom of the (reverse) list which left a large gap above on tall screens. Opt-in, so existing apps are unchanged; once the first message is sent normal layout resumes.
+
+### Changed
+- **Default fenced-code-block styling** is now a padded, rounded, bordered card (theme-aware) instead of a flat low-contrast fill — code reads as a distinct block. Inline `code` gets a subtler tinted chip. Consumers who pass their own `MessageOptions.markdownStyleSheet` are unaffected. (No tokenized syntax highlighting yet — that needs a highlighter dependency and is left as a deliberate future opt-in.)
+- Example app: all six demos opt into `centerVertically`, navigate with snappy fade transitions (replacing the slow per-platform slide), and the home version badge is current.
+
+### Tests
+- Added 2 tests for `centerVertically` (centered SingleChildScrollView path when empty + opted in; default keeps the welcome in the list). Net test count: 349 to 351.
+
 ## [2.13.0] - 2026-05-31
 
 Zero breaking changes. Localization hooks + responsive layout, driven by a live audit of the example app.
