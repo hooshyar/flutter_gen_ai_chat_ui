@@ -353,6 +353,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           (loadingWidget != null ? 1 : 0) +
           (noMoreMessagesWidget != null ? 1 : 0) +
           (_shouldShowWelcomeMessage() ? 1 : 0),
+      // `scrollCacheExtent` (the replacement) only exists on Flutter 3.41+,
+      // which would break this package's 3.27 floor. Keep `cacheExtent`.
+      // ignore: deprecated_member_use
       cacheExtent: paginationConfig.cacheExtent,
       itemBuilder: (context, index) {
         // In reverse mode (newest at bottom), we want to show the loading indicator at index 0 (bottom of screen)

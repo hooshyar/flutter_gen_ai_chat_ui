@@ -54,7 +54,6 @@ class MessageAttachment extends StatelessWidget {
       case ChatMediaType.document:
         return _buildDocumentAttachment(context, isDarkMode);
       case ChatMediaType.other:
-      default:
         return _buildGenericAttachment(context, isDarkMode);
     }
   }
