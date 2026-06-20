@@ -78,9 +78,14 @@ class _SmartChatInputState extends State<SmartChatInput>
 
   @override
   void dispose() {
+    // Always remove our listener — even from a consumer-owned controller —
+    // otherwise the closure (which captures this State) leaks for the lifetime
+    // of that controller and can fire setState() after dispose.
+    _controller.removeListener(_onTextChanged);
     if (widget.controller == null) {
       _controller.dispose();
     }
+    _focusNode.removeListener(_onFocusChanged);
     _glowController.dispose();
     _focusNode.dispose();
     super.dispose();

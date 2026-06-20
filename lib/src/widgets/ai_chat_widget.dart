@@ -465,6 +465,7 @@ class _AiChatWidgetState extends State<AiChatWidget>
                     : null,
                 welcomeMessageConfig: widget.welcomeMessageConfig,
                 exampleQuestions: widget.exampleQuestions,
+                fileUploadOptions: widget.fileUploadOptions,
                 // Pass streaming configuration down to the renderer
                 streamingTypingSpeed: widget.streamingDuration,
                 streamingEnabled: widget.enableMarkdownStreaming,

@@ -1,3 +1,22 @@
+## [2.15.0] - 2026-06-20
+
+Zero breaking changes. Reliability + packaging release driven by a full package audit — fixes a dead public parameter and a set of resource-lifecycle leaks.
+
+### Fixed
+- **`FileUploadOptions.fileDisplayBuilder` now actually renders (#40).** The builder was declared on the model but never read by the render tree, so customizing how media attachments appear in a message had no effect. It is now threaded `AiChatWidget` → `CustomChatWidget` → `MessageAttachment`, so you can fully control attachment display (tap-to-enlarge, custom borders/radius, etc.).
+- **`AiContextController.watchNotifier` no longer leaks.** It registered a listener on the watched `ValueNotifier` that was never removed, pinning the controller (and its context map) alive for the notifier's lifetime and firing `notifyListeners()` after `dispose()`. Listeners are now tracked and removed in `dispose()`.
+- **`ContextAwareChatController` now disposes the sub-controllers it creates.** When you don't pass your own `ChatMessagesController` / `ReadableContextController` / `ActionController`, the ones it constructs are now disposed in `dispose()` (consumer-owned controllers are left untouched, as before).
+- **`TextPainter` instances are disposed** after measurement on two hot paths (the per-bubble layout helper in `CustomChatWidget` and the per-keystroke ghost overlay in the inline autocomplete field), removing native-resource churn and disposal-tracking warnings on newer Flutter.
+- **`SmartChatInput` removes its text/focus listeners on dispose** even when the controller is consumer-owned, preventing a State-subtree leak.
+
+### Changed
+- **`watchNotifier` now returns a `VoidCallback` disposer** (on both `AiContextController` and the `AiContextHook`) so you can stop watching before the controller is disposed. Existing callers that ignore the return value are unaffected.
+- **Deprecation messages** on the legacy `chat_user.dart` / `chat_options.dart` import shims now name a removal target (v3.0.0).
+- **Packaging:** trimmed internal agent logs (`WORK_LOG.md`, `AGENTS.md`), tool dirs (`.claude/`, `.cto/`), and unreferenced dev screenshots from the published tarball via `.pubignore`; added a `screenshots:` section to `pubspec.yaml` so the pub.dev listing renders them.
+
+### Tests
+- Added `test/widgets/file_display_builder_test.dart` (custom builder is used; default renderer still works) and `test/controllers/controller_dispose_leak_test.dart` (watchNotifier listener removal + disposer; sub-controller ownership). Net test count: 351 → 357.
+
 ## [2.14.0] - 2026-05-31
 
 Zero breaking changes. Visual-polish release — the remaining items from the live example-app audit.

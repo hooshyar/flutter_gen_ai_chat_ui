@@ -4,6 +4,10 @@ build/
 
 # Agent memory / docs not relevant to package users
 .memory/
+.claude/
+.cto/
+AGENTS.md
+WORK_LOG.md
 CLAUDE.md
 PR_HANDLING_ULTRATHINK.md
 ULTRATHINK_ENABLE_INTERACTIVE_SELECTION.md
@@ -16,6 +20,15 @@ PROGRESS_SUMMARY.md
 
 # Internal issue-review dossier + screenshots (not package content)
 docs/
+
+# Dev/CI artifact images not referenced by README or the screenshots: field.
+# Keep the published tarball small — pub.dev renders screenshots declared in
+# pubspec.yaml, not loose repo images.
+basic-centered.png
+basic-centered-fresh.png
+example-home.png
+example-list.png
+screenshots/detailed.gif
 
 # IDE
 .idea/

@@ -49,7 +49,7 @@ Add this to your package's pubspec.yaml file:
 
 ```yaml
 dependencies:
-  flutter_gen_ai_chat_ui: ^2.14.0
+  flutter_gen_ai_chat_ui: ^2.15.0
 ```
 
 Then run:
