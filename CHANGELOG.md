@@ -3,6 +3,7 @@
 Zero breaking changes. Reliability + packaging release driven by a full package audit — fixes a dead public parameter and a set of resource-lifecycle leaks.
 
 ### Added
+- **`InputOptions.sendButtonTooltip`** (default `'Send message'`) — the default send button is icon-only and previously had no accessibility label; it now exposes a screen-reader tooltip, localizable like the other 2.13 i18n hooks.
 - **`MessageOptions.bubbleBuilder`** — a 4-arg builder `(context, message, isCurrentUser, defaultBubble)` that hands you the fully-styled default bubble so you can *wrap* it (add a feedback/report button, badge, gesture) instead of rebuilding it from scratch. Takes precedence over the existing 3-arg `customBubbleBuilder`. This is the capability the README documented but the code never implemented (the root of #18/#30); the README is now correct and shows both builders living on `MessageOptions`.
 
 ### Fixed
@@ -19,7 +20,7 @@ Zero breaking changes. Reliability + packaging release driven by a full package 
 - **Packaging:** trimmed internal agent logs (`WORK_LOG.md`, `AGENTS.md`), tool dirs (`.claude/`, `.cto/`), and unreferenced dev screenshots from the published tarball via `.pubignore`; added a `screenshots:` section to `pubspec.yaml` so the pub.dev listing renders them.
 
 ### Tests
-- Added `test/widgets/file_display_builder_test.dart` (custom builder is used; default renderer still works), `test/controllers/controller_dispose_leak_test.dart` (watchNotifier listener removal + disposer; sub-controller ownership), and `test/widgets/bubble_builder_test.dart` (bubbleBuilder wraps the default bubble; precedence over customBubbleBuilder). Net test count: 351 → 359.
+- Added `test/widgets/file_display_builder_test.dart` (custom builder is used; default renderer still works), `test/controllers/controller_dispose_leak_test.dart` (watchNotifier listener removal + disposer; sub-controller ownership), `test/widgets/bubble_builder_test.dart` (bubbleBuilder wraps the default bubble; precedence over customBubbleBuilder), and `test/widgets/accessibility_test.dart` (send-button semantic tooltip, default + localized). Net test count: 351 → 361. Validated locally on Flutter 3.44.2 — `analyze --fatal-infos` clean, full suite green.
 
 ## [2.14.0] - 2026-05-31
 
