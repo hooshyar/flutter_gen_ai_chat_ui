@@ -468,7 +468,19 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       return _buildDefaultMessageBubble(message, isUser);
     }
 
-    // Check for custom bubble builder from MessageOptions
+    // Wrapping builder takes precedence: it receives the default bubble so the
+    // consumer can decorate it (badges, feedback buttons, gestures) without
+    // rebuilding the bubble from scratch.
+    if (widget.messageOptions.bubbleBuilder != null) {
+      return widget.messageOptions.bubbleBuilder!(
+        context,
+        message,
+        isUser,
+        buildDefaultBubble(),
+      );
+    }
+
+    // Check for custom (full-replacement) bubble builder from MessageOptions
     if (widget.messageOptions.customBubbleBuilder != null) {
       return widget.messageOptions.customBubbleBuilder!(
         context,

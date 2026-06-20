@@ -2,6 +2,9 @@
 
 Zero breaking changes. Reliability + packaging release driven by a full package audit — fixes a dead public parameter and a set of resource-lifecycle leaks.
 
+### Added
+- **`MessageOptions.bubbleBuilder`** — a 4-arg builder `(context, message, isCurrentUser, defaultBubble)` that hands you the fully-styled default bubble so you can *wrap* it (add a feedback/report button, badge, gesture) instead of rebuilding it from scratch. Takes precedence over the existing 3-arg `customBubbleBuilder`. This is the capability the README documented but the code never implemented (the root of #18/#30); the README is now correct and shows both builders living on `MessageOptions`.
+
 ### Fixed
 - **`FileUploadOptions.fileDisplayBuilder` now actually renders (#40).** The builder was declared on the model but never read by the render tree, so customizing how media attachments appear in a message had no effect. It is now threaded `AiChatWidget` → `CustomChatWidget` → `MessageAttachment`, so you can fully control attachment display (tap-to-enlarge, custom borders/radius, etc.).
 - **`AiContextController.watchNotifier` no longer leaks.** It registered a listener on the watched `ValueNotifier` that was never removed, pinning the controller (and its context map) alive for the notifier's lifetime and firing `notifyListeners()` after `dispose()`. Listeners are now tracked and removed in `dispose()`.
@@ -16,7 +19,7 @@ Zero breaking changes. Reliability + packaging release driven by a full package 
 - **Packaging:** trimmed internal agent logs (`WORK_LOG.md`, `AGENTS.md`), tool dirs (`.claude/`, `.cto/`), and unreferenced dev screenshots from the published tarball via `.pubignore`; added a `screenshots:` section to `pubspec.yaml` so the pub.dev listing renders them.
 
 ### Tests
-- Added `test/widgets/file_display_builder_test.dart` (custom builder is used; default renderer still works) and `test/controllers/controller_dispose_leak_test.dart` (watchNotifier listener removal + disposer; sub-controller ownership). Net test count: 351 → 357.
+- Added `test/widgets/file_display_builder_test.dart` (custom builder is used; default renderer still works), `test/controllers/controller_dispose_leak_test.dart` (watchNotifier listener removal + disposer; sub-controller ownership), and `test/widgets/bubble_builder_test.dart` (bubbleBuilder wraps the default bubble; precedence over customBubbleBuilder). Net test count: 351 → 359.
 
 ## [2.14.0] - 2026-05-31
 

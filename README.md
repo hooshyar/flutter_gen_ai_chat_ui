@@ -380,23 +380,25 @@ AiChatWidget(
     scrollToFirstResponseMessage: true,
   ),
   
-  // Custom bubble builder for complete styling control
-  customBubbleBuilder: (context, message, isCurrentUser, defaultBubble) {
-    // Return your custom bubble widget
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: defaultBubble, // Or create completely custom UI
-    );
-  },
+  // Custom bubble styling lives in messageOptions. Use `bubbleBuilder` to wrap
+  // the default bubble, or `customBubbleBuilder` (3-arg) to replace it entirely.
+  messageOptions: MessageOptions(
+    bubbleBuilder: (context, message, isCurrentUser, defaultBubble) {
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: defaultBubble, // wrap the default, or return your own UI
+      );
+    },
+  ),
 )
 ```
 
@@ -589,26 +591,30 @@ Create completely custom message bubbles with full control over styling and beha
 ```dart
 AiChatWidget(
   // ... other parameters
-  customBubbleBuilder: (context, message, isCurrentUser, defaultBubble) {
-    // Wrapper approach: enhance default bubble
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: defaultBubble,
-    );
-    
-    // Or create completely custom UI:
-    // return MyCustomBubbleWidget(message: message, isCurrentUser: isCurrentUser);
-  },
+  messageOptions: MessageOptions(
+    // Wrapper approach: enhance the default bubble (e.g. add a report button).
+    // `bubbleBuilder` hands you the fully-styled default bubble to wrap.
+    bubbleBuilder: (context, message, isCurrentUser, defaultBubble) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: defaultBubble,
+      );
+    },
+
+    // Full-replacement approach (3-arg): rebuild the bubble from scratch.
+    // customBubbleBuilder: (context, message, isCurrentUser) =>
+    //     MyCustomBubble(message: message, isCurrentUser: isCurrentUser),
+  ),
 )
 ```
 
