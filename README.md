@@ -58,6 +58,8 @@ Then run:
 flutter pub get
 ```
 
+> 📖 **New:** task-focused [**Cookbook**](doc/cookbook/README.md) — streaming, stop-generating, thinking→answer, custom bubbles, attachments, localization/RTL.
+
 ## Quick Start
 
 ```dart
