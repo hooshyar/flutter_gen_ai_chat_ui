@@ -10,6 +10,7 @@ Zero breaking changes. Reliability + packaging release driven by a full package 
 - **`SmartChatInput` removes its text/focus listeners on dispose** even when the controller is consumer-owned, preventing a State-subtree leak.
 
 ### Changed
+- **SDK floor corrected to Flutter `>=3.27.0` / Dart `>=3.6.0`** (was `>=3.7.0` / `>=2.19.0`). The package's color code uses the wide-gamut `Color` API (`.r`/`.g`/`.b`/`.a` and `withValues`), introduced in Flutter 3.27 — the older accessors are deprecated and fail `analyze --fatal-infos`, so the package never actually compiled below 3.27 despite the lower declared bound. This aligns the constraint with reality and prevents the version-solve/compile failures reported in #7 and #12. If you're on an older Flutter, pin to an earlier release of this package.
 - **`watchNotifier` now returns a `VoidCallback` disposer** (on both `AiContextController` and the `AiContextHook`) so you can stop watching before the controller is disposed. Existing callers that ignore the return value are unaffected.
 - **Deprecation messages** on the legacy `chat_user.dart` / `chat_options.dart` import shims now name a removal target (v3.0.0).
 - **Packaging:** trimmed internal agent logs (`WORK_LOG.md`, `AGENTS.md`), tool dirs (`.claude/`, `.cto/`), and unreferenced dev screenshots from the published tarball via `.pubignore`; added a `screenshots:` section to `pubspec.yaml` so the pub.dev listing renders them.
