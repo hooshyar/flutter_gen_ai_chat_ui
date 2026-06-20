@@ -10,6 +10,7 @@ real question in the issue tracker. All snippets use the current public API
 - [Keep a persistent welcome / suggested questions](#keep-a-persistent-welcome--suggested-questions)
 - [Customize the message bubble](#customize-the-message-bubble)
 - [Customize how attachments are displayed](#customize-how-attachments-are-displayed)
+- [Match ChatGPT / Claude / Gemini styling](#match-chatgpt--claude--gemini-styling)
 - [Localize & support RTL](#localize--support-rtl)
 
 The mental model: you own a `ChatMessagesController` (like a
@@ -206,6 +207,26 @@ controller.addMessage(ChatMessage(
   media: const [ChatMedia(url: 'https://…/photo.png')],
 ));
 ```
+
+---
+
+## Match ChatGPT / Claude / Gemini styling
+
+One-liner brand presets. Attach a `CustomThemeExtension` preset to your
+`ThemeData.extensions`:
+
+```dart
+MaterialApp(
+  theme: ThemeData(extensions: [CustomThemeExtension.chatgpt()]),
+  darkTheme: ThemeData.dark().copyWith(
+    extensions: [CustomThemeExtension.chatgpt(dark: true)],
+  ),
+  home: const ChatScreen(),
+);
+```
+
+Available: `CustomThemeExtension.chatgpt()`, `.claude()`, `.gemini()` — each
+takes an optional `dark: true`. Tweak any preset with `.copyWith(...)`.
 
 ---
 
