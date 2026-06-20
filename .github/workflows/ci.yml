@@ -27,6 +27,27 @@ on:
   workflow_dispatch:
 
 jobs:
+  version-consistency:
+    name: Version consistency (pubspec ↔ README)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check README install snippet matches pubspec version
+        # Catches the recurring "bumped pubspec but forgot the README install
+        # snippet" drift. No Flutter toolchain needed, so this fails fast.
+        run: |
+          version="$(grep -E '^version:' pubspec.yaml | head -1 | sed -E 's/version:[[:space:]]*//')"
+          echo "pubspec version: $version"
+          if ! grep -qF "flutter_gen_ai_chat_ui: ^$version" README.md; then
+            echo "::error::README install snippet does not reference ^$version (pubspec version)."
+            grep -nE 'flutter_gen_ai_chat_ui:[[:space:]]*\^?[0-9]' README.md || true
+            exit 1
+          fi
+          echo "README install snippet matches."
+
   analyze-format-test:
     name: Analyze, format, and test
     runs-on: ubuntu-latest
