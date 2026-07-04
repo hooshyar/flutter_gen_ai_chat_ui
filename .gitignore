@@ -96,7 +96,6 @@ example/.dart_tool/
 example/.packages
 example/.flutter-plugins
 example/.flutter-plugins-dependencies
-example/pubspec.lock
 .memory/
 
 .playwright-mcp
