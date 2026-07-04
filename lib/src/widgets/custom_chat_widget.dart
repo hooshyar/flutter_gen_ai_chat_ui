@@ -98,6 +98,112 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   /// Timers that clear entries from [_pendingWordByWordIds] after animation.
   final List<Timer> _wordByWordTimers = [];
 
+  // ── Controller-driven stream reveal ─────────────────────────────────────
+  //
+  // For messages streamed via ChatMessagesController (addStreamingMessage +
+  // repeated updateMessage), the reveal pacing is owned HERE, not delegated
+  // to the StreamingText animation widget. StreamingText types at a fixed
+  // per-character speed and restarts/free-runs when its `text` prop churns
+  // faster than it can type — with real streams (a chunk every ~20ms) that
+  // produced the family of "types a bit, then the rest slams in at once /
+  // restarts from the top" bugs. Instead, a single ticker advances a
+  // revealed-character count per message toward the latest received text,
+  // at a rate PROPORTIONAL to the backlog — so the reveal keeps pace with
+  // the stream (fast producer → fast reveal) and finishes within ~a second
+  // of the final chunk, like ChatGPT-style UIs. The revealed substring is
+  // rendered with the ordinary static markdown/text widgets, so there is no
+  // second animation layer to fall out of sync with.
+
+  /// Revealed character count per actively-revealing message ID. Presence
+  /// in this map is what marks a message as "mid-reveal" (sticky after the
+  /// data stops, until the reveal catches up).
+  final Map<String, int> _revealedChars = {};
+
+  /// The latest full text seen per streamed message.
+  final Map<String, String> _latestStreamText = {};
+
+  /// Message IDs whose reveal has fully caught up after the stream stopped.
+  /// These render as plain static content from then on.
+  final Set<String> _streamRevealDoneIds = {};
+
+  /// Drives the reveal for all in-flight messages. Runs only while
+  /// [_revealedChars] is non-empty.
+  Timer? _revealTicker;
+
+  static const Duration _revealTickInterval = Duration(milliseconds: 50);
+
+  /// Fraction of the outstanding backlog revealed per tick. 0.16/50ms drains
+  /// ~97% of any backlog per second — the reveal trails the newest chunk by
+  /// a smoothing tail but never falls behind a fast stream, and finishes
+  /// well under a second after the final chunk.
+  static const double _revealCatchUpFactor = 0.16;
+
+  /// Floor of characters revealed per tick so short/slow responses still
+  /// visibly type rather than crawling asymptotically.
+  static const int _revealMinCharsPerTick = 2;
+
+  void _ensureRevealTicker() {
+    if (_revealTicker?.isActive == true) return;
+    _revealTicker = Timer.periodic(_revealTickInterval, (_) {
+      if (!mounted) return;
+      if (_revealedChars.isEmpty) {
+        _revealTicker?.cancel();
+        return;
+      }
+      var changed = false;
+      final finished = <String>[];
+      _revealedChars.forEach((id, revealed) {
+        final target = _latestStreamText[id]?.length ?? 0;
+        if (revealed < target) {
+          final backlog = target - revealed;
+          final step = backlog <= _revealMinCharsPerTick
+              ? backlog
+              : max(_revealMinCharsPerTick,
+                  (backlog * _revealCatchUpFactor).ceil());
+          _revealedChars[id] = revealed + step;
+          changed = true;
+        } else if (widget.controller?.currentlyStreamingMessageId != id) {
+          // Caught up AND the data has stopped — this reveal is done.
+          finished.add(id);
+          changed = true;
+        }
+      });
+      for (final id in finished) {
+        _revealedChars.remove(id);
+        _streamRevealDoneIds.add(id);
+      }
+      if (changed) setState(() {});
+      if (_revealedChars.isEmpty) _revealTicker?.cancel();
+    });
+  }
+
+  /// The substring of [fullText] to render for a mid-reveal message,
+  /// snapped back to the last whitespace so half-typed words don't flicker
+  /// (except when the whole text is one unbroken token).
+  String _revealedTextFor(String messageId, String fullText) {
+    _latestStreamText[messageId] = fullText;
+    final revealed = _revealedChars[messageId];
+    if (revealed == null || revealed >= fullText.length) return fullText;
+    var cut = revealed;
+    final lastSpace = fullText.lastIndexOf(RegExp(r'\s'), cut);
+    if (lastSpace > 0) cut = lastSpace;
+    return fullText.substring(0, cut);
+  }
+
+  /// Holds back a trailing INCOMPLETE ``` code fence until it closes.
+  ///
+  /// Markdown renders an open fence's content as literal raw text (backtick
+  /// markers visible) until the closing ``` arrives, then reformats it as a
+  /// styled code block — which strips the fence markers and makes the
+  /// visible text shrink right at that instant, reading as a stutter on top
+  /// of the reveal. Withholding keeps the block appearing only in its
+  /// final, styled form.
+  String _withholdIncompleteFence(String text) {
+    final fenceCount = '```'.allMatches(text).length;
+    if (fenceCount.isEven) return text;
+    return text.substring(0, text.lastIndexOf('```'));
+  }
+
   /// Check if welcome message should be shown
   bool _shouldShowWelcomeMessage() {
     return widget.controller?.showWelcomeMessage == true &&
@@ -256,6 +362,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       t.cancel();
     }
     _wordByWordTimers.clear();
+    _revealTicker?.cancel();
     _scrollController.removeListener(_handleScroll);
 
     // Only dispose the scroll controller if we created it ourselves
@@ -893,13 +1000,28 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
     final isCurrentlyStreaming =
         widget.controller?.currentlyStreamingMessageId == messageId;
-    // Also animate newly delivered messages when streamingWordByWord is true.
-    // This covers the addMessage() pattern where messages are added externally
-    // (e.g., via a state management provider) rather than through addStreamingMessage().
+    // Enroll controller-streamed messages in the reveal loop. Enrollment is
+    // sticky after the data stops (the entry stays in _revealedChars until
+    // the reveal catches up), so the on-screen reveal always finishes
+    // gracefully rather than snapping when the caller stops the stream.
+    if (widget.streamingEnabled &&
+        isCurrentlyStreaming &&
+        !_streamRevealDoneIds.contains(messageId)) {
+      _revealedChars.putIfAbsent(messageId, () => 0);
+      _ensureRevealTicker();
+    }
+    final isRevealing = _revealedChars.containsKey(messageId);
+    // Animate newly delivered messages when streamingWordByWord is true.
+    // This covers the addMessage() pattern where a COMPLETE message is added
+    // externally (e.g., via a state management provider) rather than
+    // incrementally through addStreamingMessage()/updateMessage(). Those get
+    // the one-shot StreamingText typing animation — the full text is known
+    // up front, which is the case that widget handles well.
     final shouldAnimate = widget.streamingEnabled &&
-        (isCurrentlyStreaming ||
-            (widget.streamingWordByWord &&
-                _pendingWordByWordIds.contains(messageId)));
+        !isRevealing &&
+        !_streamRevealDoneIds.contains(messageId) &&
+        widget.streamingWordByWord &&
+        _pendingWordByWordIds.contains(messageId);
 
     // Get appropriate text color from message options
     final textStyle = TextStyle(
@@ -1022,8 +1144,22 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         );
       } else {
         // Default: Check if streaming is enabled for markdown
-        if (shouldAnimate && widget.streamingEnabled) {
-          // Stream markdown using StreamingText
+        if (isRevealing) {
+          // Controller-driven stream: render the revealed prefix with the
+          // ordinary markdown widget; the reveal ticker grows it in step
+          // with the incoming data (see the reveal-loop section above).
+          textWidget = Markdown(
+            data: _withholdIncompleteFence(
+                _revealedTextFor(messageId, message.text)),
+            selectable: false,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            styleSheet: effectiveStyleSheet,
+            padding: EdgeInsets.zero,
+          );
+        } else if (shouldAnimate) {
+          // One-shot animation for complete messages delivered via
+          // addMessage() with streamingWordByWord enabled.
           textWidget = StreamingText(
             text: message.text,
             style: textStyle,
@@ -1067,8 +1203,16 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         return customText;
       }
       // Handle streaming vs static plain text
-      if (shouldAnimate) {
-        // Stream plain text only for active streaming messages
+      if (isRevealing) {
+        // Controller-driven stream: render the revealed prefix; the reveal
+        // ticker grows it in step with the incoming data.
+        textWidget = Text(
+          _revealedTextFor(messageId, message.text),
+          style: textStyle,
+        );
+      } else if (shouldAnimate) {
+        // One-shot animation for complete messages delivered via
+        // addMessage() with streamingWordByWord enabled.
         textWidget = StreamingText(
           text: message.text,
           style: textStyle,
