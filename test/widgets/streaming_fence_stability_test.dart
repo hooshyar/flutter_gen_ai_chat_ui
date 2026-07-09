@@ -32,8 +32,7 @@ void main() {
 
     test(
         'held value is stable while the fence stays open, then releases the '
-        'full text once it closes — never edits, only extends',
-        () {
+        'full text once it closes — never edits, only extends', () {
       final growingChunks = [
         'Here you go:\n```dart\n',
         'Here you go:\n```dart\nfinal x',

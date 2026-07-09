@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `flutter_gen_ai_chat_ui` is a published Flutter package providing a chat UI kit for AI applications. It is a library — not an app — and the `example/` directory exists primarily as a manual smoke-test harness and as documentation for consumers.
 
 - Package version: see `pubspec.yaml` (currently 2.11.0). Most architecture-significant changes ship as minor versions and are documented in `CHANGELOG.md`.
-- SDK floor: Dart `>=2.19.0 <4.0.0`, Flutter `>=3.7.0`. Be careful before using newer language features.
+- SDK floor: Dart `>=3.6.0 <4.0.0`, Flutter `>=3.27.0`. (Raised in 2.15.0 to match reality — the color code uses the wide-gamut `Color` API `.r/.g/.b/.a` and `withValues`, both introduced in Flutter 3.27 / Dart 3.6. The older int accessors are deprecated and would fail `analyze --fatal-infos`, so the package cannot actually compile below this. This was the root cause of historical issues #7 and #12.) Be careful before using newer language features.
 - Platforms: android, ios, linux, macos, web, windows. Platform-specific code is rare; assume cross-platform unless touching `example/<platform>/`.
 
 ## Common Commands

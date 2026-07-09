@@ -1,0 +1,24 @@
+# Automated publishing to pub.dev on version tags.
+#
+# Uses pub.dev's official OIDC-based automated publishing — no long-lived
+# credentials are stored in the repo. To enable it once:
+#   1. On pub.dev → package admin → "Automated publishing", enable
+#      "Publishing from GitHub Actions" and set the tag pattern to `v{{version}}`.
+#   2. Tag a release as `v2.15.0` (matching pubspec `version:`) and push the tag.
+#
+# The reusable `dart-lang/setup-dart` workflow runs `dart pub publish`. It will
+# fail loudly (without publishing) if the package doesn't pass `pub publish`'s
+# own validation, so a bad tag can't ship a broken release.
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]++[0-9]+'
+
+jobs:
+  publish:
+    permissions:
+      id-token: write # required for OIDC authentication to pub.dev
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1

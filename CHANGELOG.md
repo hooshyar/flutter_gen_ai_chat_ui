@@ -1,3 +1,30 @@
+## [2.15.0] - 2026-07-09
+
+Zero breaking changes. Reliability + packaging release driven by a full package audit — fixes a dead public parameter and a set of resource-lifecycle leaks.
+
+### Added
+- **Brand theme presets** — `CustomThemeExtension.chatgpt()`, `.claude()`, `.gemini()` (each with `dark: true`) so the README's "ChatGPT/Claude/Gemini ready" claim is a one-liner: `ThemeData(extensions: [CustomThemeExtension.chatgpt()])`.
+- **`InputOptions.sendButtonTooltip`** (default `'Send message'`) — the default send button is icon-only and previously had no accessibility label; it now exposes a screen-reader tooltip, localizable like the other 2.13 i18n hooks.
+- **`MessageOptions.bubbleBuilder`** — a 4-arg builder `(context, message, isCurrentUser, defaultBubble)` that hands you the fully-styled default bubble so you can *wrap* it (add a feedback/report button, badge, gesture) instead of rebuilding it from scratch. Takes precedence over the existing 3-arg `customBubbleBuilder`. This is the capability the README documented but the code never implemented (the root of #18/#30); the README is now correct and shows both builders living on `MessageOptions`.
+
+### Fixed
+- **Streaming reveal pacing is now owned by the widget.** Messages streamed via `addStreamingMessage` + repeated `updateMessage` were animated by handing the growing text to `StreamingText`, whose fixed-speed typing restarts/free-runs when the text prop churns faster than it can type — with real streams (a chunk every ~20ms) this produced the "types a bit, then everything slams in at once / restarts from the top" family of bugs, and completion could never be observed reliably. `CustomChatWidget` now paces the reveal itself with a single ticker, so controller-driven streams animate smoothly regardless of chunk cadence.
+- **`FileUploadOptions.fileDisplayBuilder` now actually renders (#40).** The builder was declared on the model but never read by the render tree, so customizing how media attachments appear in a message had no effect. It is now threaded `AiChatWidget` → `CustomChatWidget` → `MessageAttachment`, so you can fully control attachment display (tap-to-enlarge, custom borders/radius, etc.).
+- **`AiContextController.watchNotifier` no longer leaks.** It registered a listener on the watched `ValueNotifier` that was never removed, pinning the controller (and its context map) alive for the notifier's lifetime and firing `notifyListeners()` after `dispose()`. Listeners are now tracked and removed in `dispose()`.
+- **`ContextAwareChatController` now disposes the sub-controllers it creates.** When you don't pass your own `ChatMessagesController` / `ReadableContextController` / `ActionController`, the ones it constructs are now disposed in `dispose()` (consumer-owned controllers are left untouched, as before).
+- **`TextPainter` instances are disposed** after measurement on two hot paths (the per-bubble layout helper in `CustomChatWidget` and the per-keystroke ghost overlay in the inline autocomplete field), removing native-resource churn and disposal-tracking warnings on newer Flutter.
+- **`SmartChatInput` removes its text/focus listeners on dispose** even when the controller is consumer-owned, preventing a State-subtree leak.
+
+### Changed
+- **SDK floor corrected to Flutter `>=3.27.0` / Dart `>=3.6.0`** (was `>=3.7.0` / `>=2.19.0`). The package's color code uses the wide-gamut `Color` API (`.r`/`.g`/`.b`/`.a` and `withValues`), introduced in Flutter 3.27 — the older accessors are deprecated and fail `analyze --fatal-infos`, so the package never actually compiled below 3.27 despite the lower declared bound. This aligns the constraint with reality and prevents the version-solve/compile failures reported in #7 and #12. If you're on an older Flutter, pin to an earlier release of this package.
+- **`watchNotifier` now returns a `VoidCallback` disposer** (on both `AiContextController` and the `AiContextHook`) so you can stop watching before the controller is disposed. Existing callers that ignore the return value are unaffected.
+- **Deprecation messages** on the legacy `chat_user.dart` / `chat_options.dart` import shims now name a removal target (v3.0.0).
+- **Packaging:** trimmed internal agent logs (`WORK_LOG.md`, `AGENTS.md`), tool dirs (`.claude/`, `.cto/`), and unreferenced dev screenshots from the published tarball via `.pubignore`; added a `screenshots:` section to `pubspec.yaml` so the pub.dev listing renders them.
+- **Dependencies upgraded to latest stable** (including `flutter_markdown_plus` 1.0.11); the example app's lockfile is now tracked so its dependency state is reproducible.
+
+### Tests
+- Added `test/widgets/file_display_builder_test.dart` (custom builder is used; default renderer still works), `test/controllers/controller_dispose_leak_test.dart` (watchNotifier listener removal + disposer; sub-controller ownership), `test/widgets/bubble_builder_test.dart` (bubbleBuilder wraps the default bubble; precedence over customBubbleBuilder), `test/widgets/accessibility_test.dart` (send-button semantic tooltip, default + localized), and `test/theme/brand_presets_test.dart` (brand presets populated/distinct/applied). Net test count: 351 → 365. Validated locally on Flutter 3.44.2 — `analyze --fatal-infos` clean, full suite green.
+
 ## [2.14.0] - 2026-05-31
 
 Zero breaking changes. Visual-polish release — the remaining items from the live example-app audit.

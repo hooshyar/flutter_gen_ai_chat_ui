@@ -13,6 +13,12 @@ class ContextAwareChatController extends ChangeNotifier {
   final ReadableContextController _readableController;
   final ActionController _actionController;
 
+  // Whether each sub-controller was created internally (and must therefore be
+  // disposed here) versus passed in by the consumer (who owns its lifecycle).
+  final bool _ownsChatController;
+  final bool _ownsReadableController;
+  final bool _ownsActionController;
+
   /// Whether to automatically include context in AI prompts
   bool includeContextInPrompts = true;
 
@@ -28,7 +34,10 @@ class ContextAwareChatController extends ChangeNotifier {
     ActionController? actionController,
   })  : _chatController = chatController ?? ChatMessagesController(),
         _readableController = readableController ?? ReadableContextController(),
-        _actionController = actionController ?? ActionController() {
+        _actionController = actionController ?? ActionController(),
+        _ownsChatController = chatController == null,
+        _ownsReadableController = readableController == null,
+        _ownsActionController = actionController == null {
     // Listen to changes in context and actions to update AI awareness
     _readableController.addListener(_onContextChanged);
     _actionController.addListener(_onActionsChanged);
@@ -271,6 +280,11 @@ class ContextAwareChatController extends ChangeNotifier {
   void dispose() {
     _readableController.removeListener(_onContextChanged);
     _actionController.removeListener(_onActionsChanged);
+    // Only dispose the sub-controllers we created ourselves; consumer-owned
+    // controllers are the consumer's responsibility.
+    if (_ownsChatController) _chatController.dispose();
+    if (_ownsReadableController) _readableController.dispose();
+    if (_ownsActionController) _actionController.dispose();
     super.dispose();
   }
 }

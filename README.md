@@ -4,7 +4,7 @@
 [![pub likes](https://img.shields.io/pub/likes/flutter_gen_ai_chat_ui)](https://pub.dev/packages/flutter_gen_ai_chat_ui/score)
 [![pub points](https://img.shields.io/pub/points/flutter_gen_ai_chat_ui)](https://pub.dev/packages/flutter_gen_ai_chat_ui/score)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Flutter](https://img.shields.io/badge/Flutter-3.7%2B-blue.svg)](https://flutter.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-3.27%2B-blue.svg)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/platform-android%20%7C%20ios%20%7C%20web%20%7C%20windows%20%7C%20macos%20%7C%20linux-lightgrey.svg)](https://pub.dev/packages/flutter_gen_ai_chat_ui)
 [![GitHub stars](https://img.shields.io/github/stars/hooshyar/flutter_gen_ai_chat_ui.svg?style=flat&logo=github&colorB=deeppink&label=stars)](https://github.com/hooshyar/flutter_gen_ai_chat_ui)
 [![GitHub issues](https://img.shields.io/github/issues/hooshyar/flutter_gen_ai_chat_ui.svg)](https://github.com/hooshyar/flutter_gen_ai_chat_ui/issues)
@@ -49,7 +49,7 @@ Add this to your package's pubspec.yaml file:
 
 ```yaml
 dependencies:
-  flutter_gen_ai_chat_ui: ^2.14.0
+  flutter_gen_ai_chat_ui: ^2.15.0
 ```
 
 Then run:
@@ -57,6 +57,8 @@ Then run:
 ```bash
 flutter pub get
 ```
+
+> 📖 **New:** task-focused [**Cookbook**](doc/cookbook/README.md) — streaming, stop-generating, thinking→answer, custom bubbles, attachments, localization/RTL.
 
 ## Quick Start
 
@@ -380,23 +382,25 @@ AiChatWidget(
     scrollToFirstResponseMessage: true,
   ),
   
-  // Custom bubble builder for complete styling control
-  customBubbleBuilder: (context, message, isCurrentUser, defaultBubble) {
-    // Return your custom bubble widget
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: defaultBubble, // Or create completely custom UI
-    );
-  },
+  // Custom bubble styling lives in messageOptions. Use `bubbleBuilder` to wrap
+  // the default bubble, or `customBubbleBuilder` (3-arg) to replace it entirely.
+  messageOptions: MessageOptions(
+    bubbleBuilder: (context, message, isCurrentUser, defaultBubble) {
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: defaultBubble, // wrap the default, or return your own UI
+      );
+    },
+  ),
 )
 ```
 
@@ -589,26 +593,30 @@ Create completely custom message bubbles with full control over styling and beha
 ```dart
 AiChatWidget(
   // ... other parameters
-  customBubbleBuilder: (context, message, isCurrentUser, defaultBubble) {
-    // Wrapper approach: enhance default bubble
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: defaultBubble,
-    );
-    
-    // Or create completely custom UI:
-    // return MyCustomBubbleWidget(message: message, isCurrentUser: isCurrentUser);
-  },
+  messageOptions: MessageOptions(
+    // Wrapper approach: enhance the default bubble (e.g. add a report button).
+    // `bubbleBuilder` hands you the fully-styled default bubble to wrap.
+    bubbleBuilder: (context, message, isCurrentUser, defaultBubble) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: defaultBubble,
+      );
+    },
+
+    // Full-replacement approach (3-arg): rebuild the bubble from scratch.
+    // customBubbleBuilder: (context, message, isCurrentUser) =>
+    //     MyCustomBubble(message: message, isCurrentUser: isCurrentUser),
+  ),
 )
 ```
 

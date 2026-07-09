@@ -165,11 +165,16 @@ class _GhostOverlay extends StatelessWidget {
     final leftPad = contentPadding is EdgeInsets ? contentPadding.left : 12.0;
     final topPad = contentPadding is EdgeInsets ? contentPadding.top : 8.0;
 
+    // Read the measured width before disposing the painter — this build runs on
+    // every keystroke while a ghost suggestion is visible.
+    final painterWidth = painter.width;
+    painter.dispose();
+
     final ghostColor =
         Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35);
 
     return Positioned(
-      left: leftPad + painter.width,
+      left: leftPad + painterWidth,
       top: topPad,
       child: Text(
         ghostText,

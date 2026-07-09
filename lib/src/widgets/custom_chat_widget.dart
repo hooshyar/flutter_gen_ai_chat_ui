@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../controllers/chat_messages_controller.dart';
 import '../models/chat/models.dart';
 import '../models/example_question.dart';
+import '../models/file_upload_options.dart';
 import '../models/input_options.dart';
 import '../models/welcome_message_config.dart';
 import '../utils/color_extensions.dart';
@@ -53,6 +54,11 @@ class CustomChatWidget extends StatefulWidget {
   /// Example questions to show in the welcome message
   final List<ExampleQuestion> exampleQuestions;
 
+  /// Options controlling file uploads. Only [FileUploadOptions.fileDisplayBuilder]
+  /// is consumed here — it overrides how media attachments are rendered inside
+  /// a message bubble.
+  final FileUploadOptions? fileUploadOptions;
+
   const CustomChatWidget({
     super.key,
     required this.currentUser,
@@ -69,6 +75,7 @@ class CustomChatWidget extends StatefulWidget {
     this.controller,
     this.welcomeMessageConfig,
     this.exampleQuestions = const [],
+    this.fileUploadOptions,
     this.streamingTypingSpeed = const Duration(milliseconds: 28),
     this.streamingEnabled = true,
     this.streamingFadeInDuration = const Duration(milliseconds: 260),
@@ -453,6 +460,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           (loadingWidget != null ? 1 : 0) +
           (noMoreMessagesWidget != null ? 1 : 0) +
           (_shouldShowWelcomeMessage() ? 1 : 0),
+      // `scrollCacheExtent` (the replacement) only exists on Flutter 3.41+,
+      // which would break this package's 3.27 floor. Keep `cacheExtent`.
+      // ignore: deprecated_member_use
       cacheExtent: paginationConfig.cacheExtent,
       itemBuilder: (context, index) {
         // In reverse mode (newest at bottom), we want to show the loading indicator at index 0 (bottom of screen)
@@ -568,7 +578,19 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       return _buildDefaultMessageBubble(message, isUser);
     }
 
-    // Check for custom bubble builder from MessageOptions
+    // Wrapping builder takes precedence: it receives the default bubble so the
+    // consumer can decorate it (badges, feedback buttons, gestures) without
+    // rebuilding the bubble from scratch.
+    if (widget.messageOptions.bubbleBuilder != null) {
+      return widget.messageOptions.bubbleBuilder!(
+        context,
+        message,
+        isUser,
+        buildDefaultBubble(),
+      );
+    }
+
+    // Check for custom (full-replacement) bubble builder from MessageOptions
     if (widget.messageOptions.customBubbleBuilder != null) {
       return widget.messageOptions.customBubbleBuilder!(
         context,
@@ -607,7 +629,11 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         textDirection: TextDirection.ltr,
       )..layout(minWidth: 0, maxWidth: maxWidth);
 
-      return textPainter.size;
+      final size = textPainter.size;
+      // TextPainter holds native resources; dispose it now that we've read the
+      // measurement. This runs on the per-bubble build hot path.
+      textPainter.dispose();
+      return size;
     }
 
     final textSize = measureText(message.text,
@@ -1268,6 +1294,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
               padding: widget.spacingConfig.messageMediaSpacing,
               child: MessageAttachment(
                 media: media,
+                customBuilder: widget.fileUploadOptions?.fileDisplayBuilder,
                 onTap: widget.messageOptions.onMediaTap,
                 enableImageTaps: widget.messageOptions.enableImageTaps,
               ),

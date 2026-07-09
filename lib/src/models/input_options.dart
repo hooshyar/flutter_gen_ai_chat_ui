@@ -68,6 +68,11 @@ class InputOptions {
   final double? sendButtonIconSize;
   final EdgeInsets? sendButtonPadding;
 
+  /// Tooltip / accessibility label for the default send button (icon-only).
+  /// Surfaced to screen readers and as a hover tooltip. Localize as needed
+  /// (e.g. `'إرسال'`). Defaults to `'Send message'`.
+  final String sendButtonTooltip;
+
   // Stop / cancel-generating button customization
   //
   // When the chat is generating a response (driven by
@@ -229,6 +234,7 @@ class InputOptions {
     this.sendButtonIcon = Icons.send,
     this.sendButtonIconSize = 24.0,
     this.sendButtonPadding = const EdgeInsets.all(4.0),
+    this.sendButtonTooltip = 'Send message',
     this.cancelButtonBuilder,
     this.stopButtonIcon = Icons.stop_rounded,
     this.stopButtonColor,
@@ -414,6 +420,7 @@ class InputOptions {
     IconData? sendButtonIcon,
     double? sendButtonIconSize,
     EdgeInsets? sendButtonPadding,
+    String? sendButtonTooltip,
     Widget Function(VoidCallback onCancel)? cancelButtonBuilder,
     IconData? stopButtonIcon,
     Color? stopButtonColor,
@@ -484,6 +491,7 @@ class InputOptions {
       sendButtonColor: sendButtonColor ?? this.sendButtonColor,
       sendButtonIcon: sendButtonIcon ?? this.sendButtonIcon,
       sendButtonIconSize: sendButtonIconSize ?? this.sendButtonIconSize,
+      sendButtonTooltip: sendButtonTooltip ?? this.sendButtonTooltip,
       sendButtonPadding: sendButtonPadding ?? this.sendButtonPadding,
       cancelButtonBuilder: cancelButtonBuilder ?? this.cancelButtonBuilder,
       stopButtonIcon: stopButtonIcon ?? this.stopButtonIcon,
@@ -549,6 +557,7 @@ class InputOptions {
         color: sendButtonColor,
       ),
       padding: sendButtonPadding,
+      tooltip: sendButtonTooltip,
       onPressed: onSend,
     );
   }

@@ -331,8 +331,11 @@ class AiContextHook {
     );
   }
 
-  /// Watch a ValueNotifier and automatically update context
-  void watchNotifier<T>({
+  /// Watch a ValueNotifier and automatically update context.
+  ///
+  /// Returns a disposer that stops watching; the listener is also removed
+  /// automatically when the underlying controller is disposed.
+  VoidCallback watchNotifier<T>({
     required String contextId,
     required String contextName,
     required ValueNotifier<T> notifier,
@@ -342,7 +345,7 @@ class AiContextHook {
     List<String> categories = const [],
     String Function(T value)? serializer,
   }) {
-    _controller.watchNotifier<T>(
+    return _controller.watchNotifier<T>(
       contextId: contextId,
       contextName: contextName,
       notifier: notifier,

@@ -40,6 +40,11 @@ class AiContextController extends ChangeNotifier {
 
   Timer? _cleanupTimer;
 
+  /// Listeners registered via [watchNotifier], tracked so they can be removed
+  /// in [dispose]. Without this the watched [Listenable] keeps this controller
+  /// (and its context map) alive for the lifetime of the notifier.
+  final List<_NotifierWatch> _notifierWatches = [];
+
   AiContextController({AiContextConfig? config})
       : _config = config ?? const AiContextConfig() {
     if (_config.autoCleanExpired) {
@@ -287,8 +292,12 @@ class AiContextController extends ChangeNotifier {
     });
   }
 
-  /// Watch a ValueNotifier and automatically update context
-  void watchNotifier<T>({
+  /// Watch a ValueNotifier and automatically update context.
+  ///
+  /// Returns a disposer that removes the listener. The listener is also
+  /// removed automatically when this controller is disposed, so calling the
+  /// disposer is only needed if you want to stop watching earlier.
+  VoidCallback watchNotifier<T>({
     required String contextId,
     required String contextName,
     required ValueNotifier<T> notifier,
@@ -316,6 +325,13 @@ class AiContextController extends ChangeNotifier {
 
     // Listen for changes
     notifier.addListener(updateContext);
+    final watch = _NotifierWatch(notifier, updateContext);
+    _notifierWatches.add(watch);
+
+    return () {
+      notifier.removeListener(updateContext);
+      _notifierWatches.remove(watch);
+    };
   }
 
   /// Clean up expired context data
@@ -386,7 +402,20 @@ class AiContextController extends ChangeNotifier {
   @override
   void dispose() {
     _cleanupTimer?.cancel();
+    for (final watch in _notifierWatches) {
+      watch.notifier.removeListener(watch.listener);
+    }
+    _notifierWatches.clear();
     _eventController.close();
     super.dispose();
   }
+}
+
+/// Internal record of a [Listenable] watched via
+/// [AiContextController.watchNotifier] and the callback registered on it.
+class _NotifierWatch {
+  _NotifierWatch(this.notifier, this.listener);
+
+  final Listenable notifier;
+  final VoidCallback listener;
 }

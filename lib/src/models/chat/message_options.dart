@@ -313,7 +313,37 @@ class MessageOptions {
   ///
   /// Return a completely custom widget that replaces the entire bubble.
   /// This provides true customization rather than just wrapping the default bubble.
+  ///
+  /// Prefer [bubbleBuilder] if you want to *wrap* the default bubble (e.g. to add
+  /// a feedback/report button around it) rather than rebuild it from scratch.
   final Widget Function(BuildContext, ChatMessage, bool)? customBubbleBuilder;
+
+  /// Custom builder that receives the default bubble so you can *wrap* it.
+  ///
+  /// Arguments:
+  /// - [BuildContext] context: The build context
+  /// - [ChatMessage] message: The message being rendered
+  /// - [bool] isCurrentUser: Whether this message is from the current user
+  /// - [Widget] defaultBubble: The fully-styled default bubble for this message
+  ///
+  /// Use this when you want to keep the package's bubble styling but add chrome
+  /// around it (badges, action buttons, gestures). Takes precedence over
+  /// [customBubbleBuilder] when both are set.
+  ///
+  /// ```dart
+  /// MessageOptions(
+  ///   bubbleBuilder: (context, message, isCurrentUser, defaultBubble) => Column(
+  ///     crossAxisAlignment: CrossAxisAlignment.start,
+  ///     children: [defaultBubble, FeedbackButtons(message: message)],
+  ///   ),
+  /// )
+  /// ```
+  final Widget Function(
+    BuildContext context,
+    ChatMessage message,
+    bool isCurrentUser,
+    Widget defaultBubble,
+  )? bubbleBuilder;
 
   /// Custom builder for footer content after message text (e.g., citations)
   ///
@@ -382,6 +412,7 @@ class MessageOptions {
     this.textBuilder,
     this.markdownBuilder,
     this.customBubbleBuilder,
+    this.bubbleBuilder,
     this.footerBuilder,
     this.onCitationTap,
   });
@@ -421,6 +452,7 @@ class MessageOptions {
     Widget Function(BuildContext, String, MarkdownStyleSheet, bool)?
         markdownBuilder,
     Widget Function(BuildContext, ChatMessage, bool)? customBubbleBuilder,
+    Widget Function(BuildContext, ChatMessage, bool, Widget)? bubbleBuilder,
     Widget? Function(BuildContext, ChatMessage, bool)? footerBuilder,
     void Function(ChatCitation)? onCitationTap,
   }) =>
@@ -459,6 +491,7 @@ class MessageOptions {
         textBuilder: textBuilder ?? this.textBuilder,
         markdownBuilder: markdownBuilder ?? this.markdownBuilder,
         customBubbleBuilder: customBubbleBuilder ?? this.customBubbleBuilder,
+        bubbleBuilder: bubbleBuilder ?? this.bubbleBuilder,
         footerBuilder: footerBuilder ?? this.footerBuilder,
         onCitationTap: onCitationTap ?? this.onCitationTap,
       );
