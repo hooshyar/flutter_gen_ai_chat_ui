@@ -14,8 +14,11 @@ name: Publish to pub.dev
 on:
   push:
     tags:
+      # `+` is a glob quantifier in Actions filter patterns; an unescaped
+      # literal `+` (for build metadata) invalidates the whole workflow and
+      # produces a phantom failed run on every push. Releases here are plain
+      # semver tags, so match only those.
       - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]++[0-9]+'
 
 jobs:
   publish:
