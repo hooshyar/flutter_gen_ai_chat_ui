@@ -35,8 +35,10 @@ screenshots/detailed.gif
 .vscode/
 *.iml
 
-# Git
-.gitignore
+# NOTE: do NOT list `.gitignore` here. Pub treats checked-in-but-pubignored
+# .gitignore files as a fatal validation warning in CI (`--force` still
+# refuses on warnings), which blocked the v2.15.0 tag publish. Shipping the
+# tiny .gitignore files is pub's default and harmless.
 
 # macOS derived data
 example/macos/DerivedData/
