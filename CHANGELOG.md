@@ -1,4 +1,4 @@
-## [2.15.0] - 2026-07-09
+## [2.15.0] - 2026-07-10
 
 Zero breaking changes. Reliability + packaging release driven by a full package audit — fixes a dead public parameter and a set of resource-lifecycle leaks.
 
