@@ -128,7 +128,6 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          enableAnimation: true,
           streamingDuration: const Duration(milliseconds: 50),
         ),
       );

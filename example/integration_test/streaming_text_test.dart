@@ -27,7 +27,6 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          enableAnimation: true,
           streamingDuration: const Duration(milliseconds: 30),
         ),
       );
@@ -96,7 +95,6 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          enableAnimation: true,
           streamingDuration: const Duration(milliseconds: 50),
         ),
       );
@@ -146,7 +144,7 @@ void main() {
       await tester.pumpWidget(
         TestUtils.createTestApp(
           controller: controller,
-          enableAnimation: false, // Disable animation
+          enableMarkdownStreaming: false, // Disable streaming animation
         ),
       );
 

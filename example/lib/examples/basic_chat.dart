@@ -57,7 +57,6 @@ class _BasicChatExampleState extends State<BasicChatExample> {
             texts: ['Thinking...', 'Almost there...'],
           ),
         ),
-        enableAnimation: false,
         enableMarkdownStreaming: false,
         inputOptions: InputOptions(
           decoration: InputDecoration(
