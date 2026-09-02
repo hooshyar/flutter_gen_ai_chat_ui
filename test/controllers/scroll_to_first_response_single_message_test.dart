@@ -123,6 +123,17 @@ void main() {
       'to the top of the viewport', (tester) async {
     final controller = await pumpChatWithLongSingleResponse(tester);
 
+    // Drain any background auto-scroll Timer that setup's addMessage/
+    // updateMessage/stopStreamingMessage calls may have scheduled (whether
+    // one gets scheduled at all is nondeterministic — see the wall-clock
+    // debounce note above). A bare, not-yet-fired dart:async Timer isn't
+    // something `pumpAndSettle` waits for on its own (it only tracks
+    // scheduled frames), so a straggler here can otherwise trip "Timer
+    // still pending" at teardown once this test's own explicit call below
+    // finishes settling first.
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+
     // The AI answer is far taller than the viewport, so there is real
     // scrolling room — this guards against a false pass from a degenerate
     // (too-short) test layout.
@@ -139,12 +150,23 @@ void main() {
     // view. With the fix, the top of the response aligns with the top of
     // the viewport (small tolerance for list padding/bubble chrome).
     expect(topAlignmentGap(tester), lessThan(40));
+
+    // Trailing drain: our own scroll notifies the controller's manual-scroll
+    // listener, which schedules its own short reset Timer right at the tail
+    // of the animation above — give it a chance to fire before teardown.
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
   });
 
   testWidgets(
       'forceScrollToFirstMessageInChain pins the top of a single long '
       'streaming answer to the top of the viewport', (tester) async {
     final controller = await pumpChatWithLongSingleResponse(tester);
+
+    // Drain any background auto-scroll Timer left over from setup — see the
+    // note in the `scrollToMessage` test above.
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
 
     // `forceScrollToFirstMessageInChain` debounces against real wall-clock
     // `DateTime.now()` (not the fake-async clock `tester.pump` advances), so
@@ -160,5 +182,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(topAlignmentGap(tester), lessThan(40));
+
+    // Trailing drain — see the note in the `scrollToMessage` test above.
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
   });
 }

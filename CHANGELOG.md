@@ -5,12 +5,13 @@
 
 ### Fixed (cont'd)
 - **`LoadingConfig.typingIndicatorColor` / `.typingIndicatorSize` now actually apply.** Found during the same knob-sweep audit — both were documented ("Color for the typing indicator", "Size of the typing indicator") but never threaded past `AiChatWidget`; the default typing-dots indicator was always a hardcoded grey at a fixed 8px regardless of what you set. Now plumbed through `CustomChatWidget` into the dot indicator. No API changes — existing code that didn't set these keeps the same default look.
+- **`AiChatWidget.paginationConfig` now actually applies.** Found during the same audit — this top-level convenience parameter (documented "Configuration for pagination") was never read in `AiChatWidget`'s build method; pagination only worked if set via `AiChatWidget(messageListOptions: MessageListOptions(paginationConfig: ...))` instead. Now merged into the effective `messageListOptions`, matching the precedence the widget already gives its `scrollController` shortcut over `messageListOptions.scrollController`. No API changes.
 
 ### Deprecated
 - **`AiChatWidget.aiName`** — found during the documented-knob verification sweep (#41 Phase 0.5) to have no effect: the displayed AI name always comes from `aiUser.name` (and each message's `user.name`). Deprecated rather than removed; will be removed in v3.0.0.
 
 ### Tests
-- Added `test/controllers/scroll_to_first_response_single_message_test.dart` (2 tests: `scrollToMessage` and `forceScrollToFirstMessageInChain` both pin a single long streaming answer's top to the viewport top), `test/widgets/enable_math_rendering_test.dart` (2 tests: `enableMathRendering` actually switches between `MathMarkdown` and plain markdown rendering), `test/widgets/ai_name_dead_parameter_test.dart` (locks in `aiUser.name` as the only display-name source), and `test/widgets/typing_indicator_customization_test.dart` (2 tests: typing-indicator color/size are applied, and default fallback still holds when unset). Net test count: 372 → 379.
+- Added `test/controllers/scroll_to_first_response_single_message_test.dart` (2 tests: `scrollToMessage` and `forceScrollToFirstMessageInChain` both pin a single long streaming answer's top to the viewport top), `test/widgets/enable_math_rendering_test.dart` (2 tests: `enableMathRendering` actually switches between `MathMarkdown` and plain markdown rendering), `test/widgets/ai_name_dead_parameter_test.dart` (locks in `aiUser.name` as the only display-name source), `test/widgets/typing_indicator_customization_test.dart` (2 tests: typing-indicator color/size are applied, and default fallback still holds when unset), `test/widgets/streaming_fade_in_config_test.dart` (2 tests: `streamingFadeIn*` config reaches the underlying `StreamingText` widget), and `test/widgets/pagination_config_dead_parameter_test.dart` (the top-level `paginationConfig` shortcut reaches the loading indicator). Net test count: 372 → 382.
 
 ## [2.15.0] - 2026-07-10
 

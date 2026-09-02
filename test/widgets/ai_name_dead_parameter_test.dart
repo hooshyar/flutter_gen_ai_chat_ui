@@ -39,7 +39,10 @@ void main() {
       user: aiUser,
       createdAt: DateTime.now(),
     ));
-    await tester.pumpAndSettle();
+    // addMessage() may schedule a debounced auto-scroll Timer (up to 300ms)
+    // not tied to a scheduled frame; use a pumpAndSettle step at least that
+    // long so it can't be left pending at teardown.
+    await tester.pumpAndSettle(const Duration(milliseconds: 350));
 
     expect(find.text('RealName'), findsOneWidget);
     expect(find.text('Ignored Name'), findsNothing);

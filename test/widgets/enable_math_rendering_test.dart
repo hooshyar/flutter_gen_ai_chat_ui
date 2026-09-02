@@ -40,7 +40,11 @@ void main() {
       isMarkdown: true,
       customProperties: const {'id': 'resp1'},
     ));
-    await tester.pumpAndSettle();
+    // addMessage() may schedule a debounced auto-scroll Timer (up to 300ms)
+    // that isn't tied to a scheduled frame, so a bare pumpAndSettle() (whose
+    // default 100ms step can exit before that fires) can leave it pending;
+    // use a step at least as long as the Timer to guarantee it's drained.
+    await tester.pumpAndSettle(const Duration(milliseconds: 350));
 
     return controller;
   }

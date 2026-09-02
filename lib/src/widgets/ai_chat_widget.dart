@@ -460,6 +460,7 @@ class _AiChatWidgetState extends State<AiChatWidget>
                     (widget.messageListOptions ?? const MessageListOptions())
                         .copyWith(
                   scrollController: _effectiveScrollController,
+                  paginationConfig: widget.paginationConfig,
                 ),
                 readOnly: widget.readOnly,
                 quickReplyOptions:

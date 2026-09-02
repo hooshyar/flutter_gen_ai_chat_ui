@@ -14,7 +14,10 @@
       and the other model files not yet covered by the script.
 - [~] For each knob without an existing test asserting visible effect, add one — IN PROGRESS. Done
       so far: `enableMathRendering` (was wired but untested), `LoadingConfig.typingIndicatorColor`/
-      `.typingIndicatorSize` (were genuinely DEAD — see below — now wired + tested).
+      `.typingIndicatorSize` (were genuinely DEAD — see below — now wired + tested),
+      `streamingFadeInEnabled`/`.streamingFadeInDuration`/`.streamingFadeInCurve` (confirmed wired,
+      added coverage), `AiChatWidget.paginationConfig` (was genuinely DEAD — see below — now wired +
+      tested).
       Correction from the first pass: several of the originally-flagged 31 fields belong to the
       already-`@Deprecated`-at-the-class-level `AiChatConfig` shim (`showTimestamp`, `userName`, plus
       `aiName`/`markdownStyleSheet`/etc. duplicated there) — those are EXPECTED to be unwired (the
@@ -27,11 +30,14 @@
       not the `AiChatConfig` duplicate), `messageBubbleInnerPadding`, `messageBubbleOuterPadding`,
       `messageFooterTopPadding`, `messageListPadding`, `messageMediaSpacing`,
       `messageUsernameBottomPadding`, `quickRepliesPadding`, `scrollThreshold`,
-      `streamingFadeInCurve`, `streamingFadeInDuration`, `streamingFadeInEnabled`,
       `typingIndicatorMargin`, `typingIndicatorPadding` (padding/spacing knobs are lower risk — likely
       just plumbed straight into a `Padding`/`SizedBox` — but still unverified). `loadingText`/
-      `noMoreMessagesText`/`loadingIndicator`/`showCenteredIndicator` confirmed wired during this
-      tick's investigation (still worth a quick test each, but not dead).
+      `noMoreMessagesText`/`loadingIndicator`/`showCenteredIndicator` confirmed wired during an
+      earlier tick's investigation (still worth a quick test each, but not dead). Given
+      `AiChatWidget.paginationConfig` itself turned out to be dead, double-check whether any OTHER
+      knob only reachable via that same top-level-shortcut-vs-nested-options pattern has the same bug
+      (e.g. compare every `AiChatWidget` top-level field against what `messageListOptions`/
+      `messageOptions`/`inputOptions` also expose, not just against test coverage).
 - [x] Document any knob found to be dead-wired; fix or deprecate it:
       - `AiChatWidget.aiName` — completely dead (documented as "Name of the AI assistant (for
         display)" but never read anywhere; the real display name always comes from `aiUser.name`).
@@ -40,9 +46,18 @@
         past `AiChatWidget` into the actual dot-indicator widget. Unlike `aiName` this described a
         real, wantable customization, so it was WIRED (not deprecated): threaded through
         `CustomChatWidget` → `_DotIndicator`, additive/no breaking change.
-- [x] `dart analyze --fatal-infos` clean, `flutter test` green (379/379) — for this tick's changes.
+      - `AiChatWidget.paginationConfig` — completely dead: never read in `ai_chat_widget.dart`'s
+        build method at all; pagination only worked via `messageListOptions.paginationConfig`. Fixed
+        (not deprecated — this is a real, commonly-needed feature, and #13/#41 Phase 3 already plans
+        pagination/persistence work) by merging it into the `messageListOptions` handed to
+        `CustomChatWidget`, matching existing precedence (`scrollController` already works the same
+        way in that same `copyWith` call).
+- [x] `dart analyze --fatal-infos` clean; isolated per-file test runs green (10/10 new tests +
+      108/108 controller tests). Full-suite runs this tick hit PRE-EXISTING, load-induced flakiness
+      unrelated to these changes — see task-019 (new) for the root cause and evidence it reproduces
+      in files untouched this session.
 - [ ] Reply progress on issue #41 — deferred until a more complete pass (or several ticks) is done;
-      not worth a comment yet for three findings across two ticks.
+      not worth a comment yet for four findings across three ticks.
 
 **Status:** IN PROGRESS — resume with the remaining untested-knob list above (now scoped to genuinely
 live, non-`AiChatConfig` fields only), then the not-yet-scanned model files (`MessageOptions`,
