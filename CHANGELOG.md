@@ -1,3 +1,11 @@
+## [Unreleased]
+
+### Fixed
+- **`ScrollBehaviorConfig.scrollToFirstResponseMessage` now correctly pins a single long streaming answer's top edge to the viewport top (#42).** `scrollToMessage`/`forceScrollToFirstMessageInChain` previously computed their scroll target from `index / itemCount`, which assumes uniform message heights — with the common case of one short user question followed by one very long AI answer, that heuristic badly mistargeted the scroll position (for the default `reverse: true` list it effectively collapsed to "just show the bottom", i.e. the exact bug reported: the top of the answer scrolls out of view as it streams). Both methods now measure the message's actual rendered position (via a `BuildContext` resolver wired internally by `CustomChatWidget`) and use `Scrollable.ensureVisible`, with the alignment edge corrected for `reverse: true` lists. No public API changes.
+
+### Tests
+- Added `test/controllers/scroll_to_first_response_single_message_test.dart` (2 tests: `scrollToMessage` and `forceScrollToFirstMessageInChain` both pin a single long streaming answer's top to the viewport top). Net test count: 372 → 374.
+
 ## [2.15.0] - 2026-07-10
 
 Zero breaking changes. Reliability + packaging release driven by a full package audit — fixes a dead public parameter and a set of resource-lifecycle leaks.

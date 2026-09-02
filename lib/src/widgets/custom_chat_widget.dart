@@ -98,6 +98,21 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   /// Message IDs seen on previous render — used to detect newly added messages.
   final Set<String> _seenMessageIds = {};
 
+  /// A [GlobalKey] per currently-rendered message, keyed by message id.
+  ///
+  /// Registered with the controller via `setMessageContextResolver` so
+  /// `scrollToMessage`/`forceScrollToFirstMessageInChain` can measure a
+  /// message's actual rendered position (see issue #42) instead of guessing
+  /// from `index / itemCount`. Kept in a map (not `GlobalObjectKey(id)`)
+  /// because `GlobalObjectKey` compares by `identical()`, and message id
+  /// strings built at runtime aren't guaranteed to be the same instance
+  /// across rebuilds. Pruned in [didUpdateWidget] so it doesn't grow
+  /// unboundedly over a long-lived conversation.
+  final Map<String, GlobalKey> _messageAnchorKeys = {};
+
+  GlobalKey _anchorKeyFor(String messageId) =>
+      _messageAnchorKeys.putIfAbsent(messageId, GlobalKey.new);
+
   /// AI message IDs that should play word-by-word animation once.
   /// Populated when a new AI message is detected and streamingWordByWord is true.
   final Set<String> _pendingWordByWordIds = {};
@@ -277,6 +292,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     // If a controller was passed to the widget, connect our scroll controller to it
     if (widget.controller != null) {
       widget.controller!.setScrollController(_scrollController);
+      widget.controller!.setMessageContextResolver(
+        (messageId) => _messageAnchorKeys[messageId]?.currentContext,
+      );
 
       // Attempt an initial scroll to bottom after widget is built.
       // Guard with `mounted` — the State may be disposed between scheduling
@@ -299,6 +317,13 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // Detect newly added messages and queue word-by-word animation if needed
     _trackNewMessages();
+
+    // Prune anchor keys for messages no longer in the list so this map
+    // doesn't grow unboundedly over a long-lived conversation.
+    if (!identical(oldWidget.messages, widget.messages)) {
+      final currentIds = widget.messages.map(_resolveMessageId).toSet();
+      _messageAnchorKeys.removeWhere((id, _) => !currentIds.contains(id));
+    }
 
     // Update the controller if it changed
     if (oldWidget.messageListOptions.scrollController !=
@@ -371,6 +396,8 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     _wordByWordTimers.clear();
     _revealTicker?.cancel();
     _scrollController.removeListener(_handleScroll);
+    widget.controller?.setMessageContextResolver(null);
+    _messageAnchorKeys.clear();
 
     // Only dispose the scroll controller if we created it ourselves
     // If it was provided via messageListOptions.scrollController, don't dispose it
@@ -548,7 +575,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           return RepaintBoundary(
             child: KeyedSubtree(
               key: ValueKey(messageId),
-              child: _buildMessageBubble(message, isUser),
+              child: KeyedSubtree(
+                key: _anchorKeyFor(messageId),
+                child: _buildMessageBubble(message, isUser),
+              ),
             ),
           );
         }

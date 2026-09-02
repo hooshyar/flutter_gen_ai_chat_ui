@@ -184,6 +184,15 @@ class ChatMessagesController extends ChangeNotifier {
   VoidCallback? _scrollListener;
   Timer? _pendingScrollTimer;
 
+  /// Resolves a message id to the [BuildContext] of its rendered widget
+  /// subtree, wired by `CustomChatWidget` so [scrollToMessage] and
+  /// [forceScrollToFirstMessageInChain] can measure the message's actual
+  /// rendered position instead of guessing from `index / itemCount`, which
+  /// assumes uniform item heights and badly mistargets a chat where one
+  /// message — e.g. a single long streaming answer — dominates the total
+  /// list height (see issue #42).
+  BuildContext? Function(String messageId)? _messageContextResolver;
+
   /// Timer that fires the delayed scroll after a new message is rendered.
   /// Tracked so [dispose] can cancel it and prevent dangling timers in tests.
   Timer? _scrollAfterRenderTimer;
@@ -262,6 +271,20 @@ class ChatMessagesController extends ChangeNotifier {
     };
 
     _scrollController?.addListener(_scrollListener!);
+  }
+
+  /// Registers a resolver mapping a message id to the [BuildContext] of its
+  /// rendered widget subtree.
+  ///
+  /// `CustomChatWidget` calls this internally so [scrollToMessage] and
+  /// [forceScrollToFirstMessageInChain] can use [Scrollable.ensureVisible]
+  /// (an exact, measured scroll) instead of the `index / itemCount`
+  /// proportional-position fallback. Consumers driving the controller
+  /// outside of `AiChatWidget` normally don't need to call this — the
+  /// heuristic fallback still applies when no resolver is set.
+  void setMessageContextResolver(
+      BuildContext? Function(String messageId)? resolver) {
+    _messageContextResolver = resolver;
   }
 
   /// Whether more messages are currently being loaded.
@@ -682,6 +705,27 @@ class ChatMessagesController extends ChangeNotifier {
 
       // Get configuration for animation timing
       final config = scrollBehaviorConfig;
+
+      // Prefer an exact, measured scroll over the index/itemCount heuristic
+      // below — that heuristic assumes uniform item heights and mistargets
+      // badly when one message dominates the list's total height (#42).
+      final resolvedContext = _messageContextResolver?.call(messageId);
+      if (resolvedContext != null && resolvedContext.mounted) {
+        debugPrint('SCROLLING (measured): To message ID $messageId');
+        Scrollable.ensureVisible(
+          resolvedContext,
+          duration: config.scrollAnimationDuration,
+          curve: config.scrollAnimationCurve,
+          // `alignment: 0.0` means "align to the scroll axis's start edge".
+          // In a `reverse: true` list (the package default) the axis is
+          // flipped, so the start edge is the viewport's VISUAL BOTTOM —
+          // aligning a message's top there would do nothing useful. Use
+          // 1.0 (the axis end edge) in that case to align the message's
+          // visual top with the viewport's visual top instead.
+          alignment: paginationConfig.reverseOrder ? 1.0 : 0.0,
+        );
+        return;
+      }
 
       // Use the same improved logic as forceScrollToFirstMessageInChain
       final maxExtent = _scrollController!.position.maxScrollExtent;
@@ -1221,6 +1265,24 @@ class ChatMessagesController extends ChangeNotifier {
 
       debugPrint(
           'APPLYING ANIMATION: duration=${scrollDuration.inMilliseconds}ms, curve=$scrollCurve');
+
+      // Prefer an exact, measured scroll over the index/itemCount heuristic
+      // below — see the note in scrollToMessage (#42).
+      final chainMessageId = _getMessageId(firstMessageInChain);
+      final resolvedContext = _messageContextResolver?.call(chainMessageId);
+      if (resolvedContext != null && resolvedContext.mounted) {
+        debugPrint(
+            'FORCE SCROLL (measured): To first message in chain ID $chainMessageId');
+        Scrollable.ensureVisible(
+          resolvedContext,
+          duration: scrollDuration,
+          curve: scrollCurve,
+          // See the note in scrollToMessage: reverse lists flip which edge
+          // "alignment 0.0" refers to.
+          alignment: paginationConfig.reverseOrder ? 1.0 : 0.0,
+        );
+        return;
+      }
 
       // Use a simple approach: scroll to a calculated position based on message index
       // Get list properties
