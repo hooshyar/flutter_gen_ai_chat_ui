@@ -50,6 +50,10 @@ coverage/
 lcov.info
 doc/ui
 
+# Golden test failure artifacts (auto-generated diff images on a failed
+# `flutter test`; not checked-in test assets — only test/golden/goldens/ is).
+test/golden/failures/
+
 # IDE and development artifacts
 *.iml
 *.ipr

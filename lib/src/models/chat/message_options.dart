@@ -644,7 +644,7 @@ class ScrollToBottomOptions {
   /// Distance from right of the screen (default is 16)
   final double rightOffset;
 
-  /// Whether to show text next to the icon (default is true)
+  /// Whether to show text next to the icon (default is false)
   final bool showText;
 
   /// Custom text to display next to the icon (default is "Scroll to bottom")

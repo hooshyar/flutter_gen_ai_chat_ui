@@ -226,10 +226,18 @@ class _ChatInputState extends State<ChatInput> {
         ),
         // Adjust send button to match text field height
         Container(
-          // Match the height to align with text field
+          // Match the height to align with text field. Floored at 48 (the
+          // Material/WCAG minimum tap target) when falling back to the
+          // approximated height — a fixed Container height here overrides
+          // the send IconButton's own 48x48 minimum constraint, so without
+          // this floor a compact contentPadding could shrink the button's
+          // real tap target below the accessibility minimum even though it
+          // still LOOKS the same size (the icon itself doesn't change).
+          // An explicit `inputHeight` is a deliberate consumer choice and is
+          // left as-is.
           height: options.inputHeight ??
-              (options.decoration?.contentPadding?.vertical ?? 14) +
-                  24, // Base height approximation
+              ((options.decoration?.contentPadding?.vertical ?? 14) + 24)
+                  .clamp(48.0, double.infinity),
           // Center the button vertically
           alignment: Alignment.center,
           child: (widget.isGenerating && widget.onCancelGenerating != null)

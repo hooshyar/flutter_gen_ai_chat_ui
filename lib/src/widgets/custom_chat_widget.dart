@@ -1588,8 +1588,11 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                     widget.scrollToBottomOptions.onScrollToBottomPress?.call();
                   },
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    // 14 on all sides brings the icon-only (default
+                    // showText: false) tap target up to the 48x48
+                    // Material/WCAG minimum (20 icon + 14 + 14 = 48); with
+                    // text shown the row is already wider than 48.
+                    padding: const EdgeInsets.all(14),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
