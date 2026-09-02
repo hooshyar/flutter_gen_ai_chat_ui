@@ -109,20 +109,37 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   /// Message IDs seen on previous render — used to detect newly added messages.
   final Set<String> _seenMessageIds = {};
 
-  /// A [GlobalKey] per currently-rendered message, keyed by message id.
+  /// Finds the [BuildContext] of a currently-built message item by walking
+  /// the element tree looking for its `ValueKey(messageId)`.
   ///
   /// Registered with the controller via `setMessageContextResolver` so
   /// `scrollToMessage`/`forceScrollToFirstMessageInChain` can measure a
   /// message's actual rendered position (see issue #42) instead of guessing
-  /// from `index / itemCount`. Kept in a map (not `GlobalObjectKey(id)`)
-  /// because `GlobalObjectKey` compares by `identical()`, and message id
-  /// strings built at runtime aren't guaranteed to be the same instance
-  /// across rebuilds. Pruned in [didUpdateWidget] so it doesn't grow
-  /// unboundedly over a long-lived conversation.
-  final Map<String, GlobalKey> _messageAnchorKeys = {};
+  /// from `index / itemCount`. A [GlobalKey] per list item would do this more
+  /// directly, but attaching one to a `ListView.builder` item — which gets
+  /// recycled/repositioned as the list scrolls — tripped a framework
+  /// semantics assertion (`_needsLayout` during `flushSemantics`) the moment
+  /// the list was actually scrolled (`jumpTo`/drag), not just measured. A
+  /// plain tree walk has no such lifecycle interaction with the scrolling
+  /// element itself. Returns null if the message isn't currently built
+  /// (off-screen beyond `cacheExtent`) — callers fall back to the
+  /// `index / itemCount` heuristic in that case, same as before.
+  BuildContext? _findMessageContext(String messageId) {
+    if (!mounted) return null;
+    final targetKey = ValueKey(messageId);
+    BuildContext? found;
+    void visit(Element element) {
+      if (found != null) return;
+      if (element.widget.key == targetKey) {
+        found = element;
+        return;
+      }
+      element.visitChildren(visit);
+    }
 
-  GlobalKey _anchorKeyFor(String messageId) =>
-      _messageAnchorKeys.putIfAbsent(messageId, GlobalKey.new);
+    context.visitChildElements(visit);
+    return found;
+  }
 
   /// AI message IDs that should play word-by-word animation once.
   /// Populated when a new AI message is detected and streamingWordByWord is true.
@@ -303,9 +320,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     // If a controller was passed to the widget, connect our scroll controller to it
     if (widget.controller != null) {
       widget.controller!.setScrollController(_scrollController);
-      widget.controller!.setMessageContextResolver(
-        (messageId) => _messageAnchorKeys[messageId]?.currentContext,
-      );
+      widget.controller!.setMessageContextResolver(_findMessageContext);
 
       // Attempt an initial scroll to bottom after widget is built.
       // Guard with `mounted` — the State may be disposed between scheduling
@@ -328,13 +343,6 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // Detect newly added messages and queue word-by-word animation if needed
     _trackNewMessages();
-
-    // Prune anchor keys for messages no longer in the list so this map
-    // doesn't grow unboundedly over a long-lived conversation.
-    if (!identical(oldWidget.messages, widget.messages)) {
-      final currentIds = widget.messages.map(_resolveMessageId).toSet();
-      _messageAnchorKeys.removeWhere((id, _) => !currentIds.contains(id));
-    }
 
     // Update the controller if it changed
     if (oldWidget.messageListOptions.scrollController !=
@@ -393,6 +401,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       if (shouldLoadMore &&
           !widget.messageListOptions.isLoadingMore &&
           widget.messageListOptions.hasMoreMessages) {
+        if (paginationConfig.enableHapticFeedback) {
+          HapticFeedback.lightImpact();
+        }
         widget.messageListOptions.onLoadMore?.call();
       }
     });
@@ -408,7 +419,6 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     _revealTicker?.cancel();
     _scrollController.removeListener(_handleScroll);
     widget.controller?.setMessageContextResolver(null);
-    _messageAnchorKeys.clear();
 
     // Only dispose the scroll controller if we created it ourselves
     // If it was provided via messageListOptions.scrollController, don't dispose it
@@ -586,10 +596,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           return RepaintBoundary(
             child: KeyedSubtree(
               key: ValueKey(messageId),
-              child: KeyedSubtree(
-                key: _anchorKeyFor(messageId),
-                child: _buildMessageBubble(message, isUser),
-              ),
+              child: _buildMessageBubble(message, isUser),
             ),
           );
         }

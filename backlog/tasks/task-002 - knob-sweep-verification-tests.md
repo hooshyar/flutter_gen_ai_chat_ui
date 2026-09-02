@@ -25,11 +25,15 @@
       re-flag them. Remaining real (non-`AiChatConfig`) untested knobs still to check:
       `autoLoadOnScroll`, `cacheExtent` (PaginationConfig, confirmed wired via
       `ListView.builder.cacheExtent` — just needs a test), `distanceToTriggerLoadPixels`,
-      `enableHapticFeedback`, `loadMoreDebounceTime`, `loadingIndicatorOffset`, `loadingWidgetMargin`,
+      `loadMoreDebounceTime`, `loadingIndicatorOffset`, `loadMoreIndicator`, `loadingWidgetMargin`,
       `loadingWidgetPadding`, `markdownStyleSheet` (the live one on `MessageOptions`/`AiChatWidget`,
       not the `AiChatConfig` duplicate), `messageBubbleInnerPadding`, `messageBubbleOuterPadding`,
       `messageFooterTopPadding`, `messageListPadding`, `messageMediaSpacing`,
-      `messageUsernameBottomPadding`, `quickRepliesPadding`, `scrollThreshold`,
+      `messageUsernameBottomPadding`, `quickRepliesPadding`, `scrollThreshold` (also genuinely DEAD,
+      found alongside `enableHapticFeedback` — "Scroll position threshold to trigger loading (0.0 to
+      1.0)", never read; `loadingIndicatorOffset`/`loadMoreIndicator` are ALSO dead by the same grep —
+      not yet fixed, needs design judgment on exact intended semantics vs. the existing
+      `distanceToTriggerLoadPixels`/absolute-pixel trigger before wiring),
       `typingIndicatorMargin`, `typingIndicatorPadding` (padding/spacing knobs are lower risk — likely
       just plumbed straight into a `Padding`/`SizedBox` — but still unverified). `loadingText`/
       `noMoreMessagesText`/`loadingIndicator`/`showCenteredIndicator` confirmed wired during an
@@ -52,12 +56,27 @@
         pagination/persistence work) by merging it into the `messageListOptions` handed to
         `CustomChatWidget`, matching existing precedence (`scrollController` already works the same
         way in that same `copyWith` call).
-- [x] `dart analyze --fatal-infos` clean; isolated per-file test runs green (10/10 new tests +
-      108/108 controller tests). Full-suite runs this tick hit PRE-EXISTING, load-induced flakiness
-      unrelated to these changes — see task-019 (new) for the root cause and evidence it reproduces
-      in files untouched this session.
+      - `PaginationConfig.enableHapticFeedback` — completely dead: no `HapticFeedback` call anywhere
+        in the load-more path. Fixed (real, wantable, and a one-line wire) by calling
+        `HapticFeedback.lightImpact()` right where `onLoadMore` actually fires, gated by the flag.
+- [x] **IMPORTANT — caught and fixed a real regression from this session's own #42 fix before it
+      shipped.** The #42 fix's `BuildContext` resolver originally used a persistent `GlobalKey` per
+      message list item (cached across rebuilds). That's unsafe on a `ListView.builder` item: the
+      list recycles/repositions items as it scrolls, and attaching a long-lived `GlobalKey` to one
+      tripped a Flutter framework semantics assertion (`_needsLayout` during `flushSemantics`) the
+      moment the list was actually scrolled via `jumpTo`/drag — not just measured, which is all the
+      earlier tests exercised (they only drove `Scrollable.ensureVisible`'s own `animateTo`, which
+      happened not to trigger it). Found this tick while writing the haptic-feedback test, which
+      needed a real `jumpTo`. Replaced the `GlobalKey` with a plain element-tree walk keyed off the
+      list item's existing `ValueKey` — same capability, no GlobalKey lifecycle interaction with the
+      scrolling item. Added `test/widgets/scroll_jump_no_crash_test.dart` as a permanent regression
+      guard. This never shipped to pub.dev (still unreleased), but was live on `main` for a few
+      commits — reinforces: always test actual user-driven scrolling (`jumpTo`/drag), not just
+      programmatic `animateTo`, for anything touching list-item widget identity.
+- [x] `dart analyze --fatal-infos` clean; full `flutter test` green (385/385, ~17s, no flakiness) once
+      this tick's own machine-load contention (see task-019) cleared.
 - [ ] Reply progress on issue #41 — deferred until a more complete pass (or several ticks) is done;
-      not worth a comment yet for four findings across three ticks.
+      not worth a comment yet for five findings across four ticks.
 
 **Status:** IN PROGRESS — resume with the remaining untested-knob list above (now scoped to genuinely
 live, non-`AiChatConfig` fields only), then the not-yet-scanned model files (`MessageOptions`,
