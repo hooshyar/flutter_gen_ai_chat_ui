@@ -89,6 +89,9 @@ class AiChatWidget extends StatefulWidget {
     this.enableMathRendering = false,
     this.streamingDuration = const Duration(milliseconds: 30),
     this.markdownStyleSheet,
+    @Deprecated(
+        'Has no effect — the displayed AI name always comes from aiUser.name. '
+        'Will be removed in v3.0.0.')
     this.aiName = 'AI',
     // Streaming fade-in (optional, off by default for simplicity)
     this.streamingFadeInDuration,
@@ -114,6 +117,9 @@ class AiChatWidget extends StatefulWidget {
   final ChatUser aiUser;
 
   /// Name of the AI assistant (for display)
+  @Deprecated(
+      'Has no effect — the displayed AI name always comes from aiUser.name. '
+      'Will be removed in v3.0.0.')
   final String aiName;
 
   /// The controller for managing chat messages
