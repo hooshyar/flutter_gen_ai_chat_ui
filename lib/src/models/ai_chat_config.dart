@@ -54,9 +54,16 @@ class PaginationConfig {
   final bool enabled;
 
   /// Offset from the top at which to show the loading indicator
+  @Deprecated(
+      'Has no effect — the loading indicator\'s visibility is driven by '
+      'MessageListOptions.isLoadingMore, not a scroll offset. Will be '
+      'removed in v3.0.0.')
   final double loadingIndicatorOffset;
 
   /// Custom loading indicator widget for pagination
+  @Deprecated(
+      'Has no effect — use loadingBuilder instead, which is actually used. '
+      'Will be removed in v3.0.0.')
   final Widget Function({required bool isLoading})? loadMoreIndicator;
 
   /// Reverse order of messages (newest at bottom)
@@ -97,7 +104,14 @@ class PaginationConfig {
 
   const PaginationConfig({
     this.enabled = false,
+    @Deprecated(
+        'Has no effect — the loading indicator\'s visibility is driven by '
+        'MessageListOptions.isLoadingMore, not a scroll offset. Will be '
+        'removed in v3.0.0.')
     this.loadingIndicatorOffset = 100.0,
+    @Deprecated(
+        'Has no effect — use loadingBuilder instead, which is actually used. '
+        'Will be removed in v3.0.0.')
     this.loadMoreIndicator,
     this.reverseOrder = true,
     this.loadingDelay = const Duration(milliseconds: 500),

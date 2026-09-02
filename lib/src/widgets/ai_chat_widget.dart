@@ -80,6 +80,11 @@ class AiChatWidget extends StatefulWidget {
     this.exampleQuestions = const [],
     this.persistentExampleQuestions = false,
     this.persistentExampleQuestionsTitle = 'Suggested Questions',
+    @Deprecated(
+        'Has no effect — no single animation system reads it anymore. Use '
+        'enableMarkdownStreaming, streamingWordByWord, or '
+        'streamingFadeInEnabled to control specific animations instead. '
+        'Will be removed in v3.0.0.')
     this.enableAnimation = true,
     this.maxWidth,
     this.loadingConfig,
@@ -174,6 +179,11 @@ class AiChatWidget extends StatefulWidget {
   final String persistentExampleQuestionsTitle;
 
   /// Whether to enable animations
+  @Deprecated(
+      'Has no effect — no single animation system reads it anymore. Use '
+      'enableMarkdownStreaming, streamingWordByWord, or '
+      'streamingFadeInEnabled to control specific animations instead. Will '
+      'be removed in v3.0.0.')
   final bool enableAnimation;
 
   /// Maximum width of the chat widget
@@ -453,7 +463,9 @@ class _AiChatWidgetState extends State<AiChatWidget>
                 currentUser: widget.currentUser,
                 messages: widget.messages ?? widget.controller.messages,
                 onSend: _handleSend,
-                messageOptions: widget.messageOptions ?? const MessageOptions(),
+                messageOptions: (widget.messageOptions ??
+                        const MessageOptions())
+                    .copyWith(markdownStyleSheet: widget.markdownStyleSheet),
                 inputOptions: widget.inputOptions ?? const InputOptions(),
                 typingUsers: _getEffectiveTypingUsers(),
                 messageListOptions:
@@ -563,6 +575,10 @@ class _AiChatWidgetState extends State<AiChatWidget>
         loadingBuilders: widget.resultLoadingRenderers ?? const {},
         child: result,
       );
+    }
+
+    if (widget.padding != null) {
+      result = Padding(padding: widget.padding!, child: result);
     }
 
     return result;
