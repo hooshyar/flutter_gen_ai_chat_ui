@@ -3,11 +3,14 @@
 ### Fixed
 - **`ScrollBehaviorConfig.scrollToFirstResponseMessage` now correctly pins a single long streaming answer's top edge to the viewport top (#42).** `scrollToMessage`/`forceScrollToFirstMessageInChain` previously computed their scroll target from `index / itemCount`, which assumes uniform message heights — with the common case of one short user question followed by one very long AI answer, that heuristic badly mistargeted the scroll position (for the default `reverse: true` list it effectively collapsed to "just show the bottom", i.e. the exact bug reported: the top of the answer scrolls out of view as it streams). Both methods now measure the message's actual rendered position (via a `BuildContext` resolver wired internally by `CustomChatWidget`) and use `Scrollable.ensureVisible`, with the alignment edge corrected for `reverse: true` lists. No public API changes.
 
+### Fixed (cont'd)
+- **`LoadingConfig.typingIndicatorColor` / `.typingIndicatorSize` now actually apply.** Found during the same knob-sweep audit — both were documented ("Color for the typing indicator", "Size of the typing indicator") but never threaded past `AiChatWidget`; the default typing-dots indicator was always a hardcoded grey at a fixed 8px regardless of what you set. Now plumbed through `CustomChatWidget` into the dot indicator. No API changes — existing code that didn't set these keeps the same default look.
+
 ### Deprecated
 - **`AiChatWidget.aiName`** — found during the documented-knob verification sweep (#41 Phase 0.5) to have no effect: the displayed AI name always comes from `aiUser.name` (and each message's `user.name`). Deprecated rather than removed; will be removed in v3.0.0.
 
 ### Tests
-- Added `test/controllers/scroll_to_first_response_single_message_test.dart` (2 tests: `scrollToMessage` and `forceScrollToFirstMessageInChain` both pin a single long streaming answer's top to the viewport top), `test/widgets/enable_math_rendering_test.dart` (2 tests: `enableMathRendering` actually switches between `MathMarkdown` and plain markdown rendering), and `test/widgets/ai_name_dead_parameter_test.dart` (locks in `aiUser.name` as the only display-name source). Net test count: 372 → 377.
+- Added `test/controllers/scroll_to_first_response_single_message_test.dart` (2 tests: `scrollToMessage` and `forceScrollToFirstMessageInChain` both pin a single long streaming answer's top to the viewport top), `test/widgets/enable_math_rendering_test.dart` (2 tests: `enableMathRendering` actually switches between `MathMarkdown` and plain markdown rendering), `test/widgets/ai_name_dead_parameter_test.dart` (locks in `aiUser.name` as the only display-name source), and `test/widgets/typing_indicator_customization_test.dart` (2 tests: typing-indicator color/size are applied, and default fallback still holds when unset). Net test count: 372 → 379.
 
 ## [2.15.0] - 2026-07-10
 

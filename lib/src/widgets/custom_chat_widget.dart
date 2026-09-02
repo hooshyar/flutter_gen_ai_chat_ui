@@ -48,6 +48,15 @@ class CustomChatWidget extends StatefulWidget {
   /// Custom widget to display instead of the default typing indicator
   final Widget? typingIndicator;
 
+  /// Color for the default typing indicator's dots. Ignored when
+  /// [typingIndicator] overrides the whole indicator. Falls back to a
+  /// neutral grey when null.
+  final Color? typingIndicatorColor;
+
+  /// Diameter of each dot in the default typing indicator. Ignored when
+  /// [typingIndicator] overrides the whole indicator. Defaults to 8.
+  final double? typingIndicatorSize;
+
   /// Configuration for the welcome message
   final WelcomeMessageConfig? welcomeMessageConfig;
 
@@ -72,6 +81,8 @@ class CustomChatWidget extends StatefulWidget {
     required this.quickReplyOptions,
     required this.scrollToBottomOptions,
     this.typingIndicator,
+    this.typingIndicatorColor,
+    this.typingIndicatorSize,
     this.controller,
     this.welcomeMessageConfig,
     this.exampleQuestions = const [],
@@ -1447,13 +1458,24 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
               color: Colors.grey[200],
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                _DotIndicator(),
-                SizedBox(width: 4),
-                _DotIndicator(delay: 0.2),
-                SizedBox(width: 4),
-                _DotIndicator(delay: 0.4),
+                _DotIndicator(
+                  color: widget.typingIndicatorColor,
+                  size: widget.typingIndicatorSize,
+                ),
+                const SizedBox(width: 4),
+                _DotIndicator(
+                  delay: 0.2,
+                  color: widget.typingIndicatorColor,
+                  size: widget.typingIndicatorSize,
+                ),
+                const SizedBox(width: 4),
+                _DotIndicator(
+                  delay: 0.4,
+                  color: widget.typingIndicatorColor,
+                  size: widget.typingIndicatorSize,
+                ),
               ],
             ),
           ),
@@ -1833,8 +1855,10 @@ class _ShimmerBar extends StatelessWidget {
 
 class _DotIndicator extends StatefulWidget {
   final double delay;
+  final Color? color;
+  final double? size;
 
-  const _DotIndicator({this.delay = 0.0});
+  const _DotIndicator({this.delay = 0.0, this.color, this.size});
 
   @override
   State<_DotIndicator> createState() => _DotIndicatorState();
@@ -1865,18 +1889,17 @@ class _DotIndicatorState extends State<_DotIndicator>
 
   @override
   Widget build(BuildContext context) {
+    final dotSize = widget.size ?? 8.0;
+    final dimColor = widget.color?.withOpacityCompat(0.45) ?? Colors.grey[400]!;
+    final brightColor = widget.color ?? Colors.grey[800]!;
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
         return Container(
-          width: 8,
-          height: 8,
+          width: dotSize,
+          height: dotSize,
           decoration: BoxDecoration(
-            color: Color.lerp(
-              Colors.grey[400],
-              Colors.grey[800],
-              _animation.value,
-            ),
+            color: Color.lerp(dimColor, brightColor, _animation.value),
             shape: BoxShape.circle,
           ),
         );

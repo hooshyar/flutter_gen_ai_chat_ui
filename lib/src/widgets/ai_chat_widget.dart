@@ -469,6 +469,9 @@ class _AiChatWidgetState extends State<AiChatWidget>
                 typingIndicator: (widget.loadingConfig?.isLoading ?? false)
                     ? widget.loadingConfig?.loadingIndicator
                     : null,
+                typingIndicatorColor:
+                    widget.loadingConfig?.typingIndicatorColor,
+                typingIndicatorSize: widget.loadingConfig?.typingIndicatorSize,
                 welcomeMessageConfig: widget.welcomeMessageConfig,
                 exampleQuestions: widget.exampleQuestions,
                 fileUploadOptions: widget.fileUploadOptions,
