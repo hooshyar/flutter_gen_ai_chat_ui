@@ -8,11 +8,13 @@ the visible viewport. User wants to pin the top of the streaming answer in view 
 continuously autoscrolling to the bottom as it streams.
 
 **Acceptance criteria:**
-- [ ] Read `ScrollBehaviorConfig` and the autoscroll logic in the controller/widget to confirm current behavior.
-- [ ] Add an option (e.g. `scrollToFirstResponseMessage` extension, or a new config knob) that lets a single long streaming message stop autoscrolling once its top reaches the viewport top — additive, no breaking change.
-- [ ] Add a regression/widget test reproducing the reported scenario (one long streaming message, verify scroll position stabilizes at the top instead of chasing the bottom).
-- [ ] `flutter analyze` clean, `flutter test` green.
-- [ ] Reply on GitHub issue #42 with the fix, version it'll ship in, and a short usage snippet.
-- [ ] Update CHANGELOG.md.
+- [x] Read `ScrollBehaviorConfig` and the autoscroll logic in the controller/widget to confirm current behavior.
+- [x] Root cause found: `scrollToMessage`/`forceScrollToFirstMessageInChain` computed the target from `index/itemCount` (assumes uniform message heights), which collapses to "just show the bottom" for reverse:true lists with one short + one very long message. Fixed by measuring the real rendered position via a `BuildContext` resolver + `Scrollable.ensureVisible` (alignment corrected for reverse lists) — additive, no breaking change, existing `scrollToFirstResponseMessage: true` knob now works correctly for a single message.
+- [x] Added `test/controllers/scroll_to_first_response_single_message_test.dart` (2 tests).
+- [x] `dart analyze --fatal-infos` clean, `flutter test` green (374/374).
+- [x] Replied on GitHub issue #42: https://github.com/hooshyar/flutter_gen_ai_chat_ui/issues/42#issuecomment-5515729977
+- [x] CHANGELOG.md updated (Unreleased section).
+
+**Status:** DONE — commit 7022038 on main, pushed to origin.
 
 **Notes:** This is the highest-value fix — it's a live user complaint, not a roadmap nice-to-have.
