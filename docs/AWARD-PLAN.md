@@ -61,12 +61,18 @@ stale the way the historical audits below did.
    Added `tool/check_doc_drift.dart` (wired into CI) — checks every
    `ClassName.member(...)` call site in README.md/AGENTS.md's ```dart
    fences against real factory/named/static members in `lib/`. Added a
-   `sdk-matrix` CI job (floor Flutter 3.27.0 vs. latest stable), resolving
-   (not just documenting) the `flutter_lints`-forces-higher-dev-SDK
-   discrepancy from #41 by testing the floor through `example/` (a real
-   consumer) rather than the root package (whose dev-only `flutter_lints`
-   pin genuinely can't resolve at the floor, which is fine — consumers
-   never touch a dependency's dev_dependencies).
+   `sdk-matrix` CI job (floor vs. latest stable), resolving (not just
+   documenting) the `flutter_lints`-forces-higher-dev-SDK discrepancy from
+   #41 by testing the floor through `example/` (a real consumer) rather
+   than the root package (whose dev-only `flutter_lints` pin genuinely
+   can't resolve at the floor, which is fine — consumers never touch a
+   dependency's dev_dependencies). **The floor leg immediately found a
+   real bug**: the documented Flutter floor (`3.27.0`) had never actually
+   resolved — `flutter_streaming_text_markdown` needs `characters
+   >=1.4.0`, unavailable in Flutter's bundled tooling until `3.29.0` — so
+   CI running only on `stable` had silently masked a floor that was wrong
+   this whole time. Corrected to `flutter: ">=3.29.0"` (Dart `sdk:` stays
+   at `3.6.0` deliberately, to avoid Dart 3.7's formatter-style cliff).
 
 ## Medium value / medium effort
 

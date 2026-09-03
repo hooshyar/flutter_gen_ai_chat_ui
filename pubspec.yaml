@@ -26,8 +26,24 @@ platforms:
   windows:
 
 environment:
+  # flutter floor raised from 3.27.0 to 3.29.0 (task-012): the old claim
+  # was inaccurate — flutter_streaming_text_markdown (any version,
+  # including well before ^1.9.1) depends on characters >=1.4.0, but
+  # Flutter's own bundled flutter_test pins characters to exactly 1.3.0
+  # through 3.27.4. 3.29.0 (bundling Dart 3.7.0, characters 1.4.0) is the
+  # first stable Flutter release where this package's dependency tree
+  # actually resolves. Caught by the sdk-matrix CI job's floor leg failing
+  # against the old 3.27.0 claim — a real consumer on Flutter
+  # 3.27.x-3.28.x was already unable to `flutter pub get` this package;
+  # this only makes the declared floor match that pre-existing reality.
+  # `sdk:` is deliberately left at 3.6.0, not bumped to match 3.29.0's
+  # bundled 3.7.0 — Dart 3.7 shipped a new default `dart format` style
+  # (gated on the package's declared language version), so raising this
+  # constraint would force-reformat the entire codebase for no functional
+  # reason. Every Dart version Flutter >=3.29.0 actually ships already
+  # satisfies >=3.6.0, so the two constraints stay consistent without it.
   sdk: ">=3.6.0 <4.0.0"
-  flutter: ">=3.27.0"
+  flutter: ">=3.29.0"
 
 dependencies:
   flutter:

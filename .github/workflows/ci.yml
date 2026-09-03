@@ -12,7 +12,7 @@ name: CI
 #   - Unit + widget test regressions (`flutter test`).
 #   - Doc/code drift: README.md/AGENTS.md ```dart snippets calling a
 #     factory/method that no longer exists on the public API (task-012).
-#   - The documented SDK floor (Flutter 3.27.0/Dart 3.6.0) actually
+#   - The documented SDK floor (Flutter 3.29.0/Dart 3.7.0) actually
 #     resolving and passing tests for a real consumer, alongside latest
 #     stable (task-012's `sdk-matrix` job).
 #
@@ -112,13 +112,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - label: "documented floor (Flutter 3.27.0 / Dart 3.6.0)"
-            flutter-version: "3.27.0"
+          - label: "documented floor (Flutter 3.29.0 / Dart 3.7.0)"
+            flutter-version: "3.29.0"
           - label: "latest stable"
             channel: stable
     # task-012: verifies the floor this package actually promises
-    # CONSUMERS (`environment:` in pubspec.yaml: sdk >=3.6.0, flutter
-    # >=3.27.0), plus latest stable, alongside the existing
+    # CONSUMERS (`environment:` in pubspec.yaml: sdk >=3.7.0, flutter
+    # >=3.29.0), plus latest stable, alongside the existing
     # `analyze-format-test` job (which always runs on `stable` and is the
     # primary day-to-day gate).
     #

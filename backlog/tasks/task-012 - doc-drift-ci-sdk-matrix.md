@@ -37,5 +37,16 @@
   `example/test/` (8 tests) now runs in CI for the first time — previously only ever run locally.
 - `actionlint` clean on the modified workflow. 434/434 root tests + 8/8 example tests green locally,
   both `analyze --fatal-infos` clean, `dart format` clean.
+- **The `sdk-matrix` job's floor leg found a REAL bug on its first run**: `flutter pub get` failed at
+  Flutter 3.27.0 with a version-solving conflict — `flutter_streaming_text_markdown` (every version)
+  depends on `characters >=1.4.0`, but Flutter's own bundled `flutter_test` pins `characters` to
+  exactly `1.3.0` through Flutter 3.27.4. The documented floor was genuinely wrong the whole time;
+  CI always ran on `stable` and never caught it. Fixed by raising `pubspec.yaml`'s `flutter:` floor to
+  `>=3.29.0` (first stable release bundling `characters 1.4.0`) and re-pointing this job's floor leg
+  there. Deliberately did NOT bump the `sdk:` (Dart) constraint to match 3.29.0's bundled `3.7.0` —
+  doing so triggers Dart 3.7's new default `dart format` style and would have force-reformatted 133
+  files for no functional reason; `sdk: >=3.6.0` stays accurate since every Dart version any Flutter
+  `>=3.29.0` ships already satisfies it. Updated the README Flutter badge and CLAUDE.md's SDK-floor
+  note to match. This is exactly the kind of drift this task existed to catch — see CHANGELOG.md.
 
 **Status:** DONE.
