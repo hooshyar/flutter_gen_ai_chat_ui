@@ -32,3 +32,7 @@ admin (publisher `dilacode.com`) can flip it: pub.dev → package → Admin →
 releases are uploaded manually (`git checkout v<version> && dart pub publish`),
 which is how 2.15.0 and 2.16.0 shipped. **Gate: ask Hooshyar** — this is a
 pub.dev account action, not code.
+
+## Done (2026-09-03 09:45) — enabled on pub.dev by the Conductor via Hooshyar's browser session
+
+pub.dev → flutter_gen_ai_chat_ui → Admin → Automated publishing → **Publishing from GitHub Actions ENABLED**, repository `hooshyar/flutter_gen_ai_chat_ui`, tag pattern `v{{version}}`, push events only ("Config updated"). Same done for `flutter_streaming_text_markdown`. The next `vX.Y.Z` tag push will publish through `publish.yml`'s OIDC job with no manual upload. Manual publishing was left enabled as a fallback.
