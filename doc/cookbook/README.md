@@ -12,6 +12,7 @@ real question in the issue tracker. All snippets use the current public API
 - [Customize how attachments are displayed](#customize-how-attachments-are-displayed)
 - [Match ChatGPT / Claude / Gemini styling](#match-chatgpt--claude--gemini-styling)
 - [Localize & support RTL](#localize--support-rtl)
+- [Wire up a real LLM provider (OpenAI, Anthropic, Gemini, Ollama)](#wire-up-a-real-llm-provider-openai-anthropic-gemini-ollama)
 
 The mental model: you own a `ChatMessagesController` (like a
 `TextEditingController`). You `addMessage(...)` to append, and
@@ -249,3 +250,186 @@ AiChatWidget(
   ),
 );
 ```
+
+---
+
+## Wire up a real LLM provider (OpenAI, Anthropic, Gemini, Ollama)
+
+This package has no opinion on where your responses come from — it just needs
+you to call `controller.addMessage(...)` once and `controller.updateMessage(...)`
+per chunk, exactly like [the streaming recipe above](#stream-a-response-word-by-word).
+These snippets use `package:http` directly (not each vendor's official SDK) so
+this package's core dependencies stay light — copy the parsing loop into your
+own service class and add whichever SDK you actually want, if any. Never
+hardcode an API key; read it from an environment variable or your platform's
+secret storage.
+
+All four follow the same shape: send a request with `"stream": true`, read the
+response body as a stream of newline-delimited chunks, decode each one,
+extract the incremental text, and feed it to `updateMessage`.
+
+### OpenAI (Chat Completions)
+
+```dart
+Future<void> streamFromOpenAi(ChatMessage userMessage) async {
+  final request = http.Request(
+    'POST',
+    Uri.parse('https://api.openai.com/v1/chat/completions'),
+  )
+    ..headers.addAll({
+      'Authorization': 'Bearer $openAiApiKey',
+      'Content-Type': 'application/json',
+    })
+    ..body = jsonEncode({
+      'model': 'gpt-5.6-terra', // check platform.openai.com/docs/models for the current one
+      'messages': [
+        {'role': 'user', 'content': userMessage.text}
+      ],
+      'stream': true,
+    });
+
+  const id = 'reply';
+  controller.addMessage(ChatMessage(
+    text: '', user: aiUser, createdAt: DateTime.now(),
+    customProperties: const {'id': id},
+  ));
+
+  final buffer = StringBuffer();
+  final response = await http.Client().send(request);
+  await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+    if (!line.startsWith('data: ') || line == 'data: [DONE]') continue;
+    final delta = jsonDecode(line.substring(6))['choices'][0]['delta']['content'] as String?;
+    if (delta == null) continue;
+    buffer.write(delta);
+    controller.updateMessage(ChatMessage(
+      text: buffer.toString(), user: aiUser, createdAt: DateTime.now(),
+      customProperties: const {'id': id},
+    ));
+  }
+}
+```
+
+### Anthropic (Messages API)
+
+```dart
+Future<void> streamFromAnthropic(ChatMessage userMessage) async {
+  final request = http.Request('POST', Uri.parse('https://api.anthropic.com/v1/messages'))
+    ..headers.addAll({
+      'x-api-key': anthropicApiKey,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    })
+    ..body = jsonEncode({
+      'model': 'claude-sonnet-5', // check platform.claude.com/docs for the current one
+      'max_tokens': 1024,
+      'messages': [
+        {'role': 'user', 'content': userMessage.text}
+      ],
+      'stream': true,
+    });
+
+  const id = 'reply';
+  controller.addMessage(ChatMessage(
+    text: '', user: aiUser, createdAt: DateTime.now(),
+    customProperties: const {'id': id},
+  ));
+
+  final buffer = StringBuffer();
+  final response = await http.Client().send(request);
+  await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+    if (!line.startsWith('data: ')) continue;
+    final event = jsonDecode(line.substring(6));
+    if (event['type'] != 'content_block_delta') continue;
+    buffer.write(event['delta']['text'] as String);
+    controller.updateMessage(ChatMessage(
+      text: buffer.toString(), user: aiUser, createdAt: DateTime.now(),
+      customProperties: const {'id': id},
+    ));
+  }
+}
+```
+
+### Google Gemini (`streamGenerateContent`)
+
+```dart
+Future<void> streamFromGemini(ChatMessage userMessage) async {
+  final uri = Uri.parse(
+    'https://generativelanguage.googleapis.com/v1beta/models/'
+    // check ai.google.dev/gemini-api/docs/models for the current model name
+    'gemini-2.5-flash:streamGenerateContent?alt=sse&key=$geminiApiKey',
+  );
+  final request = http.Request('POST', uri)
+    ..headers['Content-Type'] = 'application/json'
+    ..body = jsonEncode({
+      'contents': [
+        {
+          'parts': [
+            {'text': userMessage.text}
+          ]
+        }
+      ],
+    });
+
+  const id = 'reply';
+  controller.addMessage(ChatMessage(
+    text: '', user: aiUser, createdAt: DateTime.now(),
+    customProperties: const {'id': id},
+  ));
+
+  final buffer = StringBuffer();
+  final response = await http.Client().send(request);
+  await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+    if (!line.startsWith('data: ')) continue;
+    final delta = jsonDecode(line.substring(6))['candidates'][0]['content']['parts'][0]['text'] as String?;
+    if (delta == null) continue;
+    buffer.write(delta);
+    controller.updateMessage(ChatMessage(
+      text: buffer.toString(), user: aiUser, createdAt: DateTime.now(),
+      customProperties: const {'id': id},
+    ));
+  }
+}
+```
+
+### Ollama (local models, no API key)
+
+Ollama's `/api/chat` streams newline-delimited JSON (not SSE) — one JSON
+object per line, with a final `"done": true` line:
+
+```dart
+Future<void> streamFromOllama(ChatMessage userMessage) async {
+  final request = http.Request('POST', Uri.parse('http://localhost:11434/api/chat'))
+    ..body = jsonEncode({
+      'model': 'llama3.2', // whatever you've pulled via `ollama pull <model>`
+      'messages': [
+        {'role': 'user', 'content': userMessage.text}
+      ],
+    });
+
+  const id = 'reply';
+  controller.addMessage(ChatMessage(
+    text: '', user: aiUser, createdAt: DateTime.now(),
+    customProperties: const {'id': id},
+  ));
+
+  final buffer = StringBuffer();
+  final response = await http.Client().send(request);
+  await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+    if (line.isEmpty) continue;
+    final chunk = jsonDecode(line);
+    buffer.write(chunk['message']['content'] as String);
+    controller.updateMessage(ChatMessage(
+      text: buffer.toString(), user: aiUser, createdAt: DateTime.now(),
+      customProperties: const {'id': id},
+    ));
+    if (chunk['done'] == true) break;
+  }
+}
+```
+
+All four assume `import 'dart:convert';` and `import 'package:http/http.dart' as http;`
+at the top of the file, plus the `aiUser`/`controller` from your existing chat
+screen. Wrap the `send`/decode loop in a `try`/`catch` and call
+`controller.updateMessage(...)` with `hasError: true` on failure — see
+[`ChatMessage.hasError`](../../lib/src/models/chat/chat_message.dart) — the
+snippets above omit that for brevity.

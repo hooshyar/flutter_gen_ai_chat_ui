@@ -88,10 +88,14 @@ stale the way the historical audits below did.
    with item 3's benchmark work (validate it actually helps).
 6. **Attachments lightbox + multi-file (`task-008`).** Real, visible
    feature gap for a "complete file support" claim already in the README.
-7. **Provider integration examples (`task-011`).** Low code effort (examples
-   only, explicitly keep heavy SDKs out of `lib/`), decent value — backs
-   the "Works Great With: OpenAI, Anthropic Claude, Google Gemini..." claim
-   with copy-pasteable ~10-line snippets instead of just a bullet list.
+7. ~~**Provider integration examples (`task-011`).**~~ **DONE (2026-09-03).**
+   Added 4 copy-pasteable streaming snippets (OpenAI, Anthropic, Gemini,
+   Ollama) to `doc/cookbook/README.md`, using `package:http` directly —
+   no vendor SDK added to `lib/` or `example/`. Each provider's current
+   wire format was verified via web search before writing (not assumed
+   from memory); Gemini's endpoint in particular needed a second,
+   corroborating check after an initial search surfaced an unfamiliar
+   alternate API that didn't hold up under scrutiny.
 8. ~~**Scroll-debounce wall-clock flakiness (`task-019`).**~~ **DONE
    (2026-09-03).** Injected `package:clock` into the 3 debounce call sites
    (zero behavior change — defaults to real wall-clock time). A first

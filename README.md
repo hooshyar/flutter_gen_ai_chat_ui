@@ -286,7 +286,7 @@ flutter run
 Builds and runs cleanly under Flutter's `--wasm` web compile target (`flutter build web --wasm`) — no `dart:html`/`dart:js` legacy interop or other wasm-incompatible APIs in this package. CI builds the example app with `--wasm` on every push so a regression is caught immediately (`.github/workflows/ci.yml`, `wasm-build` job).
 
 ## 🌟 Works Great With
-- **AI Services**: OpenAI, Anthropic Claude, Google Gemini, Llama, Mistral
+- **AI Services**: OpenAI, Anthropic Claude, Google Gemini, Llama, Mistral — see the [cookbook's provider-wiring recipes](doc/cookbook/README.md#wire-up-a-real-llm-provider-openai-anthropic-gemini-ollama) for copy-pasteable streaming snippets (OpenAI, Anthropic, Gemini, Ollama)
 - **Backends**: Firebase, Supabase, REST APIs, WebSockets, GraphQL
 - **Use Cases**: Customer support, AI assistants, team chat, social messaging
 - **Industries**: SaaS, E-commerce, Healthcare, Education, Gaming
