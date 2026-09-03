@@ -56,3 +56,6 @@ this task tracks the proper fix.
 only test-suite reliability), but worth fixing properly rather than leaving every future test
 author to rediscover this the hard way. Most visible when multiple fleet sessions run `flutter
 test` concurrently on this machine.
+
+## Another instance (2026-09-03 10:10)
+Full suite in a separate worktree while 5 fleet sessions + 2 flutter web dev servers were running: `test/golden/chat_golden_test.dart: streaming message mid-stream (partial reveal)` failed once; the same test passes in isolation on both the fixed and the pre-fix commit. Timing-dependent partial-reveal golden under CPU load. Consider pumping to a deterministic reveal point instead of a wall-clock duration.
