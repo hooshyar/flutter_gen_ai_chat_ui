@@ -1,4 +1,7 @@
-## [Unreleased]
+## 2.19.0 - 2026-09-03
+
+Zero breaking changes. Headline addition: a built-in image lightbox and per-file upload progress
+for attachments.
 
 ### Added
 - **Built-in attachment lightbox + per-file upload progress (task-008).** A new `AttachmentLightbox` widget provides a full-screen, pinch-to-zoom, swipe-between-images preview for image attachments — enable it with `MessageOptions.enableAttachmentLightbox: true` (alongside `enableImageTaps: true`), or invoke `AttachmentLightbox.show(context, images: ..., initialIndex: ...)` directly from a custom `fileDisplayBuilder`. An explicit `MessageOptions.onMediaTap` always takes precedence, so existing custom tap handlers are unaffected — both new `MessageAttachment` parameters (`enableBuiltInLightbox`, `siblingMedia`) and the `MessageOptions` flag default to off/unset. Also added `ChatMedia.uploadProgress` (`0.0`-`1.0`, nullable) — set it while a file is uploading and `MessageAttachment` renders a percentage overlay automatically, for every attachment type, no extra config. Multi-file messages (`ChatMessage.media` with several entries) already rendered correctly; this adds the missing lightbox and progress pieces on top. 15 new tests. Documented in the cookbook's attachments recipe.

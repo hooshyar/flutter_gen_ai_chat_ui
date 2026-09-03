@@ -42,11 +42,21 @@ class _AttachmentsChatExampleState extends State<AttachmentsChatExample> {
   /// Stands in for a real file picker. `onFilesSelected` receives whatever
   /// the picker returns — here just a marker — and this method builds the
   /// actual message the same way a real picker's result would be handled.
-  void _simulateAttachFile() {
+  ///
+  /// Attaches two files at once (a document + a photo) to demonstrate
+  /// multi-file messages, simulates the photo uploading via
+  /// `ChatMedia.uploadProgress` (task-008), then settles it at its final
+  /// URL — tap the photo afterward to see the built-in `AttachmentLightbox`
+  /// (`MessageOptions.enableAttachmentLightbox`, also task-008).
+  Future<void> _simulateAttachFile() async {
+    const attachmentId = 'attachment-demo';
+    const photoUrl = 'https://picsum.photos/seed/gen-ai-chat-ui/800/600';
+
     _controller.addMessage(ChatMessage(
-      text: 'Here is the report you asked for.',
+      text: 'Here is the report and a photo from the site visit.',
       user: _currentUser,
       createdAt: DateTime.now(),
+      customProperties: const {'id': attachmentId},
       media: const [
         ChatMedia(
           url: 'quarterly-report.pdf',
@@ -55,20 +65,53 @@ class _AttachmentsChatExampleState extends State<AttachmentsChatExample> {
           size: 482 * 1024,
           extension: 'pdf',
         ),
+        ChatMedia(
+          url: photoUrl,
+          type: ChatMediaType.image,
+          fileName: 'site-visit.jpg',
+          uploadProgress: 0.0,
+        ),
       ],
     ));
-    setState(() => _isLoading = true);
-    _aiService.generateResponse('quarterly-report.pdf').then((response) {
+
+    for (final progress in [0.35, 0.7, 1.0]) {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
       if (!mounted) return;
-      _controller.addMessage(
-        ChatMessage(
-          text: "Got it — I can see quarterly-report.pdf. $response",
-          user: _aiUser,
-          createdAt: DateTime.now(),
-        ),
-      );
-      setState(() => _isLoading = false);
-    });
+      _controller.updateMessage(ChatMessage(
+        text: 'Here is the report and a photo from the site visit.',
+        user: _currentUser,
+        createdAt: DateTime.now(),
+        customProperties: const {'id': attachmentId},
+        media: [
+          const ChatMedia(
+            url: 'quarterly-report.pdf',
+            type: ChatMediaType.document,
+            fileName: 'quarterly-report.pdf',
+            size: 482 * 1024,
+            extension: 'pdf',
+          ),
+          ChatMedia(
+            url: photoUrl,
+            type: ChatMediaType.image,
+            fileName: 'site-visit.jpg',
+            uploadProgress: progress < 1.0 ? progress : null,
+          ),
+        ],
+      ));
+    }
+
+    setState(() => _isLoading = true);
+    final response = await _aiService.generateResponse('quarterly-report.pdf');
+    if (!mounted) return;
+    _controller.addMessage(
+      ChatMessage(
+        text:
+            "Got it — I can see quarterly-report.pdf and the photo. $response",
+        user: _aiUser,
+        createdAt: DateTime.now(),
+      ),
+    );
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -92,6 +135,11 @@ class _AttachmentsChatExampleState extends State<AttachmentsChatExample> {
           enabled: true,
           uploadTooltip: 'Attach a file',
           onFilesSelected: (_) => _simulateAttachFile(),
+        ),
+        // task-008: tap the photo attachment to open the built-in lightbox.
+        messageOptions: const MessageOptions(
+          enableImageTaps: true,
+          enableAttachmentLightbox: true,
         ),
         welcomeMessageConfig: const WelcomeMessageConfig(
           title: 'Tap the paperclip below to attach a file',

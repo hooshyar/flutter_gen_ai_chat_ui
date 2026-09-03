@@ -17,9 +17,11 @@ void main() {
 
     expect(find.textContaining('quarterly-report.pdf'), findsWidgets);
 
-    // Let the mock AI service's simulated response delay (250-600ms) finish
-    // so its Timer doesn't leak past the test.
-    await tester.pump(const Duration(milliseconds: 700));
+    // Let the simulated upload-progress sequence (task-008, 3 x 300ms) and
+    // the mock AI service's simulated response delay (250-600ms) finish so
+    // neither Timer leaks past the test.
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(const Duration(seconds: 2));
     expect(tester.takeException(), isNull);
   });
 
