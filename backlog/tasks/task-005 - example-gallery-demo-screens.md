@@ -17,20 +17,29 @@
       (`example/test/attachments_chat_test.dart`, `example/test/voice_chat_test.dart`) plus replaced
       the placeholder no-op `example/test/widget_test.dart` with a real home-gallery smoke test.
 - [ ] Capture short GIFs of the key flows for README (streaming, theming, RTL, agent actions) — NOT
-      DONE this tick. Recording a GIF means actually running the app and capturing screen video,
-      which needs either a real device/simulator session or browser-based capture — deferred rather
-      than rushed with a fake/placeholder asset. The 5 static golden PNGs from task-003
-      (`test/golden/goldens/*.png`) could serve as an interim static-screenshot substitute in the
-      README if a full GIF pass doesn't happen soon; a future tick (or Hooshyar) should do the real
-      GIF capture.
-- [ ] Build the example app for web and deploy a live demo (GitHub Pages or existing static host) —
-      NOT DONE this tick — deferred to keep this tick's scope to a completable unit (the demo
-      screens). `flutter build web` itself needs no simulator/device (pure build), so this is
-      actually safe to pick up in a future tick: build the example for web, add a GitHub Actions
-      workflow to deploy `example/build/web` to GitHub Pages on push to `main`, link it from the
-      README.
+      DONE. Recording a GIF means actually running the app and capturing screen video; checked for a
+      `gif_creator`-style browser recording tool this tick and none is available in this session
+      (only static screenshots via the browser tool). The live web demo (now up to date and linked
+      from the README) makes it easy for anyone — including Hooshyar — to see these flows directly
+      without a GIF; still worth doing properly in a future tick/session that has recording tooling.
+      The 5 static golden PNGs from task-003 (`test/golden/goldens/*.png`) remain a viable interim
+      static-screenshot substitute if a full GIF pass doesn't happen soon.
+- [x] Build the example app for web and deploy a live demo (GitHub Pages or existing static host) —
+      DONE. Discovered GitHub Pages was ALREADY enabled on this repo (`gh-pages` branch,
+      `https://hooshyar.github.io/flutter_gen_ai_chat_ui/`) from a one-off manual deploy on
+      2026-02-16 — stale (pre-2.15.0, missing the newer example screens) with no automation behind
+      it. Added `.github/workflows/deploy-web-demo.yml` (builds `example/` for web with the correct
+      `--base-href` and pushes to `gh-pages` via `peaceiris/actions-gh-pages` on every push to `main`
+      touching the package/example, kept the existing branch-based Pages method rather than switching
+      Pages' source setting). Also did an immediate manual redeploy so the demo is current right now
+      rather than waiting for the next qualifying push, and dropped stray
+      `example/.dart_tool/flutter_build` cache files the original manual deploy had accidentally
+      committed. VERIFIED LIVE: navigated the actual deployed site with the browser tool, confirmed
+      the home gallery renders (including the new Attachments/Voice Input cards), and both new demo
+      screens work end-to-end in the browser (attach → PDF chip renders + AI acknowledges it; mic tap
+      → simulated listening → recognized text fills the input).
 - [x] Update README with the gallery/demo links — added `Attachments` and `Voice Input` to the
-      "🎮 Live Examples" list.
+      "🎮 Live Examples" list, plus a link to the live web demo at the top of that section.
 - [x] `flutter analyze` clean on example/ (`flutter analyze` — no `--fatal-infos` flag exists for
       that command variant used here, but zero issues found either way), `flutter test` green in
       `example/test/` (plain widget tests, no device needed). `example/integration_test/` was NOT
@@ -39,7 +48,8 @@
       anyway (following the existing pattern where integration tests exercise the package's
       `AiChatWidget` API via `TestUtils`, not the example screens directly).
 
-**Status:** IN PROGRESS — demo screens done; GIFs and live web deploy remain (see notes above).
+**Status:** IN PROGRESS — demo screens + live web deploy done and verified; only GIF capture remains
+(needs recording tooling not available in this session).
 
 **Notes:** Web deploy target choice (GitHub Pages vs other) is a judgment call — GitHub Pages via
 Actions is the lowest-friction default since it's already GitHub-native and free; use that unless
