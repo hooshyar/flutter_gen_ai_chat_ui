@@ -1,4 +1,11 @@
-## [Unreleased]
+## 2.17.0 - 2026-09-03
+
+Zero breaking changes for anyone who could previously build this package. The headline fix — the
+documented Flutter floor was inaccurate and is now corrected — only affects consumers on Flutter
+3.27.x-3.34.x, who were already unable to install this package before this release (see below).
+Also removes a dependency, adds a real performance-benchmark suite, and adds two new CI checks
+(doc/code drift, SDK floor verification) that should prevent this exact kind of drift from
+recurring silently in the future.
 
 ### Fixed
 - **The documented Flutter floor (`>=3.27.0`) was inaccurate — raised to `>=3.35.0`.** Found by task-012's new `sdk-matrix` CI job actually testing the declared floor for the first time (CI had always run on `stable`, silently masking this) — and found iteratively, one binding constraint at a time, across two CI runs: `flutter_streaming_text_markdown` (every version, not just the currently-pinned `^1.9.1`) depends on `characters >=1.4.0`, unavailable in Flutter's own bundled `flutter_test` until Flutter 3.29.0; fixing that surfaced a second, higher constraint — `google_fonts ^8.1.0`'s own declared floor is `sdk ^3.9.0` / `flutter >=3.35.0`. `flutter pub get` has genuinely failed to resolve this package below Flutter 3.35.0 for as long as both dependencies have been at their current versions. Anyone actually on Flutter 3.27.x-3.34.x was already unable to install this package; this only corrects the declared floor to match that pre-existing reality — it does not newly break anyone who could previously build. The Dart `sdk:` constraint stays at `>=3.6.0` (not bumped to Flutter 3.35.0's bundled `3.9.0`) deliberately, since Dart 3.7 gates a new default `dart format` style on the declared language version and every Dart version any Flutter `>=3.35.0` ships already satisfies `>=3.6.0` anyway.
