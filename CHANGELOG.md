@@ -26,6 +26,11 @@ All four groups above will be removed in v3.0.0; no behavior changes from deprec
 ### Tests
 - Added `test/theme/custom_theme_extension_applies_test.dart` (6 tests: `chatBackground`, bubble/text colors, send button color, and input field colors all actually render from a `CustomThemeExtension`, and explicit `BubbleStyle`/`MessageOptions`/`InputOptions` values still take precedence over it), `test/widgets/input_autocorrect_dead_parameter_test.dart` (2 tests), and one more golden (`goldens/chatgpt_theme_preset.png`, visually pinning the ChatGPT preset actually changing bubble/input/send-button colors). Net test count: 416 → 425.
 
+## 2.16.1 - 2026-09-03
+
+### Fixed
+- **`pinDuringStreaming` was released a few hundred milliseconds after arming when the answer was started with `addStreamingMessage`** — i.e. in the example app and for every consumer using the `addStreamingMessage` → `updateMessage` → `stopStreamingMessage` flow, the pin held for a moment and then the list "silently jumped forward" (found by a visual QA pass of the 2.16.0 web demo). `addMessage` schedules its delayed auto-scroll before `addStreamingMessage` arms the pin; when that timer fired it went through the public `scrollToBottom`, which 2.16.0 treats as "the reader took over" and therefore released the pin. The controller's own automatic scrolls now use an internal path that never releases the pin, and the delayed auto-scroll re-checks the pin when it fires. Regression test: `test/widgets/streaming_pin_delayed_autoscroll_test.dart` (fails on 2.16.0, passes now). No API changes.
+
 ## 2.16.0 - 2026-09-03
 
 ### Added

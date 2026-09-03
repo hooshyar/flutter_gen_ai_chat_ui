@@ -648,6 +648,16 @@ class ChatMessagesController extends ChangeNotifier {
         return;
       }
 
+      // Re-check the streaming pin at FIRE time, not only when this timer was
+      // scheduled: `addStreamingMessage` schedules this scroll from inside
+      // `addMessage` and only arms the pin afterwards, so by the time the delay
+      // elapses the pin is active and this scroll would tear the reader away
+      // from the anchor (and, worse, count as an explicit scroll-to-bottom).
+      if (!isUserMessage && isStreamingPinActive) {
+        debugPrint('SCROLL ABORTED: streaming pin active');
+        return;
+      }
+
       // Make sure the widget is still mounted and the response ID hasn't changed
       if (_scrollController?.hasClients != true) {
         debugPrint('SCROLL ABORTED: Scroll controller no longer has clients');
@@ -727,7 +737,7 @@ class ChatMessagesController extends ChangeNotifier {
           debugPrint('SCROLLING TO BOTTOM: Default behavior');
         }
 
-        scrollToBottom(
+        _scrollToBottomInternal(
             config.scrollAnimationDuration, config.scrollAnimationCurve);
       } else if (!hasScrolled) {
         debugPrint('SKIPPING DEFAULT SCROLL: Custom scroll behavior is active');
@@ -837,8 +847,17 @@ class ChatMessagesController extends ChangeNotifier {
     Curve? curve,
   ]) {
     // An explicit scroll-to-bottom is the reader taking over: release any
-    // streaming pin so it does not immediately pull the list back up.
+    // streaming pin so it does not immediately pull the list back up. The
+    // controller's own automatic scrolls go through [_scrollToBottomInternal]
+    // and never release the pin.
     releaseStreamingPin();
+    _scrollToBottomInternal(duration, curve);
+  }
+
+  void _scrollToBottomInternal([
+    Duration? duration,
+    Curve? curve,
+  ]) {
     if (!_mounted || _scrollController?.hasClients != true) return;
 
     // Don't interrupt user's manual scrolling
