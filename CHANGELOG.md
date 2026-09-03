@@ -1,6 +1,8 @@
 ## [Unreleased]
 
 ### Added
+- **`docs/AWARD-PLAN.md` (task-016)** — a living, ranked (value/effort) plan of what's left to push this package toward Flutter Favorite / award-grade status, cross-referencing the `backlog/tasks/` decomposition instead of duplicating it. Re-checked (not assumed) two pre-existing historical audit docs while writing it — `doc/ONBOARDING_AUDIT.md`'s 5 queued items are now all independently resolved by later work. Surfaced a real, time-sensitive item: the `shimmer` dependency's pana "up-to-date" grace window has ~2.5 weeks left (see task-006).
+- **Repo polish**: `.github/FUNDING.yml` (GitHub-native Sponsor button) and `.github/ISSUE_TEMPLATE/bug_report.md`/`feature_request.md` (the repo only had a custom "showcase" template before).
 - **Verified and documented WebAssembly (`--wasm`) support (task-015).** `flutter build web --wasm` on the example app succeeds with zero source changes needed — no `dart:html`/`dart:js` legacy interop anywhere in the package. Confirmed end-to-end, not just "it compiles": served the wasm build locally, verified `main.dart.wasm` actually loads (not a silent JS fallback), and exercised the streaming markdown demo with no runtime errors. Added a `wasm-build` CI job (`.github/workflows/ci.yml`) so a future regression is caught automatically, and documented the status in the README's new "Web / WebAssembly" section.
 
 ### Fixed
