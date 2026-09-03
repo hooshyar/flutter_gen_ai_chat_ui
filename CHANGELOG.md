@@ -1,4 +1,9 @@
-## [Unreleased]
+## 2.16.2 - 2026-09-03
+
+Zero breaking changes. A real bug fix for a previously-inert, marketed feature
+(`CustomThemeExtension`), a batch of dead/superseded-field deprecations from the ongoing
+documented-knob audit, a completed dartdoc pass, verified WebAssembly support, and three
+live-demo polish fixes.
 
 ### Fixed
 - **Example app: two visual-QA findings from the live web demo (tasks 023, 024).** The Attachments and Voice Input demos shared `ResponseStyle.conversational` with the Custom Themes demo, so every reply — including ones about an attached file or a recognized voice phrase — was "Try switching between the Ocean/Sunset/Default themes above", even though neither screen has a theme selector. Both now use a new `ResponseStyle.assistant` with context-appropriate replies (file/report-aware, weather/fun-fact/summarize-aware for the voice demo's simulated phrases). Separately, the Rich Widgets demo's "Add to Cart" button had an empty `onPressed: () {}` — tapping it did nothing at all, reading as a dead button; it now shows a confirmation `SnackBar`. Example-app-only, no package API changes.
