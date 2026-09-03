@@ -21,4 +21,4 @@ continuously autoscrolling to the bottom as it streams.
 
 
 ## Follow-up (2026-09-03)
-bernd70 tested this fix and reports it is not the behaviour he wants (he wants a streaming-time pin, not an end-of-stream jump). See TASK-020 — do not close issue #42 on this task alone.
+bernd70 tested this fix and reports it is not the behaviour he wants (he wants a streaming-time pin, not an end-of-stream jump). See TASK-020 (Done 2026-09-03, shipped in v2.16.0).
