@@ -25,9 +25,9 @@
   `.of(context)` accessor as false positives — fixed by widening the resolution check, not by
   weakening it into an unreliable "contains anywhere" fallback). Wired as a new step in
   `analyze-format-test`.
-- **SDK matrix**: new `sdk-matrix` job, 2 legs — floor (Flutter 3.27.0, confirmed via the Flutter
-  releases API to bundle Dart 3.6.0, exactly matching this package's declared floor) and latest
-  stable. **Resolved (not just documented) the #41 dev/consumer floor discrepancy**: the floor leg
+- **SDK matrix**: new `sdk-matrix` job, 2 legs — floor (initially Flutter 3.27.0, corrected twice to
+  the real floor `3.35.0` — see below) and latest stable. **Resolved (not just documented) the #41
+  dev/consumer floor discrepancy**: the floor leg
   runs `example/`'s own `flutter pub get` + `flutter test`, not the root package's — the root's
   `flutter_lints: ^6.0.0` dev_dependency needs Dart `^3.8.0` (confirmed via pub.dev API) and would
   fail to resolve at the floor, but that's contributor tooling a real consumer never touches (pub
@@ -56,5 +56,7 @@
   README Flutter badge and CLAUDE.md's SDK-floor note to match. This — including that a single green
   CI run against a raised floor doesn't prove there isn't a THIRD constraint waiting behind the first
   two — is exactly the kind of drift this task existed to catch. See CHANGELOG.md.
+- **Final state confirmed green**: all 5 CI jobs passed on the `4ad4eb3` push, including both
+  `sdk-matrix` legs (floor `3.35.0` and latest stable) and the doc-drift check.
 
 **Status:** DONE.
