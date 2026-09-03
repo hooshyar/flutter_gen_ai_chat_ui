@@ -353,7 +353,17 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: () {},
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '${data['name'] ?? 'Item'} added to cart'
+                      ' 🛒',
+                    ),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
               child: const Text('Add to Cart'),
             ),
           ),

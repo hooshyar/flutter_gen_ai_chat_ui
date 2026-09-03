@@ -23,7 +23,7 @@ class VoiceChatExample extends StatefulWidget {
 class _VoiceChatExampleState extends State<VoiceChatExample> {
   final _controller = ChatMessagesController();
   final _textController = TextEditingController();
-  final _aiService = ExampleAiService(style: ResponseStyle.conversational);
+  final _aiService = ExampleAiService(style: ResponseStyle.assistant);
   bool _isLoading = false;
   VoiceState _voiceState = VoiceState.idle;
   Timer? _simulatedRecognitionTimer;

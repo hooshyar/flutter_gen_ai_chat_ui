@@ -11,6 +11,11 @@ enum ResponseStyle {
 
   /// Conversational — shorter, friendly, emoji-flavored.
   conversational,
+
+  /// General-purpose assistant replies for demos that aren't specifically
+  /// about theming or markdown (attachments, voice input) — no
+  /// theme-switching pitch, since those screens have no theme selector.
+  assistant,
 }
 
 /// Simple mock AI service for example apps.
@@ -33,6 +38,8 @@ class ExampleAiService {
         return _markdownResponse(query);
       case ResponseStyle.conversational:
         return _conversationalResponse(query);
+      case ResponseStyle.assistant:
+        return _assistantResponse(query);
     }
   }
 
@@ -208,6 +215,39 @@ class ExampleAiService {
         'and Default themes above to see how this chat looks in different '
         'styles. Each theme changes bubble colors, border radii, and input '
         'decoration.';
+  }
+
+  // --- Assistant (Attachments / Voice Input examples) ---
+  String _assistantResponse(String query) {
+    final lower = query.toLowerCase();
+
+    if (lower.endsWith('.pdf') || lower.contains('report')) {
+      return "Looks like a business report — want me to pull out the key "
+          "numbers, or summarize it in a couple of sentences?";
+    }
+    if (lower.contains('weather')) {
+      return "I don't have live weather data in this demo, but in a real "
+          "app this is exactly where you'd call a weather API and stream "
+          "the result back through the same controller.";
+    }
+    if (lower.contains('fun fact') || lower.contains('flutter')) {
+      return 'Flutter fun fact: the engine (Skia or Impeller) draws every '
+          "pixel itself instead of wrapping native platform widgets — "
+          "that's how the same UI code renders identically on iOS, "
+          "Android, web, and desktop.";
+    }
+    if (lower.contains('summarize')) {
+      return "Sure — in a real app, this is where you'd pass the "
+          "conversation history to your LLM with a \"summarize this\" "
+          "prompt and stream the result back the same way.";
+    }
+    if (lower.contains('hello') || lower.contains('hi') || query.length < 10) {
+      return "Hey! I'm a demo assistant — ask me anything, or try the "
+          "button above.";
+    }
+
+    return "Got your message! In a real app, this is where your LLM "
+        "backend would generate a reply.";
   }
 
   /// Stream a response word by word.

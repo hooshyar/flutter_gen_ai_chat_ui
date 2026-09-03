@@ -19,7 +19,7 @@ class AttachmentsChatExample extends StatefulWidget {
 
 class _AttachmentsChatExampleState extends State<AttachmentsChatExample> {
   final _controller = ChatMessagesController();
-  final _aiService = ExampleAiService(style: ResponseStyle.conversational);
+  final _aiService = ExampleAiService(style: ResponseStyle.assistant);
   bool _isLoading = false;
 
   static const _currentUser = ChatUser(id: 'user', name: 'You');
