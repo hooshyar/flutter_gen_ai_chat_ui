@@ -17,6 +17,21 @@ cut the next release.
 **Notes:** Re-run this task for each subsequent release as the backlog above gets worked through —
 don't treat it as one-and-done.
 
+## Done — v2.17.1 (2026-09-03)
+
+Small patch release bundling the 2 items unreleased since v2.17.0: the scroll-debounce clock
+injection fix (task-019 — an internal test-reliability fix, zero runtime behavior change for
+consumers) and the provider integration cookbook recipes (task-011, docs-only). Zero breaking
+changes; patch-level bump since neither item touches public API surface.
+
+- Tag `v2.17.1` pushed → `publish.yml` run 33747314755 succeeded → confirmed live at
+  `pub.dev/packages/flutter_gen_ai_chat_ui` (latest version 2.17.1 via the pub.dev API).
+- Live web demo redeployed automatically.
+- **Confirmed 160/160 pub points** on a fresh, uncontended `pana` run — the new `package:clock`
+  dependency didn't cost anything.
+- 436/436 root tests + 8/8 example tests green, both `analyze --fatal-infos` clean, `dart format`
+  clean, all CI jobs green pre- and post-tag.
+
 ## Done — v2.16.2 (2026-09-03)
 
 First release to actually go out through the newly-enabled GitHub Actions OIDC publish (task-017) —

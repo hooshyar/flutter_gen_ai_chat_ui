@@ -7,29 +7,25 @@ it — each item below links to its backlog task file where one exists. Update
 this file as tasks complete or new opportunities surface; don't let it go
 stale the way the historical audits below did.
 
-## Snapshot as of 2026-09-03 (v2.17.0)
+## Snapshot as of 2026-09-03 (v2.17.1)
 
 - 0 open PRs, 2 open issues (#41 roadmap tracker — kept current, see its
   latest comment; #42 — pin feature shipped, awaiting reporter
   confirmation).
-- **`task-018` (cut the next release) done again — v2.17.0 published.**
-  Bundled everything unreleased since 2.16.2: the corrected Flutter floor
-  (`>=3.35.0`, see task-012), the `shimmer` dependency removal, the new
-  performance-benchmark suite (task-014), and the doc-drift + SDK-matrix
-  CI checks (task-012). Zero breaking changes for anyone who could
-  previously build the package. Task-018's own note that release-cutting
-  isn't one-and-done held again — this file's job is to keep flagging
-  when enough has accumulated to justify the next one.
+- **`task-018` (cut the next release) done again — v2.17.1 published**, a
+  small patch bundling the 2 items unreleased since v2.17.0: the
+  scroll-debounce clock-injection fix (task-019 — internal test
+  reliability, zero consumer-visible behavior change) and the provider
+  integration cookbook recipes (task-011, docs-only). Zero breaking
+  changes. Task-018's own note that release-cutting isn't one-and-done
+  held again — this file's job is to keep flagging when enough has
+  accumulated to justify the next one.
 - **Confirmed 160/160 pub points** — a fresh, uncontended `pana` run
-  against v2.17.0. Full breakdown: 30/30 file conventions, 10/10 dartdoc,
-  10/10 example+screenshots, 20/20 all-6-platforms, 50/50 static
-  analysis, 10/10 up-to-date deps (the `shimmer` dependency-freshness
-  warning that used to sit here is gone — the dependency itself was
-  removed), 10/10 latest SDK, 20/20 downgrade compatibility. This is the
-  number to protect going forward — re-run `pana --no-warning .` after
-  any future release to confirm it's still holding.
-- 434 package tests + 8 example tests green (the example suite now also
-  runs in CI, not just locally — see task-012), `dart analyze
+  against v2.17.1; the new `package:clock` dependency (task-019) didn't
+  cost anything. This is the number to protect going forward — re-run
+  `pana --no-warning .` after any future release to confirm it's still
+  holding.
+- 436 package tests + 8 example tests green, `dart analyze
   --fatal-infos` clean (root + example), `dart format
   --set-exit-if-changed` clean,
   `dart pub publish --dry-run` clean, `flutter build web --wasm` clean.
