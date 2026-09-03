@@ -13,8 +13,7 @@ import 'package:flutter_gen_ai_chat_ui_example/version_info.dart';
 /// regenerated `lib/version_info.dart`), instead of the badge just quietly
 /// going stale again.
 void main() {
-  test('generated packageVersion matches the package pubspec.yaml version',
-      () {
+  test('generated packageVersion matches the package pubspec.yaml version', () {
     final pubspecContent = File('../pubspec.yaml').readAsStringSync();
     final match = RegExp(r'^version:\s*(\S+)', multiLine: true)
         .firstMatch(pubspecContent);

@@ -45,8 +45,7 @@ void main() {
         .isNotEmpty;
   }
 
-  testWidgets('chatBackground colors the overall chat surface',
-      (tester) async {
+  testWidgets('chatBackground colors the overall chat surface', (tester) async {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 
@@ -102,8 +101,7 @@ void main() {
     expect(hasBubbleWithColor(ext.userBubbleColor!), isTrue,
         reason: 'user bubble should use CustomThemeExtension.userBubbleColor');
     expect(hasBubbleWithColor(ext.messageBubbleColor!), isTrue,
-        reason:
-            'AI bubble should use CustomThemeExtension.messageBubbleColor');
+        reason: 'AI bubble should use CustomThemeExtension.messageBubbleColor');
 
     final userText = tester.widget<Text>(find.text('Hi from the user'));
     final aiText = tester.widget<Text>(find.text('Hi from the AI'));
@@ -169,7 +167,8 @@ void main() {
     expect(icon.color, ext.sendButtonColor);
   });
 
-  testWidgets('inputBackgroundColor/inputTextColor apply to the text field '
+  testWidgets(
+      'inputBackgroundColor/inputTextColor apply to the text field '
       'when no explicit decoration/style is set', (tester) async {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);

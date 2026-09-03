@@ -151,8 +151,8 @@ class _ChatInputState extends State<ChatInput> {
                 hintStyle: themeExt.hintTextColor != null
                     ? TextStyle(color: themeExt.hintTextColor)
                     : null,
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: themeExt.inputBorderColor != null

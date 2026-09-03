@@ -443,7 +443,8 @@ class _AiChatWidgetState extends State<AiChatWidget>
         // color. Null when nobody has opted into a custom theme, in which
         // case this is unchanged from before (transparent — inherits
         // whatever's behind it, typically the Scaffold background).
-        color: Theme.of(context).extension<CustomThemeExtension>()?.chatBackground,
+        color:
+            Theme.of(context).extension<CustomThemeExtension>()?.chatBackground,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
