@@ -41,6 +41,8 @@ dart pub publish --dry-run
 
 The example app has its own `pubspec.yaml` and `pubspec.lock`; running `flutter pub get` inside `example/` is a separate step from the package's own `pub get`.
 
+**Before every commit that touches `.dart` files, run `dart format --output=none --set-exit-if-changed .` (root) and `cd example && dart format --output=none --set-exit-if-changed .`** — CI (`.github/workflows/ci.yml`) gates on this and `flutter analyze --fatal-infos`/`flutter test` passing locally does NOT mean formatting is clean. This has broken CI on `main` before (2026-09-03) from edits verified with analyze+test alone. After pushing, `gh run list --workflow=ci.yml --limit 1` to confirm the run actually goes green — don't assume it did.
+
 ## Architecture
 
 ### Two parallel surfaces: classic chat + agent platform
