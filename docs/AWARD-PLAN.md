@@ -67,12 +67,14 @@ stale the way the historical audits below did.
    than the root package (whose dev-only `flutter_lints` pin genuinely
    can't resolve at the floor, which is fine — consumers never touch a
    dependency's dev_dependencies). **The floor leg immediately found a
-   real bug**: the documented Flutter floor (`3.27.0`) had never actually
-   resolved — `flutter_streaming_text_markdown` needs `characters
-   >=1.4.0`, unavailable in Flutter's bundled tooling until `3.29.0` — so
-   CI running only on `stable` had silently masked a floor that was wrong
-   this whole time. Corrected to `flutter: ">=3.29.0"` (Dart `sdk:` stays
-   at `3.6.0` deliberately, to avoid Dart 3.7's formatter-style cliff).
+   real bug, twice in a row**: the documented Flutter floor (`3.27.0`) had
+   never actually resolved — first `flutter_streaming_text_markdown` needs
+   `characters >=1.4.0` (unavailable below Flutter `3.29.0`), then, after
+   fixing that, `google_fonts ^8.1.0`'s own floor (`flutter >=3.35.0`)
+   turned out to be the real binding constraint. CI running only on
+   `stable` had silently masked a floor that was wrong this whole time.
+   Corrected to `flutter: ">=3.35.0"` (Dart `sdk:` stays at `3.6.0`
+   deliberately, to avoid Dart 3.7's formatter-style cliff).
 
 ## Medium value / medium effort
 
