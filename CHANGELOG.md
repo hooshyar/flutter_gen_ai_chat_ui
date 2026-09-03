@@ -1,4 +1,10 @@
-## [Unreleased]
+## 2.17.1 - 2026-09-03
+
+Zero breaking changes. An internal test-reliability fix (no runtime behavior change for consumers)
+and a documentation addition.
+
+### Added
+- **Provider integration cookbook recipes (task-011).** `doc/cookbook/README.md` gained a "Wire up a real LLM provider" section with 4 copy-pasteable streaming snippets (OpenAI Chat Completions, Anthropic Messages API, Google Gemini `streamGenerateContent`, Ollama `/api/chat`), each showing the real SSE/NDJSON parsing loop feeding `controller.updateMessage(...)` via `package:http` directly — no vendor SDK dependency added to `lib/` or `example/`. Linked from README's "Works Great With" section.
 
 ### Changed
 - **Scroll-debounce timing now reads an injectable clock instead of raw `DateTime.now()` (task-019).** `ChatMessagesController`'s auto-scroll debounce (`_scrollAfterRender`, `forceScrollToFirstMessageInChain`, `_scrollToBottomInternal`) compared real wall-clock time to decide whether to schedule a delayed scroll `Timer`. Under normal fast test execution the gap between controller construction and the first scroll call is a few milliseconds — comfortably under the 800ms debounce window — so the debounce almost always short-circuited and no `Timer` was ever created. Under a heavily loaded machine, that real-time gap could occasionally exceed 800ms, causing a genuine `Timer` to actually get scheduled; if the test that triggered it didn't drain at least that long afterward, it failed at teardown with "A Timer is still pending" — a failure with nothing to do with whatever the test was actually checking, and load-dependent enough that it couldn't be reliably reproduced on demand. Added `package:clock` as a dependency and switched the three debounce call sites to its ambient `clock.now()`, which defaults to real wall-clock time (zero behavior change for production and for any existing test) but lets a test wrap itself in `withClock(...)` to make the debounce fully deterministic. Two new tests (`test/controllers/scroll_debounce_clock_test.dart`) use a manually-advanceable fake clock to force the debounce open on demand in a tight loop, reproducing on-demand the exact condition that previously only occurred by chance under machine load, and confirming it doesn't leave a pending `Timer` after disposal.
