@@ -7,40 +7,29 @@ it — each item below links to its backlog task file where one exists. Update
 this file as tasks complete or new opportunities surface; don't let it go
 stale the way the historical audits below did.
 
-## Snapshot as of 2026-09-03 (v2.16.1)
+## Snapshot as of 2026-09-03 (v2.16.2)
 
 - 100 likes, ~1,943 downloads/30d, 0 open PRs, 2 open issues (#41 roadmap
-  tracker, #42 — pin feature shipped, awaiting reporter confirmation).
-- **Task-017 (pub.dev CI-publish gate) is now resolved** — Hooshyar enabled
-  "Publishing from GitHub Actions" on pub.dev for this package (and
-  `flutter_streaming_text_markdown`) directly. The next `vX.Y.Z` tag push
-  publishes through `publish.yml`'s OIDC job with no manual `dart pub
-  publish` step required — this makes `task-018` (cut the next release,
-  ranked below) lower-friction than it's been for any prior release this
-  session.
-- 2.16.1 already shipped a same-day fix for a `pinDuringStreaming`
-  regression found via visual QA of the live web demo (the pin released
-  itself a few hundred ms after arming when a response was started via
-  `addStreamingMessage`) — see `CHANGELOG.md`. New backlog items 022-024
-  came out of that same visual QA pass; not yet triaged into this plan's
-  ranking below (check `backlog/tasks/` directly for their current state
-  before assuming this list is exhaustive).
-- 425 package tests + 5 example tests green, `dart analyze --fatal-infos`
+  tracker, #42 — pin feature shipped, awaiting reporter confirmation on
+  2.16.2 after a same-day pin regression was found and fixed in 2.16.1).
+- **`task-018` (cut the next release) is done — v2.16.2 published.** The
+  previously-ranked #2 item here shipped: `CustomThemeExtension` fix, the
+  dartdoc completion, wasm verification, this plan + repo polish, and the
+  022-024 visual-QA fixes all reached pub.dev in one release. Also the
+  first release to go out entirely through `task-017`'s GitHub Actions
+  OIDC auto-publish — no manual `dart pub publish` step.
+- **Confirmed 160/160 pub points** — a fresh, uncontended `pana` run
+  against v2.16.2 (not the earlier resource-contended 60/160 reading this
+  file used to warn about — that number was never real; superseded here).
+  Full breakdown: 30/30 file conventions, 10/10 dartdoc, 10/10
+  example+screenshots, 20/20 all-6-platforms, 50/50 static analysis, 10/10
+  up-to-date deps (shimmer's warning below is still just a warning, not a
+  deduction yet), 10/10 latest SDK, 20/20 downgrade compatibility. This is
+  the number to protect going forward — re-run `pana --no-warning .` after
+  any future release to confirm it's still holding.
+- 426 package tests + 8 example tests green, `dart analyze --fatal-infos`
   clean (root + example), `dart format --set-exit-if-changed` clean,
   `dart pub publish --dry-run` clean, `flutter build web --wasm` clean.
-- A **local `pana` run today came back 60/160**, but that number is not
-  trustworthy — it failed most sections with `Exceeded timeout of
-  0:02:00.000000` / `dart analyze timed out` (this machine was
-  resource-contended running a concurrent `flutter test` at the time), and
-  every one of those specific claims (docs, static analysis, platform
-  support) is independently contradicted by a clean `dart analyze
-  --fatal-infos`, `dart doc .` (0 warnings, ~13s), and `flutter test` run
-  minutes earlier and after. The one section pana finished cleanly —
-  dependencies — surfaced a real, separate, already-tracked issue (see
-  "Time-sensitive" below). **Action: re-run `pana --no-warning .` on an
-  otherwise-idle machine to get a trustworthy number before assuming
-  anything is actually wrong with docs/analysis/platform-support.** Don't
-  paste the 60/160 figure anywhere as if it were real.
 
 ## Time-sensitive (do first, small effort)
 
@@ -59,15 +48,10 @@ stale the way the historical audits below did.
 
 ## High value / low-medium effort
 
-2. **Cut the next release (`task-018`).** A real amount of shipped-but-unreleased
-   value is sitting in `[Unreleased]` right now: the `CustomThemeExtension`
-   fix (a previously-completely-inert, README-marketed feature now actually
-   works), the dartdoc completion, several deprecations, and the wasm CI
-   guard. None of this reaches a single consumer until a version is tagged
-   and published. This is mechanical, well-defined by the existing release
-   checklist in `CLAUDE.md`, and unlocks the value of several already-done
-   tasks at once — the single best value/effort ratio on this list right
-   now. **Recommended next tick's target.**
+2. ~~**Cut the next release (`task-018`).**~~ **DONE (2026-09-03) — shipped as v2.16.2.** Bundled
+   the `CustomThemeExtension` fix, dartdoc completion, deprecations, wasm CI guard, this plan, and
+   the 022-024 visual-QA fixes. Re-run this same item (next release) whenever `[Unreleased]`
+   accumulates real value again — see `task-018`'s own note that it's not one-and-done.
 3. **Performance benchmarks (`task-014`).** The README's "Performance &
    Features" section makes specific, unverified claims — *"60 FPS with
    1000+ messages"*, *"Startup Time: <100ms initialization"*, *"Optimized
