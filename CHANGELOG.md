@@ -1,4 +1,6 @@
-## [Unreleased]
+## 2.19.1 - 2026-09-03
+
+Zero breaking changes. A routine dependency-freshness bump, no code changes on this side.
 
 ### Changed
 - **Bumped `flutter_streaming_text_markdown` to `^1.10.1`** (from `^1.9.1`) — a routine dependency-freshness check (GOAL item 5) after several ticks of feature work. Backward-compatible per its own changelog: real typeset LaTeX via `flutter_math_fork` instead of Unicode approximations (with a plain-text fallback on parse errors), a fixed web clipboard exception, a word-by-word animation resume bug fix, and a completed dartdoc pass on that package's own public API. No changes needed on this side; 458/458 tests still green.
