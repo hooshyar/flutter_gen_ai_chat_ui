@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+/// Builds the widget shown for a `ChatMessage.rich(resultKind: kind, ...)`
+/// message, given its `data` payload. Registered per-`kind` in
+/// [ResultRendererRegistry.builders].
 typedef ResultBuilder = Widget Function(
     BuildContext context, Map<String, dynamic> data);
 

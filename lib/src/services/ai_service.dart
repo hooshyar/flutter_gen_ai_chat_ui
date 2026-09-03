@@ -52,9 +52,15 @@ class AiFunctionCallStreamResult {
   });
 }
 
+/// The kind of chunk an [AiFunctionCallStreamResult] carries.
 enum AiFunctionCallResultType {
+  /// A partial text token, as it streams in.
   textChunk,
+
+  /// A complete function/tool call the model wants to invoke.
   functionCall,
+
+  /// The stream has finished.
   complete,
 }
 
