@@ -47,6 +47,11 @@ jobs:
           cd example
           flutter pub get
 
+      - name: Regenerate version badge
+        run: |
+          cd example
+          dart run tool/generate_version.dart
+
       - name: Build web demo
         run: |
           cd example

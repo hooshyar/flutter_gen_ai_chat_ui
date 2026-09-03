@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### Fixed
+- **Example app: the home screen's version badge is no longer a hand-typed literal (task-021).** It had sat at `v2.14.0` on the live web demo through two releases (2.15.0 and 2.16.0) because it was a hardcoded string in `home_screen.dart`. It's now read from a generated `example/lib/version_info.dart` (`dart run tool/generate_version.dart` from `example/`, parsed straight from the package's own `pubspec.yaml`), which `deploy-web-demo.yml` also regenerates before every web-demo build so the live demo can't go stale again regardless of whether a release remembers to regenerate/commit it locally. `example/test/version_badge_test.dart` fails loudly if the committed generated file and `pubspec.yaml` ever drift apart in the meantime. No package API changes (example-app-only).
+
 ## 2.16.0 - 2026-09-03
 
 ### Added

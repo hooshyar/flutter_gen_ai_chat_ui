@@ -92,8 +92,9 @@ Unit/widget tests live in `test/`, mirroring `lib/src/` structure. Driver-style 
 1. `flutter analyze` clean and `flutter test` green.
 2. Bump `version:` in `pubspec.yaml` and the install snippet in `README.md`.
 3. Add a `CHANGELOG.md` entry following the existing format (date, "Added/Changed/Fixed/Notes" sections, and an explicit zero-breaking-change note when applicable).
-4. `dart pub publish --dry-run` must pass.
-5. Tag and publish.
+4. Regenerate the example app's version badge: `cd example && dart run tool/generate_version.dart`, then commit the updated `example/lib/version_info.dart`. `deploy-web-demo.yml` also regenerates this on every deploy, so a forgotten local regeneration only matters between "bump version" and "web demo redeploys" — but `example/test/version_badge_test.dart` will fail `flutter test` in the meantime as a reminder (task-021: this badge was a hand-typed literal that silently went stale for two releases before this).
+5. `dart pub publish --dry-run` must pass.
+6. Tag and publish.
 
 ### Things that aren't obvious from grep
 

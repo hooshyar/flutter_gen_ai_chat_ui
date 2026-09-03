@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'version_info.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.onToggleTheme});
 
@@ -196,7 +198,7 @@ class _Header extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  'v2.14.0',
+                  'v$packageVersion',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
