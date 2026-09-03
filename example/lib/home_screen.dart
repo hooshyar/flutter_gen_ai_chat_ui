@@ -145,6 +145,20 @@ const _examples = [
     color: Color(0xFF0EA5E9),
     route: '/rtl',
   ),
+  _CardData(
+    title: 'Attachments',
+    description: 'File upload button and attached-file rendering',
+    icon: Icons.attach_file_rounded,
+    color: Color(0xFF14B8A6),
+    route: '/attachments',
+  ),
+  _CardData(
+    title: 'Voice Input',
+    description: 'Mic/send toggle with the VoiceSendButton widget',
+    icon: Icons.mic_none_rounded,
+    color: Color(0xFFF97316),
+    route: '/voice',
+  ),
 ];
 
 // -- Header --

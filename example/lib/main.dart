@@ -7,6 +7,8 @@ import 'examples/themed_chat.dart';
 import 'examples/actions_chat.dart';
 import 'examples/rich_widgets_chat.dart';
 import 'examples/rtl_chat.dart';
+import 'examples/attachments_chat.dart';
+import 'examples/voice_chat.dart';
 
 void main() {
   runApp(const ExampleApp());
@@ -69,6 +71,8 @@ class _ExampleAppState extends State<ExampleApp> {
         '/actions': (_) => const ActionsChatExample(),
         '/rich-widgets': (_) => const RichWidgetsChatExample(),
         '/rtl': (_) => const RtlChatExample(),
+        '/attachments': (_) => const AttachmentsChatExample(),
+        '/voice': (_) => const VoiceChatExample(),
       },
     );
   }

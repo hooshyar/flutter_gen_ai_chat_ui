@@ -1,17 +1,23 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-// Use direct import instead of package import
+import 'package:flutter_gen_ai_chat_ui_example/main.dart';
 
 void main() {
-  testWidgets('Smoke test - example app', (WidgetTester tester) async {
-    // Skip this test for now - it's just a placeholder
-    // Tests need to be rewritten to match the actual app functionality
+  testWidgets('example app launches to the home gallery', (tester) async {
+    await tester.pumpWidget(const ExampleApp());
+    await tester.pump();
+
+    expect(find.text('Flutter Gen AI\nChat UI'), findsOneWidget);
+    expect(find.text('Basic Chat'), findsOneWidget);
+
+    // The gallery list scrolls; the newest cards are off-screen until then.
+    await tester.dragUntilVisible(
+      find.text('Voice Input'),
+      find.byType(Scrollable),
+      const Offset(0, -100),
+    );
+    expect(find.text('Attachments'), findsOneWidget);
+    expect(find.text('Voice Input'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

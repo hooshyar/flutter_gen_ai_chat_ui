@@ -198,6 +198,8 @@ Explore all features with our comprehensive example app:
 - **AI Actions**: Calculator, weather, color — function calling with generative UI
 - **Rich Widgets**: Weather cards, products, charts rendered inline as bubbles
 - **RTL Chat**: Arabic streaming with bidirectional auto-detection
+- **Attachments**: File upload button and attached-file rendering (`FileUploadOptions`)
+- **Voice Input**: Mic/send toggle using the `VoiceSendButton` widget (`InputOptions.sendOrMicBuilder`)
 
 To run the example app:
 ```bash
