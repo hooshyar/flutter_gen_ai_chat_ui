@@ -239,12 +239,55 @@ class ScrollBehaviorConfig {
   /// Curve for the scroll animation
   final Curve scrollAnimationCurve;
 
+  /// Holds a message at the top of the viewport WHILE an AI answer streams in,
+  /// so a long answer can be read from its beginning at the reader's own pace.
+  ///
+  /// Defaults to [StreamingPinAnchor.none] — the classic behaviour, where the
+  /// bottom of the list follows the growing answer.
+  ///
+  /// With [StreamingPinAnchor.responseStart] (or [StreamingPinAnchor.userMessage]):
+  ///
+  /// 1. the user sends a question and the list scrolls to it as usual;
+  /// 2. the answer starts streaming and the list keeps following it *until*
+  ///    the anchor (the start of the answer, or the user's question) reaches
+  ///    the top of the viewport;
+  /// 3. from then on the anchor is held there — new text arrives below the
+  ///    fold and the scroll-to-bottom button appears;
+  /// 4. any user scroll gesture, or a tap on the scroll-to-bottom button,
+  ///    releases the pin for the rest of that answer;
+  /// 5. when the stream ends nothing jumps — the reader stays where they are.
+  ///
+  /// This is different from [scrollToFirstResponseMessage], which acts only
+  /// once the answer has *finished* (it scrolls back to the answer's first
+  /// message at that point). The two can be combined; when a pin is active
+  /// the end-of-answer scroll is skipped because the reader is already there.
+  final StreamingPinAnchor pinDuringStreaming;
+
   const ScrollBehaviorConfig({
     this.autoScrollBehavior = AutoScrollBehavior.onNewMessage,
     this.scrollToFirstResponseMessage = false,
     this.scrollAnimationDuration = const Duration(milliseconds: 300),
     this.scrollAnimationCurve = Curves.easeOut,
+    this.pinDuringStreaming = StreamingPinAnchor.none,
   });
+
+  /// Returns a copy with the given fields replaced.
+  ScrollBehaviorConfig copyWith({
+    AutoScrollBehavior? autoScrollBehavior,
+    bool? scrollToFirstResponseMessage,
+    Duration? scrollAnimationDuration,
+    Curve? scrollAnimationCurve,
+    StreamingPinAnchor? pinDuringStreaming,
+  }) =>
+      ScrollBehaviorConfig(
+        autoScrollBehavior: autoScrollBehavior ?? this.autoScrollBehavior,
+        scrollToFirstResponseMessage:
+            scrollToFirstResponseMessage ?? this.scrollToFirstResponseMessage,
+        scrollAnimationDuration:
+            scrollAnimationDuration ?? this.scrollAnimationDuration,
+        scrollAnimationCurve: scrollAnimationCurve ?? this.scrollAnimationCurve,
+        pinDuringStreaming: pinDuringStreaming ?? this.pinDuringStreaming,
+      );
 
   /// Creates a smooth scrolling configuration with easeInOut curve
   /// Great for a natural, smooth scrolling experience
@@ -252,10 +295,12 @@ class ScrollBehaviorConfig {
     AutoScrollBehavior autoScrollBehavior = AutoScrollBehavior.onNewMessage,
     bool scrollToFirstResponseMessage = false,
     Duration duration = const Duration(milliseconds: 400),
+    StreamingPinAnchor pinDuringStreaming = StreamingPinAnchor.none,
   }) {
     return ScrollBehaviorConfig(
       autoScrollBehavior: autoScrollBehavior,
       scrollToFirstResponseMessage: scrollToFirstResponseMessage,
+      pinDuringStreaming: pinDuringStreaming,
       scrollAnimationDuration: duration,
       scrollAnimationCurve: Curves.easeInOutCubic,
     );
@@ -267,10 +312,12 @@ class ScrollBehaviorConfig {
     AutoScrollBehavior autoScrollBehavior = AutoScrollBehavior.onNewMessage,
     bool scrollToFirstResponseMessage = false,
     Duration duration = const Duration(milliseconds: 500),
+    StreamingPinAnchor pinDuringStreaming = StreamingPinAnchor.none,
   }) {
     return ScrollBehaviorConfig(
       autoScrollBehavior: autoScrollBehavior,
       scrollToFirstResponseMessage: scrollToFirstResponseMessage,
+      pinDuringStreaming: pinDuringStreaming,
       scrollAnimationDuration: duration,
       scrollAnimationCurve: Curves.elasticOut,
     );
@@ -282,10 +329,12 @@ class ScrollBehaviorConfig {
     AutoScrollBehavior autoScrollBehavior = AutoScrollBehavior.onNewMessage,
     bool scrollToFirstResponseMessage = false,
     Duration duration = const Duration(milliseconds: 350),
+    StreamingPinAnchor pinDuringStreaming = StreamingPinAnchor.none,
   }) {
     return ScrollBehaviorConfig(
       autoScrollBehavior: autoScrollBehavior,
       scrollToFirstResponseMessage: scrollToFirstResponseMessage,
+      pinDuringStreaming: pinDuringStreaming,
       scrollAnimationDuration: duration,
       scrollAnimationCurve: Curves.decelerate,
     );
@@ -297,10 +346,12 @@ class ScrollBehaviorConfig {
     AutoScrollBehavior autoScrollBehavior = AutoScrollBehavior.onNewMessage,
     bool scrollToFirstResponseMessage = false,
     Duration duration = const Duration(milliseconds: 350),
+    StreamingPinAnchor pinDuringStreaming = StreamingPinAnchor.none,
   }) {
     return ScrollBehaviorConfig(
       autoScrollBehavior: autoScrollBehavior,
       scrollToFirstResponseMessage: scrollToFirstResponseMessage,
+      pinDuringStreaming: pinDuringStreaming,
       scrollAnimationDuration: duration,
       scrollAnimationCurve: Curves.easeIn,
     );
@@ -311,10 +362,12 @@ class ScrollBehaviorConfig {
   static ScrollBehaviorConfig fast({
     AutoScrollBehavior autoScrollBehavior = AutoScrollBehavior.onNewMessage,
     bool scrollToFirstResponseMessage = false,
+    StreamingPinAnchor pinDuringStreaming = StreamingPinAnchor.none,
   }) {
     return ScrollBehaviorConfig(
       autoScrollBehavior: autoScrollBehavior,
       scrollToFirstResponseMessage: scrollToFirstResponseMessage,
+      pinDuringStreaming: pinDuringStreaming,
       scrollAnimationDuration: const Duration(milliseconds: 150),
       scrollAnimationCurve: Curves.easeOutQuart,
     );
@@ -340,6 +393,23 @@ enum AutoScrollBehavior {
   /// Never automatically scroll.
   /// The user is fully responsible for scrolling the chat view.
   never
+}
+
+/// Which message [ScrollBehaviorConfig.pinDuringStreaming] holds at the top of
+/// the viewport while an AI answer streams in.
+enum StreamingPinAnchor {
+  /// No pin — the bottom of the list follows the growing answer (default).
+  none,
+
+  /// Hold the START OF THE AI ANSWER at the top of the viewport once it gets
+  /// there. The user's question scrolls away; the answer reads from its
+  /// first line.
+  responseStart,
+
+  /// Hold the USER'S QUESTION (the most recent user message before the
+  /// answer) at the top of the viewport, so question and answer are read
+  /// together. Falls back to [responseStart] when no user message exists.
+  userMessage,
 }
 
 /// Configuration class for customizing the AI chat interface.

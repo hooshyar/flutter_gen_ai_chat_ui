@@ -49,7 +49,7 @@ Add this to your package's pubspec.yaml file:
 
 ```yaml
 dependencies:
-  flutter_gen_ai_chat_ui: ^2.15.0
+  flutter_gen_ai_chat_ui: ^2.16.0
 ```
 
 Then run:
@@ -384,6 +384,8 @@ AiChatWidget(
     autoScrollBehavior: AutoScrollBehavior.onUserMessageOnly,
     // Scroll to first message of a response instead of the last (for long responses)
     scrollToFirstResponseMessage: true,
+    // Hold the start of a streaming answer at the top of the viewport (2.16.0+)
+    pinDuringStreaming: StreamingPinAnchor.responseStart,
   ),
   
   // Custom bubble styling lives in messageOptions. Use `bubbleBuilder` to wrap
@@ -543,6 +545,10 @@ ScrollBehaviorConfig(
   // Customize animation
   scrollAnimationDuration: Duration(milliseconds: 300),
   scrollAnimationCurve: Curves.easeOut,
+
+  // 2.16.0+: hold the start of the answer (or the user's question) at the top
+  // of the viewport WHILE the answer streams — see the use case below
+  pinDuringStreaming: StreamingPinAnchor.responseStart,
 )
 
 // Or use convenient preset configurations:
@@ -561,6 +567,38 @@ When an AI returns a long response in multiple parts, scrollToFirstResponseMessa
 1. Mark the first message in a response with `'isStartOfResponse': true`
 2. Link related messages in a chain using a shared `'responseId'` property
 3. Set `scrollToFirstResponseMessage: true` in your configuration
+
+#### Use Case: Reading a Long Answer While It Streams (`pinDuringStreaming`)
+
+`scrollToFirstResponseMessage` acts once the answer has *finished*. For a single long
+answer that is still streaming, the classic behaviour is that the bottom of the list
+keeps following the new text, so the beginning scrolls out of view and you have to
+wait for the end to start reading. `pinDuringStreaming` (2.16.0+) fixes that:
+
+```dart
+ScrollBehaviorConfig(
+  // responseStart: hold the first line of the answer at the top of the viewport
+  // userMessage:   hold your own question there instead, so Q and A read together
+  pinDuringStreaming: StreamingPinAnchor.responseStart,
+)
+```
+
+What the reader sees:
+
+1. They send a question and the list scrolls to it as usual.
+2. The answer starts streaming and the list follows it — *until* the anchor (the
+   start of the answer, or the question) reaches the top of the viewport.
+3. From then on the anchor is held there; new text arrives below the fold and the
+   scroll-to-bottom button appears.
+4. Any scroll gesture, or a tap on the scroll-to-bottom button, hands control back
+   to the reader for the rest of that answer. In a reverse (newest-at-bottom) list the
+   text they are reading also stays still while more chunks arrive, instead of being
+   pushed upwards.
+5. When the stream ends nothing jumps — the reader stays where they are.
+
+The default is `StreamingPinAnchor.none` (unchanged behaviour). The pin arms whenever a
+message streams: `addMessage`/`updateMessage` with `'isStreaming': true`, or
+`addStreamingMessage` + `updateMessage` + `stopStreamingMessage`.
 
 ### Message Bubble Customization
 

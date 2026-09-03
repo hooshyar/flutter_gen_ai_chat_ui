@@ -14,12 +14,32 @@ class StreamingChatExample extends StatefulWidget {
 }
 
 class _StreamingChatExampleState extends State<StreamingChatExample> {
-  final _controller = ChatMessagesController();
+  final _controller = ChatMessagesController(
+    scrollBehaviorConfig: const ScrollBehaviorConfig(
+      pinDuringStreaming: StreamingPinAnchor.responseStart,
+    ),
+  );
   final _textController = TextEditingController();
   final _aiService = ExampleAiService(style: ResponseStyle.markdown);
   bool _isLoading = false;
   StreamSubscription<String>? _streamSub;
   String? _currentStreamingId;
+
+  /// Demo of `ScrollBehaviorConfig.pinDuringStreaming`: pick what stays at
+  /// the top of the viewport while a long answer streams in.
+  StreamingPinAnchor _pinAnchor = StreamingPinAnchor.responseStart;
+
+  void _setPinAnchor(StreamingPinAnchor anchor) {
+    setState(() => _pinAnchor = anchor);
+    _controller.scrollBehaviorConfig =
+        ScrollBehaviorConfig(pinDuringStreaming: anchor);
+  }
+
+  static const _pinLabels = {
+    StreamingPinAnchor.none: 'No pin (follow the answer)',
+    StreamingPinAnchor.responseStart: 'Pin the start of the answer',
+    StreamingPinAnchor.userMessage: 'Pin my question',
+  };
 
   static const _currentUser = ChatUser(id: 'user', name: 'You');
   static const _aiUser = ChatUser(id: 'ai', name: 'Copilot');
@@ -149,7 +169,25 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Streaming + Markdown')),
+      appBar: AppBar(
+        title: const Text('Streaming + Markdown'),
+        actions: [
+          PopupMenuButton<StreamingPinAnchor>(
+            tooltip: 'Pin while streaming',
+            icon: const Icon(Icons.push_pin_outlined),
+            initialValue: _pinAnchor,
+            onSelected: _setPinAnchor,
+            itemBuilder: (context) => [
+              for (final anchor in StreamingPinAnchor.values)
+                CheckedPopupMenuItem(
+                  value: anchor,
+                  checked: anchor == _pinAnchor,
+                  child: Text(_pinLabels[anchor]!),
+                ),
+            ],
+          ),
+        ],
+      ),
       body: AiChatWidget(
         maxWidth: 720,
         currentUser: _currentUser,

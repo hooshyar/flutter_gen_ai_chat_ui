@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_streaming_text_markdown/flutter_streaming_text_markdown.dart';
@@ -493,7 +494,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     }
 
     // Build the list with header/footer as needed
-    return ListView.builder(
+    final list = ListView.builder(
       // key: const PageStorageKey('chat_messages'),
       controller: _scrollController,
       reverse: paginationConfig.reverseOrder,
@@ -603,6 +604,30 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
         return null;
       },
+    );
+
+    final controller = widget.controller;
+    if (controller == null) return list;
+
+    // Streaming pin (ScrollBehaviorConfig.pinDuringStreaming): every time the
+    // list's content extent changes (the answer grew) let the controller
+    // re-apply the pin, and let any genuine user scroll gesture — drag, fling
+    // or mouse wheel, i.e. a non-idle UserScrollNotification, which
+    // programmatic jumpTo/animateTo never emit — release it.
+    return NotificationListener<ScrollMetricsNotification>(
+      onNotification: (_) {
+        controller.maintainStreamingPin();
+        return false;
+      },
+      child: NotificationListener<UserScrollNotification>(
+        onNotification: (notification) {
+          if (notification.direction != ScrollDirection.idle) {
+            controller.releaseStreamingPin();
+          }
+          return false;
+        },
+        child: list,
+      ),
     );
   }
 
@@ -1566,6 +1591,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(24),
                   onTap: () {
+                    // The reader asked for the bottom: end any streaming pin
+                    // first so it does not pull the list straight back up.
+                    widget.controller?.releaseStreamingPin();
                     if (_scrollController.hasClients) {
                       final paginationConfig =
                           widget.messageListOptions.paginationConfig;
