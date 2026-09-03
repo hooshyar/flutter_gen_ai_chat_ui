@@ -34,3 +34,24 @@ and the 3 live-demo visual-QA fixes (tasks 022-024). Zero breaking changes.
   specifically affecting the `addStreamingMessage` flow the example app itself uses — so bernd70
   doesn't waste a test cycle on the broken version — and asked him to confirm on 2.16.2.
 - 426 root tests + 8 example tests green, both `analyze --fatal-infos` clean, `dart format` clean.
+
+## Done — v2.17.0 (2026-09-03)
+
+Bundled everything unreleased since 2.16.2: the Flutter floor correction to `>=3.35.0` (task-012 —
+the previously-documented `>=3.27.0` never actually resolved for a real consumer, found by the new
+`sdk-matrix` CI job), the `shimmer` dependency removal (hand-rolled the loading-widget sweep effect),
+the new performance-benchmark suite (task-014), and the doc-drift + SDK-matrix CI checks themselves
+(task-012). Zero breaking changes for anyone who could previously build the package.
+
+- Tag `v2.17.0` pushed → `publish.yml` run 33743319101 succeeded → confirmed live at
+  `pub.dev/packages/flutter_gen_ai_chat_ui` (latest version 2.17.0 + corrected `environment:` via the
+  pub.dev API) shortly after the workflow completed.
+- Live web demo redeployed automatically (`deploy-web-demo.yml` on the release-prep push).
+- **Confirmed 160/160 pub points** on a fresh, uncontended `pana` run against v2.17.0 — the
+  `shimmer` dependency-freshness warning that used to show up here is gone now that the dependency
+  itself was removed.
+- Updated issue #41's checklist (checked off golden tests, a11y tap-targets, CI SDK matrix, example
+  gallery, doc/code-drift CI — all shipped since the last update) and posted a detailed progress
+  comment. #42 unchanged this round (release doesn't touch that feature).
+- 434 root tests + 8 example tests green, both `analyze --fatal-infos` clean, `dart format` clean,
+  all 5 CI jobs green pre-tag.
