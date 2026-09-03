@@ -91,3 +91,36 @@ jobs:
 
       - name: Test
         run: flutter test --reporter expanded
+
+  wasm-build:
+    name: Web (wasm) build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Guards task-015 (GOAL item 4, "wasm-ready"): the package compiled and ran
+    # cleanly under dart2wasm on the first check (2026-09-03) with zero source
+    # changes needed. This job exists so a FUTURE dependency or code change
+    # that reintroduces an incompatible API (dart:html/dart:js legacy interop,
+    # dart:mirrors, etc.) fails CI immediately instead of being discovered
+    # only when a consumer tries `flutter build web --wasm`.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install package dependencies
+        run: flutter pub get
+
+      - name: Install example dependencies
+        run: |
+          cd example
+          flutter pub get
+
+      - name: Build example for web with --wasm
+        run: |
+          cd example
+          flutter build web --wasm --release

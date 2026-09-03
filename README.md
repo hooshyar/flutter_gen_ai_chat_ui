@@ -281,6 +281,10 @@ flutter run
 - **Startup Time**: <100ms initialization
 - **Streaming Speed**: Configurable 10-100ms per word
 
+### Web / WebAssembly
+
+Builds and runs cleanly under Flutter's `--wasm` web compile target (`flutter build web --wasm`) — no `dart:html`/`dart:js` legacy interop or other wasm-incompatible APIs in this package. CI builds the example app with `--wasm` on every push so a regression is caught immediately (`.github/workflows/ci.yml`, `wasm-build` job).
+
 ## 🌟 Works Great With
 - **AI Services**: OpenAI, Anthropic Claude, Google Gemini, Llama, Mistral
 - **Backends**: Firebase, Supabase, REST APIs, WebSockets, GraphQL
