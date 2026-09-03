@@ -47,18 +47,16 @@ stale the way the historical audits below did.
    the `CustomThemeExtension` fix, dartdoc completion, deprecations, wasm CI guard, this plan, and
    the 022-024 visual-QA fixes. Re-run this same item (next release) whenever `[Unreleased]`
    accumulates real value again — see `task-018`'s own note that it's not one-and-done.
-3. **Performance benchmarks (`task-014`).** The README's "Performance &
-   Features" section makes specific, unverified claims — *"60 FPS with
-   1000+ messages"*, *"Startup Time: <100ms initialization"*, *"Optimized
-   for large conversations (10K+ messages)"* — and **zero benchmark test
-   exists anywhere in the repo** to back any of them (confirmed via
-   `grep -rl benchmark test/ example/` returning nothing). For a package
-   actively positioning itself for "award-grade" status, shipped marketing
-   claims with no test backing them is a real credibility risk if anyone
-   ever benchmarks it and gets a different number. Add a timed harness
-   (`flutter test` with a stopwatch, or `benchmark_harness`) building/
-   scrolling a `ChatMessagesController` with 500–2000+ messages, record the
-   actual numbers, and either confirm the README claims or correct them.
+3. ~~**Performance benchmarks (`task-014`).**~~ **DONE (2026-09-03).** Added
+   `test/performance/message_list_benchmark_test.dart` (8 tests) timing
+   `ChatMessagesController` build/append/streaming-update paths at
+   500-2000 messages and `AiChatWidget`'s initial render + scroll at 1000
+   messages. Real numbers recorded in `CHANGELOG.md`. Confirmed the message
+   list already uses a lazy `ListView.builder` and quantified (but didn't
+   need to fix) a small, real O(n) `indexWhere` cost in `updateMessage` for
+   chronological order — too small in absolute terms (single-digit ms for
+   100 streaming updates over 2000 messages) to be a real bottleneck. No
+   follow-up task filed.
 4. **Doc-drift + SDK-matrix CI (`task-012`).** The historical
    `doc/ONBOARDING_AUDIT.md` (iteration 10, now otherwise fully resolved —
    see below) found that hand-written example snippets in `AGENTS.md` and

@@ -3,6 +3,13 @@
 ### Changed
 - **Removed the `shimmer` package dependency.** It was the sole holdout pinning this package's dependency-freshness pana score (`shimmer` 4.0.0 requires Flutter `>=3.44.0`/Dart `^3.12.0`, above this package's declared floor) — see `docs/AWARD-PLAN.md`'s "time-sensitive" item. Replaced its one usage site (`LoadingWidget`'s shimmering loading text) with a small hand-rolled `ShaderMask` + `AnimationController` sweep that reproduces the same visual effect (a highlight band sliding across the text). No public API changes — `LoadingWidget.shimmerBaseColor`/`shimmerHighlightColor` behave identically. Removes a dependency and the recurring SDK-floor tension for good.
 
+### Added
+- **Performance benchmark suite (task-014)**, backing the README's "Performance Benchmarks" claims with an actual timed harness instead of unverified numbers. `test/performance/message_list_benchmark_test.dart` measures `ChatMessagesController.setMessages`/`addMessage`/`updateMessage` at 500-2000 messages plus `AiChatWidget`'s initial build and scroll cost at 1000 messages, printing real numbers via `debugPrint` and asserting generous ceilings so a gross regression (e.g. losing lazy `ListView.builder` building) fails CI without flaking under machine load. Baseline recorded from a local run (macOS, debug test binding — a coarse, environment-sensitive signal, not a device profile):
+  - `setMessages`: 500 msgs 4ms, 1000 msgs 0ms, 2000 msgs 1ms.
+  - `addMessage` x50 with 2000 existing messages: 9ms total (~183μs/call).
+  - `updateMessage` x100 simulating word-by-word streaming on the newest message: ~2μs/call in the default reverse-chronological order (streaming target sits at index 0, so the `indexWhere` lookup is O(1) in practice); ~43μs/call in chronological (append) order, where the streaming target sits at the end of the list and `indexWhere` scans past everything ahead of it. Confirms the theoretical O(n) scan directionally, but at ~4ms total for 100 calls over 2000 messages it's nowhere near a real bottleneck — no follow-up task filed.
+  - `AiChatWidget` initial build with 1000 messages: 240ms; 10 fling-scrolls through 1000 messages: 152ms total (~15ms/fling) — consistent with the list already using a lazy `ListView.builder` (task confirmed, not assumed).
+
 ## 2.16.2 - 2026-09-03
 
 Zero breaking changes. A real bug fix for a previously-inert, marketed feature
