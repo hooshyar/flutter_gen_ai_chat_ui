@@ -31,3 +31,15 @@
 - [x] Note in CHANGELOG.md.
 
 **Status:** DONE.
+
+## Re-checked (2026-09-03, post task-008/009 release round)
+
+`flutter pub outdated` after several ticks of feature work: only real, actionable finding was
+`flutter_streaming_text_markdown` `^1.9.1` → `^1.10.1` (both versions published same-day,
+2026-09-03 — likely the sibling maintainer session for that package). Checked its changelog before
+upgrading (backward-compatible per its own semver: real LaTeX rendering, a web clipboard fix, a
+word-by-word resume bug fix, no breaking changes, no new floor pressure — `characters >=1.4.0` /
+`flutter >=3.10.0` unchanged). Everything else outdated is either `clock` (deliberately held at
+`^1.1.2` to match Flutter's own bundled `flutter_test` exact pin — see task-019/task-012) or
+transitive deps with no direct action needed. 458/458 tests green after the bump, no code changes
+required on this side.

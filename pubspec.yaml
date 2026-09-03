@@ -57,7 +57,7 @@ dependencies:
   clock: ^1.1.2
   flutter_markdown_plus: ^1.0.3
   google_fonts: ^8.1.0
-  flutter_streaming_text_markdown: ^1.9.1
+  flutter_streaming_text_markdown: ^1.10.1
   url_launcher: ^6.3.1
   flutter_math_fork: ^0.7.2
 
