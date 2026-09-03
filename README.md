@@ -191,6 +191,8 @@ Full runnable screen: [`example/lib/examples/streaming_chat.dart`](https://githu
 
 ## 🎮 Live Examples
 
+**[Try the live web demo →](https://hooshyar.github.io/flutter_gen_ai_chat_ui/)** — no install needed, runs the actual example app in your browser. Redeployed automatically on every push to `main` that touches the package or the example app (see `.github/workflows/deploy-web-demo.yml`).
+
 Explore all features with our comprehensive example app:
 - **Basic Chat**: Simple send & receive, no streaming
 - **Streaming + Markdown**: Real-time word-by-word animations with code blocks

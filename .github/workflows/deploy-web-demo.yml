@@ -1,0 +1,60 @@
+name: Deploy web demo
+
+# Builds the example/ app for web and publishes it to GitHub Pages
+# (https://hooshyar.github.io/flutter_gen_ai_chat_ui/) on every push to
+# main that touches the example app or the package itself. Previously this
+# was deployed by hand (last done 2026-02-16, well before 2.15.0 and the
+# example gallery's newer screens) — this keeps the live demo current
+# automatically instead of silently going stale again.
+#
+# Deploys to the gh-pages branch (matches this repo's existing Pages
+# "Deploy from a branch" setting) rather than switching to the newer
+# artifact-based Pages Actions flow, to avoid an unrelated repo-settings
+# change.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "example/**"
+      - "lib/**"
+      - "pubspec.yaml"
+      - ".github/workflows/deploy-web-demo.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install package dependencies
+        run: flutter pub get
+
+      - name: Install example dependencies
+        run: |
+          cd example
+          flutter pub get
+
+      - name: Build web demo
+        run: |
+          cd example
+          flutter build web --release --base-href /flutter_gen_ai_chat_ui/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: example/build/web
+          publish_branch: gh-pages
