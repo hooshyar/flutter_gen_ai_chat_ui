@@ -662,6 +662,29 @@ AiChatWidget(
 )
 ```
 
+### Brand Theme Presets
+
+Apply a `ChatGPT`/`Claude`/`Gemini`-style look with one line, via a `CustomThemeExtension` on your app's `ThemeData` — no need to set colors on every individual `AiChatWidget`:
+
+```dart
+MaterialApp(
+  theme: ThemeData(
+    extensions: [CustomThemeExtension.chatgpt()], // or .claude() / .gemini()
+  ),
+  // For dark mode: CustomThemeExtension.chatgpt(dark: true)
+  home: MyChatScreen(),
+)
+```
+
+Two more presets derive their colors from your app's existing `ColorScheme` instead of a fixed brand palette — handy when you want a theme-consistent look without picking your own bubble colors:
+
+```dart
+CustomThemeExtension.modern(Theme.of(context).colorScheme)  // richer surfaces
+CustomThemeExtension.minimal(Theme.of(context).colorScheme) // flat, low-contrast
+```
+
+`CustomThemeExtension` sets `chatBackground`, `messageBubbleColor`/`userBubbleColor`/`messageTextColor`, `inputBackgroundColor`/`inputBorderColor`/`inputTextColor`/`hintTextColor`, and `sendButtonColor`/`backToBottomButtonColor` — all consulted only when the more specific `BubbleStyle`/`MessageOptions`/`InputOptions` value is left unset, so any explicit per-widget color you already set keeps winning. Build a fully custom one with `CustomThemeExtension(chatBackground: ..., messageBubbleColor: ..., ...)`.
+
 ## 🚀 AI Actions System
 
 **Transform your chat into a powerful AI agent platform!** The AI Actions System allows your AI to execute real functions, display rich results, and maintain human oversight - taking your chat beyond simple text exchanges.

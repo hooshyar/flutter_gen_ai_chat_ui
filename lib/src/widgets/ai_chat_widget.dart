@@ -9,6 +9,7 @@ import '../models/example_question_config.dart' hide ExampleQuestion;
 import '../models/file_upload_options.dart';
 import '../models/input_options.dart';
 import '../models/welcome_message_config.dart';
+import '../theme/custom_theme_extension.dart';
 import '../utils/color_extensions.dart';
 import 'chat_input.dart';
 import 'custom_chat_widget.dart';
@@ -437,6 +438,12 @@ class _AiChatWidgetState extends State<AiChatWidget>
         constraints: widget.maxWidth != null
             ? BoxConstraints(maxWidth: widget.maxWidth!)
             : null,
+        // A `CustomThemeExtension` (e.g. a `.chatgpt()`/`.claude()`/
+        // `.gemini()` brand preset) supplies the overall chat surface
+        // color. Null when nobody has opted into a custom theme, in which
+        // case this is unchanged from before (transparent — inherits
+        // whatever's behind it, typically the Scaffold background).
+        color: Theme.of(context).extension<CustomThemeExtension>()?.chatBackground,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

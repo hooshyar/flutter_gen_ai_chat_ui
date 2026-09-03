@@ -1,7 +1,27 @@
 ## [Unreleased]
 
 ### Fixed
+- **`CustomThemeExtension` now actually applies to the chat UI (task-002 knob sweep).** `Theme.of(context).extension<CustomThemeExtension>()` was called nowhere in the widget tree — the entire theme extension (all 11 color knobs, and by extension the README-advertised `.chatgpt()`/`.claude()`/`.gemini()` brand presets and the `.modern()`/`.minimal()` `ColorScheme`-derived presets) had **zero visual effect** no matter what a consumer set on `ThemeData.extensions`. The existing `brand_presets_test.dart` only verified the extension round-tripped through `ThemeData`, not that any widget read it back out. Now wired as a fallback layer, consulted only when the more specific `BubbleStyle`/`MessageOptions`/`InputOptions` value is unset (so explicit per-widget colors still win, and nothing changes for the many existing consumers who haven't opted into a `CustomThemeExtension`): `chatBackground` → the overall chat surface; `messageBubbleColor`/`userBubbleColor`/`messageTextColor` → message bubbles and their text; `inputBackgroundColor`/`inputBorderColor`/`inputTextColor`/`hintTextColor` → the input field (when `InputOptions.decoration`/`.textStyle` are unset); `sendButtonColor` → the default send button icon; `backToBottomButtonColor` → the scroll-to-bottom button icon. `sendButtonIconColor` remains unused — the default send button is a plain icon with no colored background/circle for it to apply to; revisit if a filled-button treatment is added. No breaking changes — the extension defaults to unset (`null`), so behavior is identical to before unless a consumer explicitly adds one to `ThemeData.extensions`.
+
+### Fixed (cont'd)
 - **Example app: the home screen's version badge is no longer a hand-typed literal (task-021).** It had sat at `v2.14.0` on the live web demo through two releases (2.15.0 and 2.16.0) because it was a hardcoded string in `home_screen.dart`. It's now read from a generated `example/lib/version_info.dart` (`dart run tool/generate_version.dart` from `example/`, parsed straight from the package's own `pubspec.yaml`), which `deploy-web-demo.yml` also regenerates before every web-demo build so the live demo can't go stale again regardless of whether a release remembers to regenerate/commit it locally. `example/test/version_badge_test.dart` fails loudly if the committed generated file and `pubspec.yaml` ever drift apart in the meantime. No package API changes (example-app-only).
+
+### Fixed (cont'd 2)
+- **`InputOptions.autocorrect` now actually applies.** Documented, defaults to `true`, but was never passed to the underlying `TextField` — setting it to `false` had no effect.
+
+### Deprecated
+- **`InputOptions.textDirection` and `.inputTextDirection`** — both no-ops: the input's `TextField` always follows the ambient `Directionality` from `BuildContext` by design (this is what makes RTL auto-detection work without per-widget configuration), so neither field's value was ever read.
+- **`InputOptions.positionedLeft`/`.positionedRight`/`.positionedBottom`/`.positionedTop`** — no-ops: nothing wraps the input in a `Stack`/`Positioned` for these to apply to (`AiChatWidget` lays it out as a regular `Column` child).
+- **`MessageOptions.timestampSpacing`** — no-op, superseded by `ChatSpacingConfig.messageFooterTopPadding`, which is what actually controls the footer's spacing.
+- **`MessageOptions.maxReactions`/`.reactionSize`/`.enableQuickReply`** — no-ops: no reaction UI exists anywhere in the widget tree to apply them to. Quick replies are a real, separate, working feature — driven by `QuickReplyOptions` on `AiChatWidget`, not this flag.
+
+All four groups above will be removed in v3.0.0; no behavior changes from deprecating them (they already did nothing).
+
+### Removed
+- **Two fully dead, duplicate `ThemeProvider`/`CustomThemeExtension` classes** (`lib/src/providers/theme_provider.dart`, `lib/src/theme/theme_provider.dart`) — neither was exported from the package's main library file nor imported by anything else in `lib/`, `test/`, or `example/`. The `providers/` copy additionally bundled its own duplicate `CustomThemeExtension` class (with a different field set than the real, exported one), which would have collided if anyone ever imported it. Found during the same knob-sweep audit that led to actually wiring up the real `CustomThemeExtension` above.
+
+### Tests
+- Added `test/theme/custom_theme_extension_applies_test.dart` (6 tests: `chatBackground`, bubble/text colors, send button color, and input field colors all actually render from a `CustomThemeExtension`, and explicit `BubbleStyle`/`MessageOptions`/`InputOptions` values still take precedence over it), `test/widgets/input_autocorrect_dead_parameter_test.dart` (2 tests), and one more golden (`goldens/chatgpt_theme_preset.png`, visually pinning the ChatGPT preset actually changing bubble/input/send-button colors). Net test count: 416 → 425.
 
 ## 2.16.0 - 2026-09-03
 

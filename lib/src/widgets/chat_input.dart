@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../models/file_upload_options.dart';
 import '../models/input_options.dart';
+import '../theme/custom_theme_extension.dart';
 
 /// A custom chat input widget that supports extensive customization options.
 class ChatInput extends StatefulWidget {
@@ -134,15 +135,46 @@ class _ChatInputState extends State<ChatInput> {
     // Always use the app's text direction from context for consistency
     final appDirection = Directionality.of(context);
 
+    // A `CustomThemeExtension` (e.g. a brand preset) supplies input-field
+    // and send-button colors as a fallback layer below any explicit
+    // `InputOptions` value. Null (nobody has opted into a custom theme)
+    // leaves both `effectiveDecoration`/`effectiveTextStyle` exactly as
+    // `options.decoration`/`options.textStyle` were before — no behavior
+    // change for existing consumers.
+    final themeExt = Theme.of(context).extension<CustomThemeExtension>();
+    final effectiveDecoration = options.decoration ??
+        (themeExt == null
+            ? null
+            : InputDecoration(
+                filled: true,
+                fillColor: themeExt.inputBackgroundColor,
+                hintStyle: themeExt.hintTextColor != null
+                    ? TextStyle(color: themeExt.hintTextColor)
+                    : null,
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: themeExt.inputBorderColor != null
+                      ? BorderSide(color: themeExt.inputBorderColor!)
+                      : BorderSide.none,
+                ),
+              ));
+    final effectiveTextStyle = options.textStyle ??
+        (themeExt?.inputTextColor != null
+            ? TextStyle(color: themeExt!.inputTextColor)
+            : null);
+
     // Basic content of the input area - the TextField and send button
     Widget textField = TextField(
       controller: controller,
       focusNode: focusNode,
       autofocus: options.autofocus,
-      style: options.textStyle,
+      autocorrect: options.autocorrect,
+      style: effectiveTextStyle,
       // Always use the app's text direction for the TextField
       textDirection: appDirection,
-      decoration: options.decoration,
+      decoration: effectiveDecoration,
       textCapitalization: options.textCapitalization,
       maxLines: options.maxLines,
       minLines: options.minLines,
@@ -242,7 +274,11 @@ class _ChatInputState extends State<ChatInput> {
           alignment: Alignment.center,
           child: (widget.isGenerating && widget.onCancelGenerating != null)
               ? options.effectiveStopButtonBuilder(widget.onCancelGenerating!)
-              : options.effectiveSendWidget(onSend, isEmpty: _isEmpty),
+              : options.effectiveSendWidget(
+                  onSend,
+                  isEmpty: _isEmpty,
+                  themeSendButtonColor: themeExt?.sendButtonColor,
+                ),
         ),
       ],
     );

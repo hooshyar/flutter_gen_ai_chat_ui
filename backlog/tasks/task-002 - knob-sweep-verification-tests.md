@@ -110,3 +110,46 @@ tasks for variety; resume this task later to scan `MessageOptions`/`InputOptions
 `CustomThemeExtension` the same way, and to make the deliberate design call on `scrollThreshold`.
 
 **Notes:** This is a "trust" investment per #41's thesis — prevents the next silent-no-op bug report.
+
+## Round 6 (2026-09-03): `MessageOptions` / `InputOptions` / `CustomThemeExtension`
+
+Swept the remaining three classes named in the "resume with" note above. Biggest finding yet:
+
+- **`CustomThemeExtension` was a COMPLETE no-op** — `Theme.of(context).extension<CustomThemeExtension>()`
+  was called nowhere in the entire widget tree. This isn't one dead field, it's the WHOLE class: all
+  11 color knobs, and by extension the README-marketed `.chatgpt()`/`.claude()`/`.gemini()` brand
+  presets and the `.modern()`/`.minimal()` `ColorScheme`-derived presets — none of it had any visual
+  effect no matter what a consumer set. The existing `test/theme/brand_presets_test.dart` only
+  verified the extension round-tripped through `ThemeData.extensions`, never that any widget actually
+  read it back out — a misleading-test trap of exactly the kind this whole task exists to catch.
+  Fixed by wiring it as a fallback layer in `custom_chat_widget.dart` (bubble colors, message text
+  color), `ai_chat_widget.dart` (chat background), and `chat_input.dart` (input field decoration,
+  send button color, scroll-to-bottom icon color) — consulted only when the more specific
+  `BubbleStyle`/`MessageOptions`/`InputOptions` value is unset, preserving existing precedence for
+  every current consumer. `sendButtonIconColor` is left unused (no filled/circular send button exists
+  for it to color — see the CHANGELOG note). 6 new widget tests + 1 new golden
+  (`chatgpt_theme_preset.png`, visually confirms the ChatGPT preset now actually changes bubble/
+  input/send-button colors — compare against `default_bubble.png`).
+- **`InputOptions.autocorrect`** — real, dead, cheap fix: never passed to the underlying `TextField`.
+  Now wired.
+- **Deprecated as superseded/structurally inapplicable** (all genuinely no-ops, not just
+  under-tested): `InputOptions.textDirection`/`.inputTextDirection` (the input always follows ambient
+  `Directionality` by design — that's what makes RTL auto-detect work), `InputOptions.positionedLeft/
+  Right/Bottom/Top` (nothing wraps the input in a `Stack`/`Positioned` — it's a plain `Column` child),
+  `MessageOptions.timestampSpacing` (superseded by `ChatSpacingConfig.messageFooterTopPadding`),
+  `MessageOptions.maxReactions`/`.reactionSize`/`.enableQuickReply` (no reaction UI exists anywhere;
+  quick replies are a real, separate, working feature via `QuickReplyOptions`).
+- Also found and removed 2 fully dead files while investigating this area:
+  `lib/src/providers/theme_provider.dart` and `lib/src/theme/theme_provider.dart` — both defined an
+  unreachable duplicate `ThemeProvider`/`CustomThemeExtension`, neither exported nor imported by
+  anything.
+- `dart analyze --fatal-infos` clean (root + example); full `flutter test` green (416 → 425); `dart
+  pub publish --dry-run` clean.
+
+**Remaining for a future round:** the `scrollThreshold` design call is still open (needs a deliberate
+opt-in design, not a blind wire — see the original note above). `InputOptions`'s remaining ~50 fields
+(cursor/selection/IME passthroughs, `onChanged`/`onSubmitted`/etc.) were spot-checked, not
+individually re-verified — they're thin passthroughs to `TextField`'s own matching parameters and low
+risk, but a from-scratch scan hasn't been re-run since this round's fixes. Consider this task DONE
+enough to move on unless a new report surfaces — the two remaining classes this pass targeted are now
+covered.

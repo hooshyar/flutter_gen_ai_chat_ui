@@ -14,6 +14,7 @@ import '../models/example_question.dart';
 import '../models/file_upload_options.dart';
 import '../models/input_options.dart';
 import '../models/welcome_message_config.dart';
+import '../theme/custom_theme_extension.dart';
 import '../utils/color_extensions.dart';
 import 'math_markdown.dart';
 import 'message_attachment.dart';
@@ -740,17 +741,25 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = theme.primaryColor;
+    // A `CustomThemeExtension` (see the brand presets, e.g. `.chatgpt()`)
+    // set on `ThemeData.extensions` supplies bubble/text colors as a
+    // fallback layer below any explicit `BubbleStyle`/`MessageOptions`
+    // value and above the hardcoded defaults below. Null (the common case
+    // — nobody has opted into a custom theme) falls straight through to
+    // those defaults, so this is purely additive.
+    final themeExt = theme.extension<CustomThemeExtension>();
 
     // Get bubble style configuration
     final bubbleStyle =
         widget.messageOptions.bubbleStyle ?? BubbleStyle.defaultStyle;
 
     // Premium design colors for a sophisticated look
-    final defaultUserBubbleColor = isDark
-        ? primaryColor.withOpacityCompat(0.18)
-        : primaryColor.withOpacityCompat(0.06);
-    final defaultAiBubbleColor =
-        isDark ? const Color(0xFF2D2D2D) : Colors.white;
+    final defaultUserBubbleColor = themeExt?.userBubbleColor ??
+        (isDark
+            ? primaryColor.withOpacityCompat(0.18)
+            : primaryColor.withOpacityCompat(0.06));
+    final defaultAiBubbleColor = themeExt?.messageBubbleColor ??
+        (isDark ? const Color(0xFF2D2D2D) : Colors.white);
 
     // Refined corner radius values for modern messaging apps
     final topLeftRadius = isUser
@@ -1091,6 +1100,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // Get the theme's brightness
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeExt = Theme.of(context).extension<CustomThemeExtension>();
     final isCurrentUser = message.user.id == widget.currentUser.id;
 
     // Check if this message should show streaming animation
@@ -1126,8 +1136,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     final textStyle = TextStyle(
       color: isCurrentUser
           ? widget.messageOptions.userTextColor ??
+              themeExt?.messageTextColor ??
               (isDark ? Colors.white : Colors.black)
           : widget.messageOptions.aiTextColor ??
+              themeExt?.messageTextColor ??
               (isDark ? Colors.white : Colors.black),
       fontSize: widget.messageOptions.textStyle?.fontSize,
       fontWeight: widget.messageOptions.textStyle?.fontWeight,
@@ -1627,7 +1639,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                         Icon(
                           Icons.keyboard_arrow_down,
                           size: 20,
-                          color: Theme.of(context).primaryColor,
+                          color: Theme.of(context)
+                                  .extension<CustomThemeExtension>()
+                                  ?.backToBottomButtonColor ??
+                              Theme.of(context).primaryColor,
                         ),
                         if (widget.scrollToBottomOptions.showText) ...[
                           const SizedBox(width: 4),

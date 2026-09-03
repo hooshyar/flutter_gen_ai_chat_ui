@@ -209,16 +209,30 @@ class MessageOptions {
   /// Function to format the timestamp
   final String Function(DateTime)? timeFormat;
 
-  /// Spacing between message bubble and timestamp
+  /// No effect: the footer's top padding is actually controlled by
+  /// `ChatSpacingConfig.messageFooterTopPadding`. Will be removed in v3.0.0.
+  @Deprecated(
+      'Has no effect — use ChatSpacingConfig.messageFooterTopPadding instead. '
+      'Will be removed in v3.0.0.')
   final double? timestampSpacing;
 
-  /// Maximum number of reactions to show
+  /// No effect: no reaction UI is implemented anywhere in the widget tree.
+  /// Will be removed in v3.0.0.
+  @Deprecated('Has no effect — no reaction UI exists to apply it to. '
+      'Will be removed in v3.0.0.')
   final int maxReactions;
 
-  /// Size of reaction bubbles
+  /// No effect: no reaction UI is implemented anywhere in the widget tree.
+  /// Will be removed in v3.0.0.
+  @Deprecated('Has no effect — no reaction UI exists to apply it to. '
+      'Will be removed in v3.0.0.')
   final double reactionSize;
 
-  /// Whether to enable quick replies
+  /// No effect: quick replies are actually driven by the separate
+  /// `QuickReplyOptions` passed to `AiChatWidget`. Will be removed in v3.0.0.
+  @Deprecated(
+      'Has no effect — quick replies are controlled by QuickReplyOptions '
+      'on AiChatWidget instead. Will be removed in v3.0.0.')
   final bool enableQuickReply;
 
   /// Style options for message bubbles

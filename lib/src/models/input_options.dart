@@ -49,12 +49,30 @@ class InputOptions {
   final ShapeBorder? materialShape;
   final EdgeInsets? materialPadding;
   final bool? useScaffoldBackground;
+
+  /// No effect: the `TextField`'s text direction always follows the
+  /// ambient `Directionality` from `BuildContext`, by design (this is what
+  /// makes RTL auto-detection work without per-widget configuration). Will
+  /// be removed in v3.0.0.
+  @Deprecated(
+      'Has no effect — the input always follows the ambient Directionality. '
+      'Will be removed in v3.0.0.')
   final TextDirection? inputTextDirection;
 
-  // Position properties (when used in Stack/Positioned)
+  // Position properties — dead: nothing in AiChatWidget wraps the input in
+  // a Stack/Positioned to consume these (it uses a Column, with the input
+  // as a regular last child). Kept for source compatibility only.
+  @Deprecated('Has no effect — the input is not laid out in a Stack. '
+      'Will be removed in v3.0.0.')
   final double? positionedLeft;
+  @Deprecated('Has no effect — the input is not laid out in a Stack. '
+      'Will be removed in v3.0.0.')
   final double? positionedRight;
+  @Deprecated('Has no effect — the input is not laid out in a Stack. '
+      'Will be removed in v3.0.0.')
   final double? positionedBottom;
+  @Deprecated('Has no effect — the input is not laid out in a Stack. '
+      'Will be removed in v3.0.0.')
   final double? positionedTop;
 
   // Special effects
@@ -106,6 +124,13 @@ class InputOptions {
   final TextInputType? keyboardType;
   final TextCapitalization textCapitalization;
   final TextInputAction? textInputAction;
+
+  /// No effect: the `TextField`'s text direction always follows the
+  /// ambient `Directionality` from `BuildContext` (see [inputTextDirection],
+  /// the other field with the same fate). Will be removed in v3.0.0.
+  @Deprecated(
+      'Has no effect — the input always follows the ambient Directionality. '
+      'Will be removed in v3.0.0.')
   final TextDirection? textDirection;
   final List<TextInputFormatter>? inputFormatters;
   final bool enableSuggestions;
@@ -535,15 +560,29 @@ class InputOptions {
   ///
   /// If [sendOrMicBuilder] is set, it receives both [onSend] and [isEmpty].
   /// Otherwise falls back to [effectiveSendButtonBuilder].
-  Widget effectiveSendWidget(VoidCallback onSend, {bool isEmpty = false}) {
+  ///
+  /// [themeSendButtonColor] is an optional fallback used only when
+  /// [sendButtonColor] itself is unset — `ChatInput` passes the active
+  /// `CustomThemeExtension.sendButtonColor` (e.g. from a brand preset) here.
+  Widget effectiveSendWidget(
+    VoidCallback onSend, {
+    bool isEmpty = false,
+    Color? themeSendButtonColor,
+  }) {
     if (sendOrMicBuilder != null) {
       return sendOrMicBuilder!(onSend, isEmpty);
     }
-    return effectiveSendButtonBuilder(onSend);
+    return effectiveSendButtonBuilder(
+      onSend,
+      themeSendButtonColor: themeSendButtonColor,
+    );
   }
 
   /// Helper method to build an effective send button based on configuration
-  Widget effectiveSendButtonBuilder(VoidCallback onSend) {
+  Widget effectiveSendButtonBuilder(
+    VoidCallback onSend, {
+    Color? themeSendButtonColor,
+  }) {
     // If a custom builder is provided, use it
     if (sendButtonBuilder != null) {
       return sendButtonBuilder!(onSend);
@@ -554,7 +593,7 @@ class InputOptions {
       icon: Icon(
         sendButtonIcon,
         size: sendButtonIconSize,
-        color: sendButtonColor,
+        color: sendButtonColor ?? themeSendButtonColor,
       ),
       padding: sendButtonPadding,
       tooltip: sendButtonTooltip,

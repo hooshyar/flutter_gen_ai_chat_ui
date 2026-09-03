@@ -17,8 +17,10 @@ void main() {
   const testUser = ChatUser(id: 'user', name: 'You');
   const aiUser = ChatUser(id: 'ai', name: 'Assistant');
 
-  Widget wrap(Widget child, {TextDirection direction = TextDirection.ltr}) {
+  Widget wrap(Widget child,
+      {TextDirection direction = TextDirection.ltr, ThemeData? theme}) {
     return MaterialApp(
+      theme: theme,
       home: Directionality(
         textDirection: direction,
         child: Material(
@@ -197,6 +199,44 @@ void main() {
     await expectLater(
       find.byType(AiChatWidget),
       matchesGoldenFile('goldens/rtl_layout.png'),
+    );
+  });
+
+  testWidgets(
+      'CustomThemeExtension.chatgpt() brand preset actually applies '
+      '(regression guard: this extension used to be read nowhere)',
+      (tester) async {
+    final controller = ChatMessagesController(
+      initialMessages: [
+        ChatMessage(
+          text: 'What is the capital of Iraq?',
+          user: testUser,
+          createdAt: DateTime(2026, 1, 1, 12, 0),
+        ),
+        ChatMessage(
+          text: 'The capital of Iraq is Baghdad.',
+          user: aiUser,
+          createdAt: DateTime(2026, 1, 1, 12, 0, 5),
+        ),
+      ],
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(wrap(
+      AiChatWidget(
+        currentUser: testUser,
+        aiUser: aiUser,
+        controller: controller,
+        onSendMessage: (_) async {},
+        enableMarkdownStreaming: false,
+      ),
+      theme: ThemeData(extensions: [CustomThemeExtension.chatgpt()]),
+    ));
+    await tester.pumpAndSettle();
+
+    await expectLater(
+      find.byType(AiChatWidget),
+      matchesGoldenFile('goldens/chatgpt_theme_preset.png'),
     );
   });
 }
