@@ -17,6 +17,24 @@ cut the next release.
 **Notes:** Re-run this task for each subsequent release as the backlog above gets worked through —
 don't treat it as one-and-done.
 
+## Done — v2.19.0 (2026-09-03)
+
+Minor release for the one substantial item unreleased since v2.18.0: the built-in attachment
+lightbox + per-file upload progress (task-008). Also wired the new features into the example app's
+Attachments demo (multi-file attach with simulated upload progress, `enableAttachmentLightbox`
+turned on) so the live demo actually showcases the feature. Zero breaking changes.
+
+- Tag `v2.19.0` pushed → `publish.yml` run 33752922923 succeeded → confirmed live at
+  `pub.dev/packages/flutter_gen_ai_chat_ui` (latest version 2.19.0 via the pub.dev API).
+- Live web demo redeployed automatically — **visually verified end-to-end in the browser**: opened
+  the Attachments demo, tapped the paperclip, watched the photo attachment's upload-progress overlay
+  go from 35% to fully loaded, then tapped the photo and confirmed the built-in `AttachmentLightbox`
+  opens full-screen with the filename caption and closes via the X button. Real behavior, not just
+  unit tests.
+- **Confirmed 160/160 pub points** on a fresh, uncontended `pana` run.
+- 458/458 root tests + 8/8 example tests green, both `analyze --fatal-infos` clean, `dart format`
+  clean, all CI jobs green pre- and post-tag.
+
 ## Done — v2.18.0 (2026-09-03)
 
 Minor release for the one substantial item unreleased since v2.17.1: the opt-in `ChatPersistence`

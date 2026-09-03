@@ -7,24 +7,26 @@ it — each item below links to its backlog task file where one exists. Update
 this file as tasks complete or new opportunities surface; don't let it go
 stale the way the historical audits below did.
 
-## Snapshot as of 2026-09-03 (v2.18.0)
+## Snapshot as of 2026-09-03 (v2.19.0)
 
 - 0 open PRs, 2 open issues (#41 roadmap tracker — kept current, see its
   latest comment; #42 — pin feature shipped, awaiting reporter
   confirmation).
-- **`task-018` (cut the next release) done again — v2.18.0 published**, a
-  minor release for the one substantial item unreleased since v2.17.1:
-  the opt-in `ChatPersistence` hook for long-running threads (task-009),
-  plus the `scrollThreshold` deprecation. Minor bump (not patch) since
-  `ChatPersistence` is genuinely new public API surface. Zero breaking
+- **`task-018` (cut the next release) done again — v2.19.0 published**, a
+  minor release for the one substantial item unreleased since v2.18.0:
+  the built-in `AttachmentLightbox` + per-file upload progress (task-008).
+  Also wired both into the example app's Attachments demo so the live
+  site actually showcases the feature, and **visually verified it
+  end-to-end in the browser** (upload progress overlay, lightbox
+  open/close) rather than trusting unit tests alone. Zero breaking
   changes. Task-018's own note that release-cutting isn't one-and-done
   held again — this file's job is to keep flagging when enough has
   accumulated to justify the next one.
 - **Confirmed 160/160 pub points** — a fresh, uncontended `pana` run
-  against v2.18.0. This is the number to protect going forward — re-run
+  against v2.19.0. This is the number to protect going forward — re-run
   `pana --no-warning .` after any future release to confirm it's still
   holding.
-- 443 package tests + 8 example tests green, `dart analyze
+- 458 package tests + 8 example tests green, `dart analyze
   --fatal-infos` clean (root + example), `dart format
   --set-exit-if-changed` clean,
   `dart pub publish --dry-run` clean, `flutter build web --wasm` clean.
