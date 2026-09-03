@@ -58,3 +58,6 @@ example/web/
 
 # Generated dartdoc output (published via gh-pages, not the tarball)
 doc/api/
+
+# Agent backlog / planning docs — not for package users
+backlog/
