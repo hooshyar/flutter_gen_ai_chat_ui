@@ -17,6 +17,20 @@ cut the next release.
 **Notes:** Re-run this task for each subsequent release as the backlog above gets worked through —
 don't treat it as one-and-done.
 
+## Done — v2.18.0 (2026-09-03)
+
+Minor release for the one substantial item unreleased since v2.17.1: the opt-in `ChatPersistence`
+hook for long-running threads (task-009), plus the `PaginationConfig.scrollThreshold` deprecation.
+Minor-version bump (not patch) since `ChatPersistence` is genuinely new public API surface, not just
+a fix. Zero breaking changes.
+
+- Tag `v2.18.0` pushed → `publish.yml` run 33750084621 succeeded → confirmed live at
+  `pub.dev/packages/flutter_gen_ai_chat_ui` (latest version 2.18.0 via the pub.dev API).
+- Live web demo redeployed automatically.
+- **Confirmed 160/160 pub points** on a fresh, uncontended `pana` run.
+- 443/443 root tests + 8/8 example tests green, both `analyze --fatal-infos` clean, `dart format`
+  clean, all CI jobs green pre- and post-tag.
+
 ## Done — v2.17.1 (2026-09-03)
 
 Small patch release bundling the 2 items unreleased since v2.17.0: the scroll-debounce clock
