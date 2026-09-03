@@ -92,11 +92,13 @@ stale the way the historical audits below did.
    only, explicitly keep heavy SDKs out of `lib/`), decent value — backs
    the "Works Great With: OpenAI, Anthropic Claude, Google Gemini..." claim
    with copy-pasteable ~10-line snippets instead of just a bullet list.
-8. **Scroll-debounce wall-clock flakiness (`task-019`).** Not a released bug
-   (never shipped), but a recurring source of flaky local test runs under
-   concurrent machine load. Needs either an injectable clock or a redesign
-   of the debounce mechanism — worth doing before it causes a false CI
-   failure someone has to re-run and shrug at.
+8. ~~**Scroll-debounce wall-clock flakiness (`task-019`).**~~ **DONE
+   (2026-09-03).** Injected `package:clock` into the 3 debounce call sites
+   (zero behavior change — defaults to real wall-clock time). A first
+   attempt at the alternative fix (an always-armed boolean+Timer flag)
+   empirically made things worse (100+ new failures) before being reverted
+   — recorded in the CHANGELOG so it isn't retried blind. Added 2 tests
+   using a fake clock to force the race on demand.
 
 ## Lower value / niche, or genuinely optional polish
 

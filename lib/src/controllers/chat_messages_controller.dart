@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 
@@ -253,8 +254,23 @@ class ChatMessagesController extends ChangeNotifier {
   bool _isManuallyScrolling = false;
   DateTime _lastManualScrollTime = DateTime.now();
 
-  /// Add this property at the top of the class with other properties
-  DateTime _lastScrollTime = DateTime.now();
+  /// Timestamp of the last executed auto-scroll, used to debounce
+  /// [_scrollAfterRender], [forceScrollToFirstMessageInChain] and
+  /// [_scrollToBottomInternal] against firing too close together.
+  ///
+  /// Read via [clock.now()][clock] (`package:clock`), not raw
+  /// `DateTime.now()` (task-019): the debounce compares real elapsed time,
+  /// which under a heavily loaded machine can occasionally exceed the
+  /// debounce window between a test's controller construction and its
+  /// first `addMessage` call — scheduling a genuine `Timer` that a test's
+  /// `pump`/`pumpAndSettle` may not drain long enough to fire, causing an
+  /// intermittent "A Timer is still pending" failure unrelated to whatever
+  /// the test was actually checking. `package:clock`'s ambient `clock` is
+  /// real wall-clock time by default (zero behavior change for production
+  /// and for any test that doesn't opt in), but a test can wrap itself in
+  /// `withClock(someControllableClock, () { ... })` to make this debounce
+  /// deterministic instead of dependent on real elapsed time.
+  DateTime _lastScrollTime = clock.now();
   int _scrollDebounceMs =
       800; // Increased default debounce time to reduce frequency
   String?
@@ -576,7 +592,7 @@ class ChatMessagesController extends ChangeNotifier {
     final operationId = 'scroll_${DateTime.now().millisecondsSinceEpoch}';
 
     // Apply debounce for scrolling to prevent jitter
-    final now = DateTime.now();
+    final now = clock.now();
     if (now.difference(_lastScrollTime).inMilliseconds < _scrollDebounceMs) {
       return; // Removed debug print to reduce log spam
     }
@@ -665,7 +681,7 @@ class ChatMessagesController extends ChangeNotifier {
       }
 
       // Update last scroll time for debouncing
-      _lastScrollTime = DateTime.now();
+      _lastScrollTime = clock.now();
 
       debugPrint('SCROLL EXECUTION: isUserMessage=$isUserMessage, '
           'scrollToFirstResponseMessage=${config.scrollToFirstResponseMessage}, '
@@ -868,7 +884,7 @@ class ChatMessagesController extends ChangeNotifier {
 
     // Apply debounce for scrollToBottom to prevent jitter
     // (less strict than for force scroll)
-    final now = DateTime.now();
+    final now = clock.now();
     const minInterval = 400; // ms - increased from 200ms to reduce frequency
     if (now.difference(_lastScrollTime).inMilliseconds < minInterval) {
       return; // Removed debug print to reduce log spam
@@ -1326,7 +1342,7 @@ class ChatMessagesController extends ChangeNotifier {
     if (!_mounted || _scrollController?.hasClients != true) return;
 
     // Implement debounce for scrolling to prevent jitter
-    final now = DateTime.now();
+    final now = clock.now();
     if (now.difference(_lastScrollTime).inMilliseconds < _scrollDebounceMs) {
       return; // Removed debug print to reduce log spam
     }
