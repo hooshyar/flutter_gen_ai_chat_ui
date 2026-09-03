@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
 import '../models/chat/models.dart';
 import '../utils/color_extensions.dart';
 
@@ -270,7 +269,7 @@ class _LoadingWidgetState extends State<LoadingWidget> {
             : Alignment.centerLeft);
 
     // Create the shimmer text content
-    final textContent = Shimmer.fromColors(
+    final textContent = _ShimmerEffect(
       baseColor: baseColor,
       highlightColor: highlightColor,
       child: AnimatedSwitcher(
@@ -365,5 +364,76 @@ class _LoadingWidgetState extends State<LoadingWidget> {
     }
 
     return content;
+  }
+}
+
+/// A hand-rolled shimmer sweep, replacing the external `shimmer` package.
+///
+/// Reproduces `Shimmer.fromColors`'s visual effect (a highlight band sliding
+/// left-to-right across [child]) without an extra dependency, so this
+/// package's SDK floor doesn't inherit `shimmer`'s.
+class _ShimmerEffect extends StatefulWidget {
+  const _ShimmerEffect({
+    required this.baseColor,
+    required this.highlightColor,
+    required this.child,
+  });
+
+  final Color baseColor;
+  final Color highlightColor;
+  final Widget child;
+
+  @override
+  State<_ShimmerEffect> createState() => _ShimmerEffectState();
+}
+
+class _ShimmerEffectState extends State<_ShimmerEffect>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(final BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      child: widget.child,
+      builder: (final context, final child) {
+        return ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (final bounds) {
+            // Slides a highlight band fully across [bounds] and off both
+            // edges (-1 to 2 covers the full sweep-in/sweep-out range).
+            final slide = -1.0 + 3.0 * _controller.value;
+            return LinearGradient(
+              colors: [
+                widget.baseColor,
+                widget.baseColor,
+                widget.highlightColor,
+                widget.baseColor,
+                widget.baseColor,
+              ],
+              stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+              begin: Alignment(-1.0 + slide, 0.0),
+              end: Alignment(1.0 + slide, 0.0),
+            ).createShader(bounds);
+          },
+          child: child,
+        );
+      },
+    );
   }
 }

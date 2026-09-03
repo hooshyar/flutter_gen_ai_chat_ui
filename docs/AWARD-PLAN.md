@@ -33,18 +33,13 @@ stale the way the historical audits below did.
 
 ## Time-sensitive (do first, small effort)
 
-1. **`shimmer` dependency clock.** Held at `^3.0.0` since task-006
-   (`shimmer` 4.0.0 needs Flutter `>=3.44.0`/Dart `^3.12.0`, above this
-   package's declared floor). Pana: *"When shimmer is 30 days old, this
-   package will no longer be awarded points in this category"* — it was
-   13 days old at today's check, so **roughly 2.5 weeks of runway left**.
-   Decide before it lapses: (a) raise the SDK floor to 3.44 (a real
-   breaking-ish change — check how many consumers that actually excludes
-   first), (b) replace `shimmer` with a hand-rolled shimmer effect (it's a
-   small, well-understood animation — genuinely low effort to inline and
-   removes the dependency entirely), or (c) accept the score hit as a
-   documented tradeoff. Leaning toward (b): removes a dependency AND the
-   recurring SDK-floor tension for good, for less code than it sounds.
+1. ~~**`shimmer` dependency clock.**~~ **DONE (2026-09-03).** Replaced the
+   package's one usage site (`LoadingWidget`'s shimmering loading text) with
+   a small hand-rolled `ShaderMask` + `AnimationController` sweep and removed
+   the `shimmer` dependency entirely (option (b) from this item's original
+   analysis). No public API changes, 426 tests still green. Permanently
+   removes both the pana dependency-freshness risk and the recurring
+   SDK-floor tension — nothing to revisit here going forward.
 
 ## High value / low-medium effort
 

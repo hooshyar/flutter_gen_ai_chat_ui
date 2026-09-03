@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### Changed
+- **Removed the `shimmer` package dependency.** It was the sole holdout pinning this package's dependency-freshness pana score (`shimmer` 4.0.0 requires Flutter `>=3.44.0`/Dart `^3.12.0`, above this package's declared floor) — see `docs/AWARD-PLAN.md`'s "time-sensitive" item. Replaced its one usage site (`LoadingWidget`'s shimmering loading text) with a small hand-rolled `ShaderMask` + `AnimationController` sweep that reproduces the same visual effect (a highlight band sliding across the text). No public API changes — `LoadingWidget.shimmerBaseColor`/`shimmerHighlightColor` behave identically. Removes a dependency and the recurring SDK-floor tension for good.
+
 ## 2.16.2 - 2026-09-03
 
 Zero breaking changes. A real bug fix for a previously-inert, marketed feature
