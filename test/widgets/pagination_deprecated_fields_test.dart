@@ -12,6 +12,12 @@ import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 /// the built-in default). Both are now `@Deprecated`, pointing at the
 /// mechanisms that actually work; this test locks in that the real
 /// mechanisms are what render, regardless of the deprecated fields.
+///
+/// `PaginationConfig.scrollThreshold` (task-002/task-009) is a third
+/// confirmed-dead field, deprecated the same way: the auto-load-on-scroll
+/// trigger in `custom_chat_widget.dart` is driven entirely by
+/// `distanceToTriggerLoadPixels` (a pixel distance from the scroll edge),
+/// never by `scrollThreshold`'s proportional 0.0-1.0 value.
 void main() {
   const testUser = ChatUser(id: 'user', name: 'Test User');
   const aiUser = ChatUser(id: 'ai', name: 'AI Assistant');
@@ -49,5 +55,67 @@ void main() {
 
     expect(find.text('REAL_LOADING_INDICATOR'), findsOneWidget);
     expect(find.text('IGNORED_DEPRECATED_INDICATOR'), findsNothing);
+  });
+
+  testWidgets(
+      'auto-load-on-scroll fires based on distanceToTriggerLoadPixels, not '
+      'the deprecated scrollThreshold', (tester) async {
+    var loadMoreCalls = 0;
+    final controller = ChatMessagesController(
+      initialMessages: List.generate(
+        30,
+        (i) => ChatMessage(
+          text: 'Message $i ' * 8,
+          user: i.isEven ? testUser : aiUser,
+          createdAt: DateTime.now(),
+        ),
+      ),
+    );
+    addTearDown(controller.dispose);
+    final scrollController = ScrollController();
+    addTearDown(scrollController.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Material(
+          child: SizedBox(
+            height: 400,
+            child: AiChatWidget(
+              currentUser: testUser,
+              aiUser: aiUser,
+              controller: controller,
+              onSendMessage: (_) async {},
+              scrollController: scrollController,
+              messageListOptions: MessageListOptions(
+                hasMoreMessages: true,
+                isLoadingMore: false,
+                onLoadMore: () async {
+                  loadMoreCalls++;
+                },
+                paginationConfig: const PaginationConfig(
+                  enabled: true,
+                  autoLoadOnScroll: true,
+                  distanceToTriggerLoadPixels: 100,
+                  loadMoreDebounceTime: Duration.zero,
+                  // Deprecated, ignored field — set to a value that would
+                  // make loading trigger almost never (if it had any
+                  // effect) to prove it doesn't gate the real mechanism.
+                  scrollThreshold: 0.0001,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(scrollController.position.maxScrollExtent, greaterThan(200));
+    scrollController.jumpTo(scrollController.position.maxScrollExtent);
+    await tester.pump(const Duration(milliseconds: 50));
+    scrollController.jumpTo(1);
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(loadMoreCalls, greaterThan(0));
   });
 }

@@ -82,6 +82,10 @@ class PaginationConfig {
   final double distanceToTriggerLoadPixels;
 
   /// Scroll position threshold to trigger loading (0.0 to 1.0)
+  @Deprecated(
+      'Has no effect — the auto-load-on-scroll trigger is driven entirely '
+      'by distanceToTriggerLoadPixels (a pixel distance from the edge), not '
+      'a proportional 0.0-1.0 threshold. Will be removed in v3.0.0.')
   final double scrollThreshold;
 
   /// Whether to enable haptic feedback when loading more messages
@@ -118,6 +122,10 @@ class PaginationConfig {
     this.loadMoreDebounceTime = const Duration(milliseconds: 200),
     this.autoLoadOnScroll = true,
     this.distanceToTriggerLoadPixels = 100.0,
+    @Deprecated(
+        'Has no effect — the auto-load-on-scroll trigger is driven entirely '
+        'by distanceToTriggerLoadPixels (a pixel distance from the edge), '
+        'not a proportional 0.0-1.0 threshold. Will be removed in v3.0.0.')
     this.scrollThreshold = 0.1,
     this.enableHapticFeedback = true,
     this.loadingBuilder,

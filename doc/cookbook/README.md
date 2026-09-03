@@ -13,6 +13,7 @@ real question in the issue tracker. All snippets use the current public API
 - [Match ChatGPT / Claude / Gemini styling](#match-chatgpt--claude--gemini-styling)
 - [Localize & support RTL](#localize--support-rtl)
 - [Wire up a real LLM provider (OpenAI, Anthropic, Gemini, Ollama)](#wire-up-a-real-llm-provider-openai-anthropic-gemini-ollama)
+- [Persist a long-running thread across app restarts](#persist-a-long-running-thread-across-app-restarts)
 
 The mental model: you own a `ChatMessagesController` (like a
 `TextEditingController`). You `addMessage(...)` to append, and
@@ -433,3 +434,70 @@ screen. Wrap the `send`/decode loop in a `try`/`catch` and call
 `controller.updateMessage(...)` with `hasError: true` on failure — see
 [`ChatMessage.hasError`](../../lib/src/models/chat/chat_message.dart) — the
 snippets above omit that for brevity.
+
+---
+
+## Persist a long-running thread across app restarts
+
+`ChatMessagesController` accepts an optional `persistence` hook so a thread
+survives an app restart — the package doesn't pick a storage backend, you
+implement `ChatPersistence` with whatever you already use
+(`shared_preferences`, `sqflite`, `Hive`, a REST API):
+
+```dart
+class MyChatPersistence implements ChatPersistence {
+  @override
+  Future<List<ChatMessage>> loadMessages() async {
+    final raw = prefs.getString('chat_history');
+    if (raw == null) return [];
+    return (jsonDecode(raw) as List)
+        .map((m) => ChatMessage(
+              text: m['text'],
+              user: m['userId'] == 'me' ? currentUser : aiUser,
+              createdAt: DateTime.parse(m['createdAt']),
+              customProperties: {'id': m['id']},
+            ))
+        .toList();
+  }
+
+  @override
+  Future<void> saveMessages(List<ChatMessage> messages) async {
+    final raw = jsonEncode(messages
+        .map((m) => {
+              'text': m.text,
+              'userId': m.user.id == currentUser.id ? 'me' : 'ai',
+              'createdAt': m.createdAt.toIso8601String(),
+              'id': m.customProperties?['id'],
+            })
+        .toList());
+    await prefs.setString('chat_history', raw);
+  }
+}
+
+final controller = ChatMessagesController(
+  persistence: MyChatPersistence(),
+);
+
+@override
+void initState() {
+  super.initState();
+  controller.restoreFromPersistence(); // populates `controller.messages`
+}
+```
+
+`saveMessages` runs automatically after `addMessage`/`updateMessage`/
+`clearMessages`, debounced by `persistDebounce` (500ms by default) so a
+word-by-word streamed reply triggers one save after it finishes, not one
+per chunk. Pass `autoPersist: false` to disable the automatic save entirely
+and call `controller.persistNow()` yourself instead — e.g. only on app
+backgrounding via `WidgetsBindingObserver.didChangeAppLifecycleState`.
+`loadMessages`/`saveMessages` receive/return the package's real
+`ChatMessage` objects, so `customProperties['id']` round-trips correctly
+for streaming and rich-widget messages that key off it.
+
+For pagination on top of persistence (loading only the most recent N
+messages, then lazily fetching older ones as the user scrolls up), see
+`PaginationConfig` (`enabled`, `autoLoadOnScroll`, `distanceToTriggerLoadPixels`)
+and `ChatMessagesController.loadMore` — `persistence` only covers
+save/restore of what's currently in memory, it isn't itself a pagination
+mechanism.

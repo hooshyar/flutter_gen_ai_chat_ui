@@ -1,4 +1,5 @@
 export 'chat_message.dart';
+export 'chat_persistence.dart';
 export 'chat_spacing_config.dart';
 export 'chat_user.dart';
 export 'citation.dart';

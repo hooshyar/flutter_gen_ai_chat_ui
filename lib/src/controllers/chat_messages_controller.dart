@@ -77,6 +77,8 @@ class ChatMessagesController extends ChangeNotifier {
   /// [paginationConfig] - Configuration for pagination behavior.
   /// [onLoadMoreMessages] - Callback for loading more messages (for backward compatibility).
   /// [showWelcomeMessage] - Whether to show the welcome message.
+  /// [persistence] - Optional hook for restoring/saving a long-running thread
+  /// across app restarts. See [restoreFromPersistence] and [autoPersist].
   ChatMessagesController({
     final List<ChatMessage>? initialMessages,
     this.paginationConfig = const PaginationConfig(),
@@ -84,6 +86,9 @@ class ChatMessagesController extends ChangeNotifier {
         onLoadMoreMessages,
     bool showWelcomeMessage = false,
     ScrollBehaviorConfig? scrollBehaviorConfig,
+    this.persistence,
+    this.autoPersist = true,
+    this.persistDebounce = const Duration(milliseconds: 500),
   }) {
     _scrollBehaviorConfig = scrollBehaviorConfig;
 
@@ -97,6 +102,70 @@ class ChatMessagesController extends ChangeNotifier {
 
     // Store the callback for backward compatibility
     _onLoadMoreMessagesCallback = onLoadMoreMessages;
+  }
+
+  /// Optional hook for restoring/saving a long-running thread across app
+  /// restarts. Null by default — persistence is entirely opt-in and never
+  /// forces a storage backend. See [ChatPersistence].
+  final ChatPersistence? persistence;
+
+  /// Whether to automatically call [ChatPersistence.saveMessages] (debounced
+  /// by [persistDebounce]) after a message-list mutation, when [persistence]
+  /// is set. Has no effect when [persistence] is null. Defaults to true so
+  /// setting `persistence` alone is enough to keep storage in sync; set to
+  /// false to call [persistNow] manually instead (e.g. only on app
+  /// backgrounding, to avoid writing on every keystroke of a streamed reply).
+  final bool autoPersist;
+
+  /// How long to wait after the last mutation before calling
+  /// [ChatPersistence.saveMessages], when [autoPersist] is true. Coalesces a
+  /// burst of `updateMessage` calls during streaming into a single save
+  /// instead of one per chunk.
+  final Duration persistDebounce;
+
+  Timer? _persistDebounceTimer;
+
+  /// Loads messages from [persistence] and replaces the current list.
+  ///
+  /// A no-op if [persistence] is null. Call this explicitly (e.g. once in
+  /// `initState`, before the first frame) rather than having the
+  /// constructor do it implicitly — a constructor can't be `async`, and an
+  /// explicit call lets the consumer show a loading state around the
+  /// `await` and decide exactly when a restore happens.
+  Future<void> restoreFromPersistence() async {
+    final store = persistence;
+    if (store == null) return;
+    final restored = await store.loadMessages();
+    if (!_mounted) return;
+    setMessages(restored);
+  }
+
+  /// Immediately calls [ChatPersistence.saveMessages] with the current
+  /// message list, bypassing [persistDebounce]. A no-op if [persistence] is
+  /// null. Useful when [autoPersist] is false and you want to persist at a
+  /// specific moment (e.g. app backgrounding) instead of after every
+  /// mutation.
+  Future<void> persistNow() async {
+    final store = persistence;
+    if (store == null) return;
+    _persistDebounceTimer?.cancel();
+    _persistDebounceTimer = null;
+    await store.saveMessages(List.unmodifiable(_messages));
+  }
+
+  /// Schedules a debounced [ChatPersistence.saveMessages] call, restarting
+  /// the debounce window on every call — a trailing debounce, so a burst of
+  /// mutations (e.g. word-by-word streaming) results in one save shortly
+  /// after the burst ends, not one per mutation. No-ops when [persistence]
+  /// is null or [autoPersist] is false.
+  void _scheduleAutoPersist() {
+    if (persistence == null || !autoPersist) return;
+    _persistDebounceTimer?.cancel();
+    _persistDebounceTimer = Timer(persistDebounce, () {
+      _persistDebounceTimer = null;
+      if (!_mounted) return;
+      persistence!.saveMessages(List.unmodifiable(_messages));
+    });
   }
 
   /// Configuration for pagination behavior
@@ -523,6 +592,7 @@ class ChatMessagesController extends ChangeNotifier {
       }
 
       notifyListeners();
+      _scheduleAutoPersist();
 
       // Determine if we should scroll based on the configuration
       final config = scrollBehaviorConfig;
@@ -948,6 +1018,7 @@ class ChatMessagesController extends ChangeNotifier {
 
     if (hasNewMessages) {
       notifyListeners();
+      _scheduleAutoPersist();
     }
   }
 
@@ -1083,6 +1154,7 @@ class ChatMessagesController extends ChangeNotifier {
         _isCurrentlyStreaming = true;
         // For streaming: just notify, no scrolling to prevent assertion errors
         notifyListeners();
+        _scheduleAutoPersist();
       } else {
         // If we were streaming and now we're not, this is the end of stream
         final wasStreaming = _isCurrentlyStreaming;
@@ -1090,6 +1162,7 @@ class ChatMessagesController extends ChangeNotifier {
 
         // Always notify listeners
         notifyListeners();
+        _scheduleAutoPersist();
 
         // Only scroll if configured to do so and not during rapid updates
         final config = scrollBehaviorConfig;
@@ -1151,6 +1224,7 @@ class ChatMessagesController extends ChangeNotifier {
         }
         _messageCache[newId] = messageWithId;
         notifyListeners();
+        _scheduleAutoPersist();
 
         // Only scroll if configured to do so for new messages
         final config = scrollBehaviorConfig;
@@ -1210,6 +1284,10 @@ class ChatMessagesController extends ChangeNotifier {
     _messageCache = {for (var m in _messages) _getMessageId(m): m};
     _currentPage = 1;
     notifyListeners();
+    // Note: also fires right after restoreFromPersistence() calls this
+    // internally, re-saving the same data it just loaded — a harmless
+    // redundant write, not worth special-casing.
+    _scheduleAutoPersist();
 
     // Only scroll to bottom if configured to do so
     final config = scrollBehaviorConfig;
@@ -1229,6 +1307,7 @@ class ChatMessagesController extends ChangeNotifier {
     _currentPage = 1;
     _hasMoreMessages = true;
     notifyListeners();
+    _scheduleAutoPersist();
   }
 
   /// Loads more messages using the provided callback.
@@ -1664,6 +1743,10 @@ class ChatMessagesController extends ChangeNotifier {
     // Future.delayed) for the same reason.
     _manualScrollResetTimer?.cancel();
     _manualScrollResetTimer = null;
+
+    // Cancel the auto-persist debounce timer (task-009) for the same reason.
+    _persistDebounceTimer?.cancel();
+    _persistDebounceTimer = null;
 
     // Cancel any pending simulate-streaming-completion timers (iter 3).
     for (final t in _simulateStreamingTimers) {

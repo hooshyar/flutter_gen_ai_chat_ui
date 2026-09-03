@@ -274,6 +274,7 @@ flutter run
 - **📱 Cross-Platform**: Works on all Flutter-supported platforms
 - **🔗 Backend Agnostic**: Compatible with any API or service
 - **⚡ Real-time Ready**: Built-in support for live updates
+- **💾 Persistable Threads**: Opt-in `ChatPersistence` hook to restore/save a long-running conversation across app restarts — see the [persistence cookbook recipe](doc/cookbook/README.md#persist-a-long-running-thread-across-app-restarts)
 
 ### Performance Benchmarks
 - **Message Rendering**: 60 FPS with 1000+ messages

@@ -77,11 +77,18 @@ stale the way the historical audits below did.
 
 ## Medium value / medium effort
 
-5. **Long-thread persistence + lazy pagination (`task-009`, issue #13).**
-   Real, requested feature gap — an opt-in lazy-load-older-messages API
-   plus a storage-agnostic persistence hook. Higher effort than most items
-   here because it's new API surface, not a wire-up fix; pairs naturally
-   with item 3's benchmark work (validate it actually helps).
+5. ~~**Long-thread persistence + lazy pagination (`task-009`, issue #13).**~~
+   **DONE (2026-09-03).** The lazy-pagination half already existed
+   (`loadMore`/`PaginationConfig`, genuinely wired to a scroll listener —
+   confirmed by reading the code, not assumed) and is covered by task-014's
+   benchmark suite. Added the genuinely new part: `ChatPersistence`, a
+   storage-agnostic `loadMessages`/`saveMessages` hook wired into
+   `ChatMessagesController` (`persistence`, `autoPersist`,
+   `persistDebounce`, `restoreFromPersistence()`, `persistNow()`), debounced
+   via a properly tracked-and-cancelled `Timer` (applying task-019's own
+   lesson from earlier this session). Also deprecated the confirmed-dead
+   `PaginationConfig.scrollThreshold`, closing a loose end open since
+   task-002.
 6. **Attachments lightbox + multi-file (`task-008`).** Real, visible
    feature gap for a "complete file support" claim already in the README.
 7. ~~**Provider integration examples (`task-011`).**~~ **DONE (2026-09-03).**

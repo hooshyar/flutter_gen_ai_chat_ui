@@ -1,3 +1,11 @@
+## [Unreleased]
+
+### Added
+- **Opt-in persistence hook for long-running threads (task-009, issue #13).** `ChatMessagesController` accepts a new `persistence` parameter (a `ChatPersistence` implementation you write, backed by whatever storage already fits your app — `shared_preferences`, `sqflite`, `Hive`, a REST API; the package doesn't pick one) plus `autoPersist` (default `true`) and `persistDebounce` (default 500ms). Call the new `controller.restoreFromPersistence()` (e.g. in `initState`) to load a previously saved thread; `saveMessages` then runs automatically after `addMessage`/`updateMessage`/`clearMessages`, debounced so a word-by-word streamed reply triggers one save, not one per chunk. Call the new `controller.persistNow()` to save immediately, useful with `autoPersist: false` for saving only at specific moments (e.g. app backgrounding). Entirely additive — a controller with no `persistence` set behaves exactly as before, and never calls it. Documented in a new cookbook recipe. 6 new tests, including two using `fakeAsync` to prove the debounce timer doesn't leak past disposal.
+
+### Deprecated
+- **`PaginationConfig.scrollThreshold`** — confirmed dead (task-002/task-009 knob sweep): the auto-load-on-scroll trigger in `custom_chat_widget.dart` is driven entirely by `distanceToTriggerLoadPixels` (a pixel distance from the scroll edge), never by this field's proportional 0.0-1.0 value. Marked `@Deprecated`, matching `loadingIndicatorOffset`/`loadMoreIndicator`'s existing pattern. Will be removed in v3.0.0.
+
 ## 2.17.1 - 2026-09-03
 
 Zero breaking changes. An internal test-reliability fix (no runtime behavior change for consumers)
