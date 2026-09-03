@@ -1382,6 +1382,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                 customBuilder: widget.fileUploadOptions?.fileDisplayBuilder,
                 onTap: widget.messageOptions.onMediaTap,
                 enableImageTaps: widget.messageOptions.enableImageTaps,
+                enableBuiltInLightbox:
+                    widget.messageOptions.enableAttachmentLightbox,
+                siblingMedia: message.media,
               ),
             );
           }),

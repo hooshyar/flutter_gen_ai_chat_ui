@@ -291,6 +291,14 @@ class MessageOptions {
   /// Whether to enable tapping on images in markdown content
   final bool enableImageTaps;
 
+  /// Whether tapping an image attachment (when [onMediaTap] is not set)
+  /// opens a built-in full-screen lightbox/preview with pinch-zoom and
+  /// swipe-between-images support. Has no effect unless [enableImageTaps]
+  /// is also true, and an explicit [onMediaTap] always takes precedence
+  /// over the built-in lightbox. Defaults to false — additive, existing
+  /// consumers see no change in tap behavior unless they opt in.
+  final bool enableAttachmentLightbox;
+
   /// Callback when an image in markdown content is tapped
   /// Provides the image URL, title, and alt text
   final void Function(String url, String? title, String? alt)? onImageTap;
@@ -422,6 +430,7 @@ class MessageOptions {
     this.aiTextColor,
     this.onMediaTap,
     this.enableImageTaps = false,
+    this.enableAttachmentLightbox = false,
     this.onImageTap,
     this.textBuilder,
     this.markdownBuilder,
@@ -461,6 +470,7 @@ class MessageOptions {
     Color? aiTextColor,
     void Function(ChatMedia)? onMediaTap,
     bool? enableImageTaps,
+    bool? enableAttachmentLightbox,
     void Function(String url, String? title, String? alt)? onImageTap,
     Widget Function(BuildContext, String, TextStyle, bool)? textBuilder,
     Widget Function(BuildContext, String, MarkdownStyleSheet, bool)?
@@ -501,6 +511,8 @@ class MessageOptions {
         aiTextColor: aiTextColor ?? this.aiTextColor,
         onMediaTap: onMediaTap ?? this.onMediaTap,
         enableImageTaps: enableImageTaps ?? this.enableImageTaps,
+        enableAttachmentLightbox:
+            enableAttachmentLightbox ?? this.enableAttachmentLightbox,
         onImageTap: onImageTap ?? this.onImageTap,
         textBuilder: textBuilder ?? this.textBuilder,
         markdownBuilder: markdownBuilder ?? this.markdownBuilder,

@@ -88,8 +88,14 @@ stale the way the historical audits below did.
    lesson from earlier this session). Also deprecated the confirmed-dead
    `PaginationConfig.scrollThreshold`, closing a loose end open since
    task-002.
-6. **Attachments lightbox + multi-file (`task-008`).** Real, visible
-   feature gap for a "complete file support" claim already in the README.
+6. ~~**Attachments lightbox + multi-file (`task-008`).**~~ **DONE
+   (2026-09-03).** Multi-file rendering already existed (confirmed by
+   reading the code); added the missing pieces — a new `AttachmentLightbox`
+   widget (pinch-zoom, swipe-between-images, opt-in via
+   `MessageOptions.enableAttachmentLightbox`) and `ChatMedia.uploadProgress`
+   (a generic per-file progress overlay, any attachment type). Both are
+   additive/defaulted-off; an explicit `onMediaTap` always wins. 15 new
+   tests.
 7. ~~**Provider integration examples (`task-011`).**~~ **DONE (2026-09-03).**
    Added 4 copy-pasteable streaming snippets (OpenAI, Anthropic, Gemini,
    Ollama) to `doc/cookbook/README.md`, using `package:http` directly —

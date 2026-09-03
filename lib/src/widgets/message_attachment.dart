@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/chat/media.dart';
 import '../utils/color_extensions.dart';
+import 'attachment_lightbox.dart';
 
 /// Displays a media attachment in a chat message
 class MessageAttachment extends StatelessWidget {
@@ -16,6 +17,18 @@ class MessageAttachment extends StatelessWidget {
   /// Custom builder for rendering media
   final Widget Function(BuildContext, ChatMedia)? customBuilder;
 
+  /// Whether tapping an image (when [onTap] is not set) opens a built-in
+  /// full-screen [AttachmentLightbox]. Defaults to false — additive,
+  /// existing consumers see no change in tap behavior unless they opt in.
+  /// Has no effect when [onTap] is set; an explicit [onTap] always wins.
+  final bool enableBuiltInLightbox;
+
+  /// The other media in the same message, used so the built-in lightbox can
+  /// page through every image in the message rather than showing just the
+  /// one that was tapped. Defaults to `[media]` (a single-image gallery)
+  /// when not provided. Non-image entries are filtered out automatically.
+  final List<ChatMedia>? siblingMedia;
+
   /// Creates a [MessageAttachment] widget
   const MessageAttachment({
     super.key,
@@ -23,22 +36,91 @@ class MessageAttachment extends StatelessWidget {
     this.customBuilder,
     this.onTap,
     this.enableImageTaps = true,
+    this.enableBuiltInLightbox = false,
+    this.siblingMedia,
   });
 
   @override
   Widget build(BuildContext context) {
+    final Widget child;
     // Use custom builder if provided
     if (customBuilder != null) {
-      return customBuilder!(context, media);
+      child = customBuilder!(context, media);
+    } else if (media.customBuilder != null) {
+      // Use media's custom builder if provided
+      child = media.customBuilder!(context, media);
+    } else {
+      // Default rendering based on media type
+      child = _buildByType(context);
     }
 
-    // Use media's custom builder if provided
-    if (media.customBuilder != null) {
-      return media.customBuilder!(context, media);
-    }
+    final progress = media.uploadProgress;
+    if (progress == null || progress >= 1.0) return child;
+    return _withUploadProgressOverlay(context, child, progress);
+  }
 
-    // Default rendering based on media type
-    return _buildByType(context);
+  /// Overlays a centered circular progress indicator + percentage on top of
+  /// [child] while `media.uploadProgress` is set and below 1.0. Applies
+  /// uniformly regardless of media type, so every attachment kind gets the
+  /// same "uploading" treatment without each type-specific builder needing
+  /// its own progress-rendering logic.
+  Widget _withUploadProgressOverlay(
+      BuildContext context, Widget child, double progress) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Opacity(opacity: 0.5, child: child),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacityCompat(0.55),
+            shape: BoxShape.circle,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(
+                  value: progress.clamp(0.0, 1.0),
+                  strokeWidth: 3,
+                  color: Colors.white,
+                  backgroundColor: Colors.white.withOpacityCompat(0.3),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${(progress.clamp(0.0, 1.0) * 100).round()}%',
+                style: const TextStyle(color: Colors.white, fontSize: 10),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _handleImageTap(BuildContext context) {
+    if (onTap != null) {
+      onTap!(media);
+      return;
+    }
+    if (!enableBuiltInLightbox) return;
+
+    final gallery = (siblingMedia ?? [media])
+        .where((m) => m.type == ChatMediaType.image)
+        .toList();
+    var initialIndex = gallery.indexOf(media);
+    if (initialIndex < 0) {
+      // `media` itself isn't in `gallery` (e.g. siblingMedia was passed
+      // without it, or filtering removed it) — show it on its own rather
+      // than silently jumping to a different image.
+      gallery.insert(0, media);
+      initialIndex = 0;
+    }
+    AttachmentLightbox.show(context,
+        images: gallery, initialIndex: initialIndex);
   }
 
   Widget _buildByType(BuildContext context) {
@@ -60,7 +142,7 @@ class MessageAttachment extends StatelessWidget {
 
   Widget _buildImageAttachment(BuildContext context, bool isDarkMode) {
     return GestureDetector(
-      onTap: enableImageTaps ? () => onTap?.call(media) : null,
+      onTap: enableImageTaps ? () => _handleImageTap(context) : null,
       child: Container(
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.7,

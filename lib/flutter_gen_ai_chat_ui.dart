@@ -36,6 +36,7 @@ export 'src/widgets/ai_action_provider.dart';
 export 'src/widgets/ai_chat_widget.dart';
 export 'src/widgets/ai_context_provider.dart';
 export 'src/widgets/ai_suggestions_bar.dart';
+export 'src/widgets/attachment_lightbox.dart';
 export 'src/widgets/chat_input.dart';
 export 'src/widgets/citation_chip.dart';
 export 'src/widgets/copilot_textarea.dart';

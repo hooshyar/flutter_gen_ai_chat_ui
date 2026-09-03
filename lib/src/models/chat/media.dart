@@ -23,6 +23,18 @@ class ChatMedia {
   /// Optional widget to use for rendering this media
   final Widget Function(BuildContext, ChatMedia)? customBuilder;
 
+  /// Upload progress for this attachment, from `0.0` to `1.0`.
+  ///
+  /// `null` (the default) means "not applicable" — either the attachment
+  /// isn't being uploaded at all, or the upload already finished; either
+  /// way, `MessageAttachment` renders it normally with no progress overlay.
+  /// Set this on a message you add optimistically while a file upload is in
+  /// flight (e.g. `0.0`, then update it via repeated
+  /// `ChatMessagesController.updateMessage` calls as the upload progresses,
+  /// then `null` or `1.0` once it completes) to show a built-in per-file
+  /// progress indicator.
+  final double? uploadProgress;
+
   const ChatMedia({
     required this.url,
     this.type = ChatMediaType.image,
@@ -31,6 +43,7 @@ class ChatMedia {
     this.extension,
     this.metadata,
     this.customBuilder,
+    this.uploadProgress,
   });
 
   /// Creates a copy of this media with the given fields replaced with new values
@@ -42,6 +55,7 @@ class ChatMedia {
     String? extension,
     Map<String, dynamic>? metadata,
     Widget Function(BuildContext, ChatMedia)? customBuilder,
+    double? uploadProgress,
   }) =>
       ChatMedia(
         url: url ?? this.url,
@@ -51,6 +65,7 @@ class ChatMedia {
         extension: extension ?? this.extension,
         metadata: metadata ?? this.metadata,
         customBuilder: customBuilder ?? this.customBuilder,
+        uploadProgress: uploadProgress ?? this.uploadProgress,
       );
 }
 

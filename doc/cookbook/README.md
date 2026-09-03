@@ -184,15 +184,51 @@ AiChatWidget(
 
 ## Customize how attachments are displayed
 
-Attach media to a message via `ChatMessage.media`, and control rendering with
-`FileUploadOptions.fileDisplayBuilder` (e.g. tap-to-enlarge, custom radius).
+Attach media to a message via `ChatMessage.media` — pass a `List<ChatMedia>`
+to send several files in one message, each rendered by `MessageAttachment`:
+
+```dart
+controller.addMessage(ChatMessage(
+  text: 'Here you go',
+  user: aiUser,
+  createdAt: DateTime.now(),
+  media: const [
+    ChatMedia(url: 'https://…/photo1.png'),
+    ChatMedia(url: 'https://…/photo2.png'),
+    ChatMedia(url: 'https://…/report.pdf', type: ChatMediaType.document, fileName: 'report.pdf'),
+  ],
+));
+```
+
+### Built-in image lightbox (task-008)
+
+For a tap-to-preview image viewer (pinch-zoom, swipe between every image in
+the message) with zero custom code, turn on `enableAttachmentLightbox`:
+
+```dart
+AiChatWidget(
+  // …
+  messageOptions: const MessageOptions(
+    enableImageTaps: true,           // required — taps are opt-in
+    enableAttachmentLightbox: true,  // opens the built-in AttachmentLightbox
+  ),
+);
+```
+
+An explicit `MessageOptions.onMediaTap` always overrides the built-in
+lightbox, so existing custom tap handlers keep working unchanged. You can
+also invoke the lightbox directly (e.g. from your own
+`fileDisplayBuilder`): `AttachmentLightbox.show(context, images: [...], initialIndex: 0)`.
+
+For full control over rendering instead, use
+`FileUploadOptions.fileDisplayBuilder`:
 
 ```dart
 AiChatWidget(
   // …
   fileUploadOptions: FileUploadOptions(
     fileDisplayBuilder: (context, media) => GestureDetector(
-      onTap: () => _openLightbox(media.url),
+      onTap: () => AttachmentLightbox.show(context, images: [media]),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Image.network(media.url, fit: BoxFit.cover),
@@ -200,14 +236,33 @@ AiChatWidget(
     ),
   ),
 );
+```
 
-// A message with an image attachment:
+### Per-file upload progress (task-008)
+
+While a file is uploading, set `ChatMedia.uploadProgress` (0.0-1.0) — every
+attachment type renders a progress overlay automatically, no extra config:
+
+```dart
+const id = 'attachment-1';
 controller.addMessage(ChatMessage(
-  text: 'Here you go',
-  user: aiUser,
+  text: '',
+  user: currentUser,
   createdAt: DateTime.now(),
-  media: const [ChatMedia(url: 'https://…/photo.png')],
+  media: const [ChatMedia(url: localFilePath, uploadProgress: 0.0)],
+  customProperties: const {'id': id},
 ));
+
+await for (final sent in myUploader.upload(localFilePath)) {
+  controller.updateMessage(ChatMessage(
+    text: '',
+    user: currentUser,
+    createdAt: DateTime.now(),
+    media: [ChatMedia(url: sent.remoteUrlOrLocalPath, uploadProgress: sent.fraction)],
+    customProperties: const {'id': id},
+  ));
+}
+// Final update: uploadProgress: 1.0 (or omit it) once the real remote URL is known.
 ```
 
 ---

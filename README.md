@@ -267,7 +267,7 @@ flutter run
 
 ### Key Capabilities
 - **✨ Unique Streaming Text**: Word-by-word animations like ChatGPT and Claude
-- **📁 Complete File Support**: Multi-format attachments (images, documents, videos)
+- **📁 Complete File Support**: Multi-format, multi-file attachments (images, documents, videos) with a built-in image lightbox and per-file upload progress — see the [attachments cookbook recipe](doc/cookbook/README.md#customize-how-attachments-are-displayed)
 - **📝 Advanced Markdown**: Full support with syntax highlighting for code blocks
 - **🚀 High Performance**: Optimized for large conversations (10K+ messages)
 - **🎨 Extensive Theming**: Complete customization to match your brand
