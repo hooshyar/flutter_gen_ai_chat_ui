@@ -18,3 +18,7 @@ continuously autoscrolling to the bottom as it streams.
 **Status:** DONE — commit 7022038 on main, pushed to origin.
 
 **Notes:** This is the highest-value fix — it's a live user complaint, not a roadmap nice-to-have.
+
+
+## Follow-up (2026-09-03)
+bernd70 tested this fix and reports it is not the behaviour he wants (he wants a streaming-time pin, not an end-of-stream jump). See TASK-020 — do not close issue #42 on this task alone.
