@@ -17,6 +17,20 @@ cut the next release.
 **Notes:** Re-run this task for each subsequent release as the backlog above gets worked through —
 don't treat it as one-and-done.
 
+## Done — v2.19.1 (2026-09-03)
+
+Patch release for the one item unreleased since v2.19.0: the routine `flutter_streaming_text_markdown`
+dependency bump (task-006 re-check). No code changes on this side.
+
+- Tag `v2.19.1` pushed → `publish.yml` run 33755320152 succeeded → confirmed live at
+  `pub.dev/packages/flutter_gen_ai_chat_ui` (latest version 2.19.1 via the pub.dev API).
+- Live web demo redeployed automatically.
+- **Confirmed 160/160 pub points** on a fresh, uncontended `pana` run.
+- 458/458 root tests + 8/8 example tests green, both `analyze --fatal-infos` clean, `dart format`
+  clean, all CI jobs green pre- and post-tag.
+- Checked GitHub for new issue/PR activity before this tick — none since the last check (#41/#42
+  unchanged, 0 open PRs).
+
 ## Done — v2.19.0 (2026-09-03)
 
 Minor release for the one substantial item unreleased since v2.18.0: the built-in attachment
