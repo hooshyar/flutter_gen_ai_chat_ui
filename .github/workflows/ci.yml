@@ -10,6 +10,11 @@ name: CI
 #     introduced by dartdoc edits).
 #   - Static analyzer warnings (`flutter analyze`).
 #   - Unit + widget test regressions (`flutter test`).
+#   - Doc/code drift: README.md/AGENTS.md ```dart snippets calling a
+#     factory/method that no longer exists on the public API (task-012).
+#   - The documented SDK floor (Flutter 3.27.0/Dart 3.6.0) actually
+#     resolving and passing tests for a real consumer, alongside latest
+#     stable (task-012's `sdk-matrix` job).
 #
 # Intentionally not in scope here:
 #   - `dart pub publish --dry-run` (the user controls releases and
@@ -91,6 +96,77 @@ jobs:
 
       - name: Test
         run: flutter test --reporter expanded
+
+      - name: Check doc/code drift (README.md, AGENTS.md)
+        # task-012: catches the ONBOARDING_AUDIT failure mode (a doc
+        # snippet calling a factory/method that no longer exists) the way
+        # a future accidental rename or removal would trigger it, instead
+        # of relying on the next manual audit to notice.
+        run: dart run tool/check_doc_drift.dart
+
+  sdk-matrix:
+    name: SDK matrix (${{ matrix.label }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: "documented floor (Flutter 3.27.0 / Dart 3.6.0)"
+            flutter-version: "3.27.0"
+          - label: "latest stable"
+            channel: stable
+    # task-012: verifies the floor this package actually promises
+    # CONSUMERS (`environment:` in pubspec.yaml: sdk >=3.6.0, flutter
+    # >=3.27.0), plus latest stable, alongside the existing
+    # `analyze-format-test` job (which always runs on `stable` and is the
+    # primary day-to-day gate).
+    #
+    # This deliberately drives the floor leg through `example/` rather
+    # than `flutter pub get` on the ROOT pubspec: the root package's
+    # dev_dependencies (`flutter_lints: ^6.0.0`, which needs Dart ^3.8.0 —
+    # see issue #41) are CONTRIBUTOR tooling only. A real consumer never
+    # resolves a path/hosted dependency's dev_dependencies (pub ignores
+    # them), so trying to `flutter pub get` the root pubspec at the floor
+    # would fail for a reason that has nothing to do with the actual
+    # consumer-facing floor this job exists to verify. `example/` depends
+    # on this package the same way a real consumer would (a normal,
+    # non-dev dependency) and pins its own dev_dependencies low enough
+    # (`flutter_lints: ^3.0.1`, Dart `^3.0.0`) to resolve cleanly at the
+    # floor, making it the right proxy — and as a side benefit this is the
+    # first place `example/`'s own test suite runs in CI at all.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter (floor)
+        if: matrix.flutter-version
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ matrix.flutter-version }}
+          cache: true
+
+      - name: Set up Flutter (${{ matrix.label }})
+        if: matrix.channel
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ matrix.channel }}
+          cache: true
+
+      - name: Print Flutter and Dart versions
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Install example dependencies
+        run: |
+          cd example
+          flutter pub get
+
+      - name: Test example app
+        run: |
+          cd example
+          flutter test --reporter expanded
 
   wasm-build:
     name: Web (wasm) build

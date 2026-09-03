@@ -57,18 +57,16 @@ stale the way the historical audits below did.
    chronological order — too small in absolute terms (single-digit ms for
    100 streaming updates over 2000 messages) to be a real bottleneck. No
    follow-up task filed.
-4. **Doc-drift + SDK-matrix CI (`task-012`).** The historical
-   `doc/ONBOARDING_AUDIT.md` (iteration 10, now otherwise fully resolved —
-   see below) found that hand-written example snippets in `AGENTS.md` and
-   in class-level dartdoc had drifted from the actual public API (calling
-   methods/factories that didn't exist) — a first-contact bug for anyone
-   copy-pasting from the docs. That was fixed by hand that one time; a CI
-   check that *compiles* README/cookbook snippets against the current API
-   (or at minimum greps for a few known-fragile signatures) turns "caught
-   eventually by a manual audit" into "caught automatically on the next
-   drift." Bundle with the SDK-matrix half of the task (documented floor
-   vs. latest stable, resolving the `flutter_lints`-forces-higher-dev-SDK
-   note from #41).
+4. ~~**Doc-drift + SDK-matrix CI (`task-012`).**~~ **DONE (2026-09-03).**
+   Added `tool/check_doc_drift.dart` (wired into CI) — checks every
+   `ClassName.member(...)` call site in README.md/AGENTS.md's ```dart
+   fences against real factory/named/static members in `lib/`. Added a
+   `sdk-matrix` CI job (floor Flutter 3.27.0 vs. latest stable), resolving
+   (not just documenting) the `flutter_lints`-forces-higher-dev-SDK
+   discrepancy from #41 by testing the floor through `example/` (a real
+   consumer) rather than the root package (whose dev-only `flutter_lints`
+   pin genuinely can't resolve at the floor, which is fine — consumers
+   never touch a dependency's dev_dependencies).
 
 ## Medium value / medium effort
 
