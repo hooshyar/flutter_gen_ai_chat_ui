@@ -9,6 +9,7 @@ import '../models/example_question_config.dart' hide ExampleQuestion;
 import '../models/file_upload_options.dart';
 import '../models/input_options.dart';
 import '../models/welcome_message_config.dart';
+import '../theme/chat_tokens.dart';
 import '../theme/custom_theme_extension.dart';
 import '../utils/color_extensions.dart';
 import 'chat_input.dart';
@@ -537,29 +538,57 @@ class _AiChatWidgetState extends State<AiChatWidget>
                       ),
                       child: _buildChatInput(),
                     )
-                  : Padding(
-                      padding: EdgeInsets.only(
-                        bottom: MediaQuery.of(context).padding.bottom,
-                      ),
-                      child: Material(
-                        elevation: widget.inputOptions?.materialElevation ?? 0,
-                        color:
-                            widget.inputOptions?.useScaffoldBackground == true
+                  // A consumer who set their own materialShape/materialColor/
+                  // materialElevation/useScaffoldBackground keeps the exact
+                  // pre-existing Material wrapper below — nothing here
+                  // changes for them. Everybody else (the zero-config
+                  // default) gets a transparent pass-through: the composer's
+                  // own chrome (`ChatInput`, `DESIGN.md` §8.4) now supplies
+                  // the visible shape, so this wrapper no longer needs one.
+                  : _isDefaultInputMaterial(widget.inputOptions)
+                      ? Padding(
+                          padding: EdgeInsetsDirectional.fromSTEB(
+                            16,
+                            8,
+                            16,
+                            12 + MediaQuery.of(context).padding.bottom,
+                          ),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                maxWidth: ChatLayout.composerMaxWidth,
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: _buildChatInput(),
+                              ),
+                            ),
+                          ),
+                        )
+                      : Padding(
+                          padding: EdgeInsets.only(
+                            bottom: MediaQuery.of(context).padding.bottom,
+                          ),
+                          child: Material(
+                            elevation:
+                                widget.inputOptions?.materialElevation ?? 0,
+                            color: widget.inputOptions?.useScaffoldBackground ==
+                                    true
                                 ? Theme.of(context).scaffoldBackgroundColor
                                 : widget.inputOptions?.materialColor,
-                        shape: widget.inputOptions?.materialShape ??
-                            RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(22),
-                              side: BorderSide.none,
+                            shape: widget.inputOptions?.materialShape ??
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(22),
+                                  side: BorderSide.none,
+                                ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Container(
+                              padding: widget.inputOptions?.materialPadding ??
+                                  const EdgeInsets.all(8.0),
+                              child: _buildChatInput(),
                             ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Container(
-                          padding: widget.inputOptions?.materialPadding ??
-                              const EdgeInsets.all(8.0),
-                          child: _buildChatInput(),
+                          ),
                         ),
-                      ),
-                    ),
           ],
         ),
       ),
@@ -693,6 +722,18 @@ class _AiChatWidgetState extends State<AiChatWidget>
         ),
       ),
     );
+  }
+
+  /// Whether [options] leaves every Material-wrapper knob at its default,
+  /// i.e. the consumer hasn't opted into the pre-existing (pre-`DESIGN.md`)
+  /// rounded Material bar around the composer. Used only in the
+  /// `useOuterContainer: true` (default) input-wrapper branch — the
+  /// `useOuterContainer: false` bottom-sheet branch is untouched by this.
+  static bool _isDefaultInputMaterial(InputOptions? options) {
+    return options?.materialShape == null &&
+        options?.materialColor == null &&
+        (options?.materialElevation ?? 0) == 0 &&
+        options?.useScaffoldBackground != true;
   }
 
   // Build the chat input bar

@@ -81,7 +81,16 @@ class InputOptions {
 
   // Send button customization
   final Widget Function(VoidCallback onSend)? sendButtonBuilder;
+
+  /// Fill color of the default send disc's enabled state. Ignored by the
+  /// empty and generating states, which always use token-derived fills.
+  /// Only read when [sendButtonBuilder], [sendOrMicBuilder] and
+  /// [cancelButtonBuilder] are all null (`DESIGN.md` §8.5).
   final Color? sendButtonColor;
+
+  /// Icon for the default send button's enabled/empty states. Defaults to
+  /// `Icons.arrow_upward_rounded` (changed from `Icons.send`). Never used
+  /// for the generating state, which always renders a fixed stop square.
   final IconData? sendButtonIcon;
   final double? sendButtonIconSize;
   final EdgeInsets? sendButtonPadding;
@@ -226,7 +235,7 @@ class InputOptions {
     this.textController,
     this.textStyle,
     this.decoration,
-    this.maxLines = 5,
+    this.maxLines = 8,
     this.minLines = 1,
     this.sendOnEnter = true,
     this.readOnly = false,
@@ -256,7 +265,7 @@ class InputOptions {
     this.clipBehavior = false,
     this.sendButtonBuilder,
     this.sendButtonColor,
-    this.sendButtonIcon = Icons.send,
+    this.sendButtonIcon = Icons.arrow_upward_rounded,
     this.sendButtonIconSize = 24.0,
     this.sendButtonPadding = const EdgeInsets.all(4.0),
     this.sendButtonTooltip = 'Send message',

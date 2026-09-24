@@ -94,8 +94,12 @@ void main() {
 
       // Type and send a message
       await tester.enterText(find.byType(TextField), 'Hello from user');
-      await tester.pump();
-      await tester.tap(find.byIcon(Icons.send));
+      // Settle the send control's disabled->enabled icon cross-fade
+      // (DESIGN.md §7 "Send -> stop") before locating it by icon — mid
+      // animation both the outgoing and incoming icons are briefly present.
+      await tester.pumpAndSettle();
+      // Default send icon: Icons.arrow_upward_rounded (DESIGN.md §8.5).
+      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
       await tester.pumpAndSettle();
 
       // Both user and AI messages should be in the controller

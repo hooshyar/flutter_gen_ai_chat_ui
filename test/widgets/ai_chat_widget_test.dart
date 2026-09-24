@@ -115,10 +115,13 @@ void main() {
 
       // Type text into the field
       await tester.enterText(textField, 'Test message');
-      await tester.pump();
+      // Settle the send control's disabled->enabled icon cross-fade
+      // (DESIGN.md §7 "Send -> stop") before locating it by icon — mid
+      // animation both the outgoing and incoming icons are briefly present.
+      await tester.pumpAndSettle();
 
-      // Find and tap the send button
-      final sendButton = find.byIcon(Icons.send);
+      // Find and tap the send button (default icon: DESIGN.md §8.5).
+      final sendButton = find.byIcon(Icons.arrow_upward_rounded);
       expect(sendButton, findsOneWidget);
       await tester.tap(sendButton);
       await tester.pump();

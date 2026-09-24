@@ -26,6 +26,10 @@ void main() {
   }
 
   group('Stop generating button (#39)', () {
+    // The default stop control is a plain 12x12 square (`DESIGN.md` §8.5),
+    // not an `Icons.stop_rounded` glyph, so it's found by its tooltip /
+    // semantics label instead of `find.byIcon`. The default send icon also
+    // changed from `Icons.send` to `Icons.arrow_upward_rounded`.
     testWidgets('shows stop button when generating + onCancelGenerating set',
         (tester) async {
       final controller = ChatMessagesController();
@@ -35,9 +39,9 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+      expect(find.byTooltip('Stop generating'), findsOneWidget);
       // Default send icon should be replaced.
-      expect(find.byIcon(Icons.send), findsNothing);
+      expect(find.byIcon(Icons.arrow_upward_rounded), findsNothing);
 
       controller.dispose();
     });
@@ -52,7 +56,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.tap(find.byIcon(Icons.stop_rounded));
+      await tester.tap(find.byTooltip('Stop generating'));
       await tester.pump();
 
       expect(cancelled, isTrue);
@@ -69,8 +73,8 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byIcon(Icons.stop_rounded), findsNothing);
-      expect(find.byIcon(Icons.send), findsOneWidget);
+      expect(find.byTooltip('Stop generating'), findsNothing);
+      expect(find.byIcon(Icons.arrow_upward_rounded), findsOneWidget);
 
       controller.dispose();
     });
@@ -83,8 +87,8 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byIcon(Icons.stop_rounded), findsNothing);
-      expect(find.byIcon(Icons.send), findsOneWidget);
+      expect(find.byTooltip('Stop generating'), findsNothing);
+      expect(find.byIcon(Icons.arrow_upward_rounded), findsOneWidget);
 
       controller.dispose();
     });
@@ -97,7 +101,7 @@ void main() {
         harness(controller, isLoading: true, onCancel: () {}),
       );
       await tester.pump();
-      expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+      expect(find.byTooltip('Stop generating'), findsOneWidget);
 
       // Rebuild with loading finished.
       await tester.pumpWidget(
@@ -105,8 +109,8 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byIcon(Icons.stop_rounded), findsNothing);
-      expect(find.byIcon(Icons.send), findsOneWidget);
+      expect(find.byTooltip('Stop generating'), findsNothing);
+      expect(find.byIcon(Icons.arrow_upward_rounded), findsOneWidget);
 
       controller.dispose();
     });
