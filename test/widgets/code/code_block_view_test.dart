@@ -65,12 +65,17 @@ void main() {
       expect(find.byIcon(Icons.copy_rounded), findsOneWidget);
       await tester.tap(find.byIcon(Icons.copy_rounded));
       await tester.pump();
+      // The icon swap runs inside an AnimatedSwitcher (ChatMotion.fast);
+      // let its cross-fade finish before asserting on the settled icon.
+      await tester.pumpAndSettle();
 
       expect(copied, 'void main() {}');
       expect(find.byIcon(Icons.check_rounded), findsOneWidget);
       expect(find.byIcon(Icons.copy_rounded), findsNothing);
 
       await tester.pump(const Duration(seconds: 2));
+      // Settle the AnimatedSwitcher's cross-fade back to the copy icon.
+      await tester.pumpAndSettle();
       expect(find.byIcon(Icons.copy_rounded), findsOneWidget);
       expect(find.byIcon(Icons.check_rounded), findsNothing);
     });

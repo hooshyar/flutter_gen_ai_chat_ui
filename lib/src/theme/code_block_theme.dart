@@ -34,27 +34,28 @@ class CodeBlockTheme {
     this.copiedTooltip = 'Copied',
   });
 
-  /// GitHub-light-like palette.
+  /// GitHub-light-derived palette per `DESIGN.md` §3 (two contrast fixes:
+  /// `commentColor` and `annotationColor`).
   factory CodeBlockTheme.light() => const CodeBlockTheme(
-        backgroundColor: Color(0xFFF6F8FA),
-        borderColor: Color(0xFFD0D7DE),
-        headerTextColor: Color(0xFF57606A),
+        backgroundColor: Color(0xFFF6F6F4),
+        borderColor: Color(0xFFE4E4E2),
+        headerTextColor: Color(0xFF6B6B73),
         baseStyle: _baseLight,
-        commentColor: Color(0xFF6E7781),
+        commentColor: Color(0xFF656D76),
         stringColor: Color(0xFF0A3069),
         numberColor: Color(0xFF0550AE),
         keywordColor: Color(0xFFCF222E),
         typeColor: Color(0xFF953800),
         functionColor: Color(0xFF8250DF),
-        annotationColor: Color(0xFF9A6700),
+        annotationColor: Color(0xFF8A5C00),
         punctuationColor: Color(0xFF57606A),
       );
 
-  /// GitHub-dark-like palette.
+  /// GitHub-dark-derived palette per `DESIGN.md` §3.
   factory CodeBlockTheme.dark() => const CodeBlockTheme(
-        backgroundColor: Color(0xFF161B22),
-        borderColor: Color(0xFF30363D),
-        headerTextColor: Color(0xFF8B949E),
+        backgroundColor: Color(0xFF161618),
+        borderColor: Color(0xFF2A2A2F),
+        headerTextColor: Color(0xFF8C8C94),
         baseStyle: _baseDark,
         commentColor: Color(0xFF8B949E),
         stringColor: Color(0xFFA5D6FF),
@@ -76,8 +77,8 @@ class CodeBlockTheme {
     fontFamily: monoFontFamily,
     package: 'flutter_gen_ai_chat_ui',
     fontFamilyFallback: monoFontFallback,
-    fontSize: 13,
-    height: 1.45,
+    fontSize: 13.5,
+    height: 1.48,
     color: Color(0xFF24292F),
   );
 
@@ -85,8 +86,8 @@ class CodeBlockTheme {
     fontFamily: monoFontFamily,
     package: 'flutter_gen_ai_chat_ui',
     fontFamilyFallback: monoFontFallback,
-    fontSize: 13,
-    height: 1.45,
+    fontSize: 13.5,
+    height: 1.48,
     color: Color(0xFFE6EDF3),
   );
 

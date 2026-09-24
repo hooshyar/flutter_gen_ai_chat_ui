@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 
+import '../../theme/chat_tokens.dart';
 import '../../theme/code_block_theme.dart';
 import 'code_highlighter.dart';
 
@@ -52,7 +53,8 @@ class CodeBlockView extends StatefulWidget {
   /// the container.
   final TextStyle? baseStyle;
 
-  /// Inner padding around the code. Defaults to `EdgeInsets.all(12)`.
+  /// Inner padding around the code. Defaults to
+  /// `EdgeInsets.symmetric(vertical: 14, horizontal: 16)`.
   final EdgeInsets? padding;
 
   /// Whether to paint the rounded background/border container.
@@ -71,11 +73,30 @@ class _CodeBlockViewState extends State<CodeBlockView> {
   bool _copied = false;
   Timer? _copiedTimer;
 
+  /// Whether there is more code to scroll to at the right edge.
+  bool _canScrollRight = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updateCanScrollRight);
+  }
+
   @override
   void dispose() {
     _copiedTimer?.cancel();
+    _scrollController.removeListener(_updateCanScrollRight);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _updateCanScrollRight() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final canScrollRight = position.pixels < position.maxScrollExtent - 1;
+    if (canScrollRight != _canScrollRight) {
+      setState(() => _canScrollRight = canScrollRight);
+    }
   }
 
   Future<void> _copy() async {
@@ -155,12 +176,52 @@ class _CodeBlockViewState extends State<CodeBlockView> {
       widget.theme ?? CodeBlockTheme.of(Theme.of(context).brightness),
     );
     final language = widget.language?.trim() ?? '';
+    final hasHeader = language.isNotEmpty || widget.showCopyButton;
+
+    // The scroll extent is only known after this frame lays out; schedule a
+    // check so the edge fade appears/disappears as soon as it's accurate
+    // (e.g. when `code` changes length between builds).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _updateCanScrollRight();
+    });
+
+    Widget codeArea = Scrollbar(
+      controller: _scrollController,
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        padding: widget.padding ??
+            const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        child: Text.rich(
+          _highlighter.highlight(
+            widget.code,
+            language: widget.language,
+            theme: theme,
+            enabled: widget.enableSyntaxHighlighting,
+          ),
+          softWrap: false,
+        ),
+      ),
+    );
+
+    if (_canScrollRight) {
+      codeArea = ShaderMask(
+        shaderCallback: (bounds) => const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          stops: [0, 0.94, 1],
+          colors: [Colors.white, Colors.white, Colors.transparent],
+        ).createShader(bounds),
+        blendMode: BlendMode.dstIn,
+        child: codeArea,
+      );
+    }
 
     Widget child = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (language.isNotEmpty || widget.showCopyButton)
+        if (hasHeader) ...[
           _Header(
             language: language,
             theme: theme,
@@ -168,23 +229,9 @@ class _CodeBlockViewState extends State<CodeBlockView> {
             showCopyButton: widget.showCopyButton,
             onCopy: _copy,
           ),
-        Scrollbar(
-          controller: _scrollController,
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            scrollDirection: Axis.horizontal,
-            padding: widget.padding ?? const EdgeInsets.all(12),
-            child: Text.rich(
-              _highlighter.highlight(
-                widget.code,
-                language: widget.language,
-                theme: theme,
-                enabled: widget.enableSyntaxHighlighting,
-              ),
-              softWrap: false,
-            ),
-          ),
-        ),
+          Container(height: 1, color: theme.borderColor),
+        ],
+        codeArea,
       ],
     );
 
@@ -194,7 +241,7 @@ class _CodeBlockViewState extends State<CodeBlockView> {
         decoration: BoxDecoration(
           color: theme.backgroundColor,
           border: Border.all(color: theme.borderColor, width: 1),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(ChatRadius.md),
         ),
         child: child,
       );
@@ -225,44 +272,50 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tooltip = copied ? theme.copiedTooltip : theme.copyTooltip;
-    return Padding(
-      padding: const EdgeInsets.only(left: 12, right: 4),
-      child: Row(
-        children: [
-          if (language.isNotEmpty)
-            Expanded(
-              child: Text(
-                language.toLowerCase(),
-                style: TextStyle(
+    return SizedBox(
+      height: 44,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.only(start: 12, end: 0),
+        child: Row(
+          children: [
+            if (language.isNotEmpty)
+              Expanded(
+                child: Text(
+                  language.toLowerCase(),
+                  style: theme.baseStyle.copyWith(
+                    color: theme.headerTextColor,
+                    fontSize: 12,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              )
+            else
+              const Spacer(),
+            if (showCopyButton)
+              Semantics(
+                button: true,
+                label: tooltip,
+                child: IconButton(
+                  tooltip: tooltip,
+                  onPressed: onCopy,
+                  iconSize: 16,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
+                  ),
                   color: theme.headerTextColor,
-                  fontSize: 11,
-                  letterSpacing: 0.5,
+                  icon: AnimatedSwitcher(
+                    duration: ChatMotion.of(context, ChatMotion.fast),
+                    child: Icon(
+                      copied ? Icons.check_rounded : Icons.copy_rounded,
+                      key: ValueKey(copied),
+                    ),
+                  ),
                 ),
               ),
-            )
-          else
-            const Spacer(),
-          if (showCopyButton)
-            Semantics(
-              button: true,
-              label: tooltip,
-              child: IconButton(
-                tooltip: tooltip,
-                onPressed: onCopy,
-                iconSize: 16,
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
-                ),
-                color: theme.headerTextColor,
-                icon: Icon(
-                  copied ? Icons.check_rounded : Icons.copy_rounded,
-                ),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

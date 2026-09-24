@@ -149,8 +149,8 @@ void main() {
             .map((f) => 'packages/flutter_gen_ai_chat_ui/$f')
             .toList(),
       );
-      expect(style.fontSize, 13);
-      expect(style.height, 1.45);
+      expect(style.fontSize, 13.5);
+      expect(style.height, 1.48);
       expect(style.backgroundColor, isNull);
     });
 

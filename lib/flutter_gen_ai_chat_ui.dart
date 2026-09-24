@@ -27,6 +27,7 @@ export 'src/models/welcome_message_config.dart';
 export 'src/services/ai_service.dart';
 export 'src/theme/advanced_theme_system.dart';
 export 'src/theme/bubble_theme.dart';
+export 'src/theme/chat_tokens.dart';
 export 'src/theme/code_block_theme.dart';
 export 'src/theme/custom_theme_extension.dart';
 export 'src/utils/action_error_handler.dart';
