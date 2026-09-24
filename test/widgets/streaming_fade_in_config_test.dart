@@ -65,7 +65,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
   });
 
-  testWidgets('streamingFadeInEnabled defaults to false', (tester) async {
+  testWidgets('streamingFadeInEnabled defaults to true', (tester) async {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 
@@ -102,7 +102,7 @@ void main() {
     final streamingText = tester.widget<StreamingText>(
       find.byType(StreamingText),
     );
-    expect(streamingText.fadeInEnabled, isFalse);
+    expect(streamingText.fadeInEnabled, isTrue);
 
     // See the drain note in the test above.
     await tester.pump(const Duration(milliseconds: 350));

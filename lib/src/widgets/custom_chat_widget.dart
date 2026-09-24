@@ -819,6 +819,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         isStreaming: isStreaming,
         showCopyButton: widget.messageOptions.showCopyButton ?? true,
         copyButtonLabel: widget.messageOptions.copyButtonLabel,
+        showTimestamp: widget.messageOptions.showTime,
+        timestampStyle: widget.messageOptions.aiTimeTextStyle ??
+            widget.messageOptions.timeTextStyle,
       ),
     ];
   }
@@ -847,25 +850,66 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     final trailingBottom =
         sameSenderAsNext ? ChatRadius.bubble : ChatRadius.tail;
 
+    final bubble = ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: Container(
+        padding: widget.messageOptions.padding ??
+            const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        decoration: BoxDecoration(
+          color: fill,
+          borderRadius: BorderRadiusDirectional.only(
+            topStart: const Radius.circular(ChatRadius.bubble),
+            topEnd: const Radius.circular(ChatRadius.bubble),
+            bottomStart: const Radius.circular(ChatRadius.bubble),
+            bottomEnd: Radius.circular(trailingBottom),
+          ),
+        ),
+        child: _buildMessageContent(message, context),
+      ),
+    );
+
+    // DESIGN.md §8.1: the user bubble itself never shows a timestamp — by
+    // default time is exposed only via tooltip/long-press semantics, not an
+    // inline Text. But an explicit `MessageOptions.timeFormat` is a genuine
+    // opt-in signal (nobody sets a custom formatter without wanting it
+    // rendered somewhere), so honor it here, under the bubble, using
+    // `userTimeTextStyle` (falling back to the shared `timeTextStyle`) —
+    // mirroring how the AI side's action row resolves its own style.
+    if (widget.messageOptions.showTime &&
+        widget.messageOptions.timeFormat != null) {
+      final timestampText = widget.messageOptions.timeFormat!(
+        message.createdAt,
+      );
+      final timestampStyle = widget.messageOptions.userTimeTextStyle ??
+          widget.messageOptions.timeTextStyle ??
+          TextStyle(
+            fontSize: 12,
+            height: 16 / 12,
+            letterSpacing: 0.1,
+            color: tokens.textTertiary,
+          );
+      return Align(
+        alignment: AlignmentDirectional.centerEnd,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            bubble,
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                top: ChatSpace.s4,
+                end: 4,
+              ),
+              child: Text(timestampText, style: timestampStyle),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Align(
       alignment: AlignmentDirectional.centerEnd,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Container(
-          padding: widget.messageOptions.padding ??
-              const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-          decoration: BoxDecoration(
-            color: fill,
-            borderRadius: BorderRadiusDirectional.only(
-              topStart: const Radius.circular(ChatRadius.bubble),
-              topEnd: const Radius.circular(ChatRadius.bubble),
-              bottomStart: const Radius.circular(ChatRadius.bubble),
-              bottomEnd: Radius.circular(trailingBottom),
-            ),
-          ),
-          child: _buildMessageContent(message, context),
-        ),
-      ),
+      child: bubble,
     );
   }
 
@@ -1114,6 +1158,17 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     if (widget.streamingEnabled &&
         isCurrentlyStreaming &&
         !_streamRevealDoneIds.contains(messageId)) {
+      // Record the target length up front regardless of which render path
+      // below actually consumes the revealed prefix (only the plain
+      // "isRevealing" Markdown/plain-text branch calls [_revealedTextFor],
+      // which is what previously updated this map). Interactive-markdown
+      // messages (onTapLink/onImageTap/enableImageTaps set) render the full
+      // text immediately and never called it, so the ticker's target stayed
+      // stuck at 0 and `revealed` (also 0) never caught up — the reveal
+      // entry, and therefore [_isCurrentlyStreaming], stayed "true" forever,
+      // pinning the live caret's repeating animation and never letting a
+      // test's `pumpAndSettle()` settle.
+      _latestStreamText[messageId] = message.text;
       _revealedChars.putIfAbsent(messageId, () => 0);
       _ensureRevealTicker();
     }
