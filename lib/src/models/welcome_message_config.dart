@@ -5,13 +5,15 @@ class WelcomeMessageConfig {
   const WelcomeMessageConfig({
     this.title,
     this.titleStyle,
+    this.subtitle,
+    this.subtitleStyle,
     this.containerDecoration,
     this.containerPadding = const EdgeInsets.all(24),
     this.containerMargin = const EdgeInsets.symmetric(
       horizontal: 16,
       vertical: 12,
     ),
-    this.questionsSectionTitle = 'Here are some questions you can ask:',
+    this.questionsSectionTitle,
     this.questionsSectionTitleStyle,
     this.questionsSectionDecoration,
     this.questionsSectionPadding = const EdgeInsets.symmetric(
@@ -30,6 +32,16 @@ class WelcomeMessageConfig {
   /// Style for the title text
   final TextStyle? titleStyle;
 
+  /// Optional subtitle shown below the title (`DESIGN.md` §8.6): `body`,
+  /// `textSecondary`, max 2 lines by default. Null by default — the
+  /// package default empty state shows only a greeting unless a subtitle
+  /// is explicitly supplied.
+  final String? subtitle;
+
+  /// Style for [subtitle]. Falls back to the package's `body`/
+  /// `textSecondary` default when null.
+  final TextStyle? subtitleStyle;
+
   /// Decoration for the main container
   final BoxDecoration? containerDecoration;
 
@@ -39,8 +51,10 @@ class WelcomeMessageConfig {
   /// Margin for the main container
   final EdgeInsets containerMargin;
 
-  /// Title for the questions section
-  final String questionsSectionTitle;
+  /// Optional heading shown above the suggestion tiles. Null by default —
+  /// the package default empty state (`DESIGN.md` §8.6) has no "Here are
+  /// some questions you can ask:" label; set this explicitly to opt back in.
+  final String? questionsSectionTitle;
 
   /// Style for the questions section title
   final TextStyle? questionsSectionTitleStyle;
@@ -73,6 +87,8 @@ class WelcomeMessageConfig {
   WelcomeMessageConfig copyWith({
     String? title,
     TextStyle? titleStyle,
+    String? subtitle,
+    TextStyle? subtitleStyle,
     BoxDecoration? containerDecoration,
     EdgeInsets? containerPadding,
     EdgeInsets? containerMargin,
@@ -88,6 +104,8 @@ class WelcomeMessageConfig {
     return WelcomeMessageConfig(
       title: title ?? this.title,
       titleStyle: titleStyle ?? this.titleStyle,
+      subtitle: subtitle ?? this.subtitle,
+      subtitleStyle: subtitleStyle ?? this.subtitleStyle,
       containerDecoration: containerDecoration ?? this.containerDecoration,
       containerPadding: containerPadding ?? this.containerPadding,
       containerMargin: containerMargin ?? this.containerMargin,

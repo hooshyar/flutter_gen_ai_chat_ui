@@ -113,7 +113,7 @@ void main() {
     await tester.pump();
 
     final scrollButton = find.ancestor(
-      of: find.byIcon(Icons.keyboard_arrow_down),
+      of: find.byIcon(Icons.arrow_downward_rounded),
       matching: find.byType(InkWell),
     );
     expect(scrollButton, findsOneWidget);

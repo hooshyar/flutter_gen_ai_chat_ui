@@ -594,7 +594,9 @@ class _AiChatWidgetState extends State<AiChatWidget>
 
   // Welcome message is now handled in CustomChatWidget as part of the message list
 
-  // Add a new method for building just the example questions without the welcome message
+  // Building just the example questions without the welcome message —
+  // a single horizontally scrolling row of pill chips, never a fixed-height
+  // panel that clips its last item (`DESIGN.md` §8.6, anti-pattern #8).
   Widget _buildPersistentExampleQuestions(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
@@ -604,58 +606,41 @@ class _AiChatWidgetState extends State<AiChatWidget>
         ? widget.exampleQuestions.first.config
         : null;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-      decoration: BoxDecoration(
-        color: isDarkMode
-            ? theme.colorScheme.surfaceContainerHigh
-            : theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDarkMode
-              ? Colors.white.withOpacityCompat(0.08)
-              : Colors.black.withOpacityCompat(0.06),
-          width: 0.5,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
+          child: Text(
+            widget.persistentExampleQuestionsTitle,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isDarkMode ? Colors.white70 : Colors.black87,
+            ),
+          ),
         ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 8, right: 8, bottom: 12),
-            child: Text(
-              widget.persistentExampleQuestionsTitle,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: isDarkMode ? Colors.white70 : Colors.black87,
-              ),
-            ),
+        SizedBox(
+          height: 36,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: widget.exampleQuestions.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final question = widget.exampleQuestions[index];
+              // Get the question's config or use the default
+              final effectiveConfig = question.config ?? defaultQuestionConfig;
+              return _buildPersistentQuestionChip(
+                question,
+                effectiveConfig ?? const ExampleQuestionConfig(),
+                isDarkMode,
+                primaryColor,
+              );
+            },
           ),
-          Flexible(
-            child: SingleChildScrollView(
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: widget.exampleQuestions.map(
-                  (question) {
-                    // Get the question's config or use the default
-                    final effectiveConfig =
-                        question.config ?? defaultQuestionConfig;
-                    return _buildPersistentQuestionChip(
-                      question,
-                      effectiveConfig ?? const ExampleQuestionConfig(),
-                      isDarkMode,
-                      primaryColor,
-                    );
-                  },
-                ).toList(),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

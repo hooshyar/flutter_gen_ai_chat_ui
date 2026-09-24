@@ -704,7 +704,10 @@ class ScrollToBottomOptions {
   /// Distance from bottom of the screen (default is 72)
   final double bottomOffset;
 
-  /// Distance from right of the screen (default is 16)
+  /// Distance from right of the screen (default is 16). Only applied when
+  /// [position] is [ScrollToBottomPosition.end] — the package default
+  /// ([ScrollToBottomPosition.center]) horizontally centers the button on
+  /// the reading column instead (`DESIGN.md` §8.10).
   final double rightOffset;
 
   /// Whether to show text next to the icon (default is false)
@@ -712,6 +715,13 @@ class ScrollToBottomOptions {
 
   /// Custom text to display next to the icon (default is "Scroll to bottom")
   final String buttonText;
+
+  /// Where the button sits relative to the reading column. Defaults to
+  /// [ScrollToBottomPosition.center] (`DESIGN.md` §8.10): a floating button
+  /// must never park over code in the bottom-right. Set to
+  /// [ScrollToBottomPosition.end] to restore the legacy trailing-edge
+  /// placement, which honors [rightOffset].
+  final ScrollToBottomPosition position;
 
   const ScrollToBottomOptions({
     this.disabled = false,
@@ -722,6 +732,7 @@ class ScrollToBottomOptions {
     this.rightOffset = 16,
     this.showText = false,
     this.buttonText = 'Scroll to bottom',
+    this.position = ScrollToBottomPosition.center,
   });
 
   ScrollToBottomOptions copyWith({
@@ -733,6 +744,7 @@ class ScrollToBottomOptions {
     double? rightOffset,
     bool? showText,
     String? buttonText,
+    ScrollToBottomPosition? position,
   }) =>
       ScrollToBottomOptions(
         disabled: disabled ?? this.disabled,
@@ -745,5 +757,18 @@ class ScrollToBottomOptions {
         rightOffset: rightOffset ?? this.rightOffset,
         showText: showText ?? this.showText,
         buttonText: buttonText ?? this.buttonText,
+        position: position ?? this.position,
       );
+}
+
+/// Where a [ScrollToBottomOptions]-configured button sits relative to the
+/// reading column (`DESIGN.md` §8.10).
+enum ScrollToBottomPosition {
+  /// Horizontally centered on the reading column, just above the composer.
+  /// The package default.
+  center,
+
+  /// Pinned to the trailing edge of the column, honoring
+  /// [ScrollToBottomOptions.rightOffset]. Legacy placement.
+  end,
 }

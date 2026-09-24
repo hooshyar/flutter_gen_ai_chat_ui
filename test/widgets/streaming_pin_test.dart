@@ -213,7 +213,7 @@ void main() {
       await streamAnswer(tester, controller);
       await settle(tester);
 
-      expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_downward_rounded), findsOneWidget);
     });
 
     testWidgets('the pin keeps holding as more chunks arrive', (tester) async {
@@ -300,7 +300,7 @@ void main() {
       await streamAnswer(tester, controller, chunks: 6, upTo: 3);
       await settle(tester);
 
-      await tester.tap(find.byIcon(Icons.keyboard_arrow_down));
+      await tester.tap(find.byIcon(Icons.arrow_downward_rounded));
       await settle(tester);
       expect(controller.isStreamingPinActive, isFalse);
       expect(position(tester).pixels, closeTo(0.0, 1.0));
@@ -318,7 +318,7 @@ void main() {
       await settle(tester);
       expect(controller.isStreamingPinActive, isTrue);
 
-      await tester.tap(find.byIcon(Icons.keyboard_arrow_down));
+      await tester.tap(find.byIcon(Icons.arrow_downward_rounded));
       await settle(tester);
 
       expect(controller.isStreamingPinActive, isFalse);
