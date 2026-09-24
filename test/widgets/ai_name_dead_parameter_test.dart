@@ -28,6 +28,9 @@ void main() {
             controller: controller,
             onSendMessage: (_) async {},
             aiName: 'Ignored Name',
+            // The default document layout hides AI names (DESIGN.md §8.1);
+            // opt in so the test can check WHICH name source is displayed.
+            messageOptions: const MessageOptions(showUserName: true),
           ),
         ),
       ),
