@@ -65,14 +65,16 @@ class _ExampleAppState extends State<ExampleApp> {
       ),
       home: HomeScreen(onToggleTheme: _toggleTheme),
       routes: {
-        '/basic': (_) => const BasicChatExample(),
-        '/streaming': (_) => const StreamingChatExample(),
-        '/themed': (_) => const ThemedChatExample(),
-        '/actions': (_) => const ActionsChatExample(),
-        '/rich-widgets': (_) => const RichWidgetsChatExample(),
-        '/rtl': (_) => const RtlChatExample(),
-        '/attachments': (_) => const AttachmentsChatExample(),
-        '/voice': (_) => const VoiceChatExample(),
+        '/basic': (_) => BasicChatExample(onToggleTheme: _toggleTheme),
+        '/streaming': (_) => StreamingChatExample(onToggleTheme: _toggleTheme),
+        '/themed': (_) => ThemedChatExample(onToggleTheme: _toggleTheme),
+        '/actions': (_) => ActionsChatExample(onToggleTheme: _toggleTheme),
+        '/rich-widgets': (_) =>
+            RichWidgetsChatExample(onToggleTheme: _toggleTheme),
+        '/rtl': (_) => RtlChatExample(onToggleTheme: _toggleTheme),
+        '/attachments': (_) =>
+            AttachmentsChatExample(onToggleTheme: _toggleTheme),
+        '/voice': (_) => VoiceChatExample(onToggleTheme: _toggleTheme),
       },
     );
   }

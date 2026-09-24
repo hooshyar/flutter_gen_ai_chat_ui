@@ -3,17 +3,17 @@ import 'dart:math';
 
 /// Response style for mock AI responses.
 enum ResponseStyle {
-  /// Plain text only — no markdown, short replies.
+  /// Plain text only - no markdown, short replies.
   plain,
 
-  /// Rich markdown — code blocks, headers, lists.
+  /// Rich markdown - code blocks, headers, lists.
   markdown,
 
-  /// Conversational — shorter, friendly, emoji-flavored.
+  /// Conversational - shorter, friendly, emoji-flavored.
   conversational,
 
   /// General-purpose assistant replies for demos that aren't specifically
-  /// about theming or markdown (attachments, voice input) — no
+  /// about theming or markdown (attachments, voice input) - no
   /// theme-switching pitch, since those screens have no theme selector.
   assistant,
 }
@@ -53,16 +53,15 @@ class ExampleAiService {
     if (lower.contains('flutter')) {
       return 'Flutter is Google\'s UI toolkit for building apps from a single '
           'codebase. It supports Android, iOS, web, and desktop. The key '
-          'advantage is hot reload — you see changes instantly.';
+          'advantage is hot reload - you see changes instantly.';
     }
     if (lower.contains('dart')) {
       return 'Dart is the programming language behind Flutter. It\'s '
           'object-oriented, strongly typed, and supports both AOT and JIT '
           'compilation. The syntax is similar to Java or TypeScript.';
     }
-    return 'That\'s an interesting question. In a real app, this is where '
-        'your AI backend would provide a response. This is just a demo '
-        'with plain text replies — no formatting.';
+    return 'This is a demo reply with plain text. Plug in your model to '
+        'get real answers.';
   }
 
   // --- Rich markdown (Streaming example) ---
@@ -71,7 +70,7 @@ class ExampleAiService {
 
     if (lower.contains('same function') || lower.contains('typescript')) {
       return '# Fibonacci in Three Languages\n\n'
-          'The same tiny recursive function — note how each fence carries '
+          'The same tiny recursive function - note how each fence carries '
           'its own language tag.\n\n'
           '## Dart\n'
           '```dart\n'
@@ -99,7 +98,7 @@ class ExampleAiService {
           'And a fence with **no language tag** falls back to the plain '
           'base style:\n\n'
           '```\n'
-          'no language here — just monospace text\n'
+          'no language here - just monospace text\n'
           '```\n';
     }
 
@@ -216,13 +215,13 @@ class ExampleAiService {
     if (lower.contains('debug')) {
       return '# Debugging Checklist\n\n'
           'When Dart code misbehaves, work through this list:\n\n'
-          '1. **Read the stack trace** — the top frame in *your* code is '
+          '1. **Read the stack trace** - the top frame in *your* code is '
           'usually the culprit.\n'
           '2. **Add a breakpoint or `debugPrint`** where the data last '
           'looked correct.\n'
-          '3. **Check nullability** — a `null` sneaking into a non-nullable '
+          '3. **Check nullability** - a `null` sneaking into a non-nullable '
           'path is the classic failure.\n'
-          '4. **Shrink the input** — reproduce with the smallest value that '
+          '4. **Shrink the input** - reproduce with the smallest value that '
           'still fails.\n\n'
           '```dart\n'
           'assert(items.isNotEmpty, \'items must not be empty\');\n'
@@ -233,9 +232,9 @@ class ExampleAiService {
     if (lower.contains('hello') || lower.contains('hi') || query.length < 10) {
       return '# Hey there! 👋\n\n'
           'I\'m a code assistant demo. Try asking me about:\n\n'
-          '- **Dart patterns** — singletons, factories, builders\n'
-          '- **Flutter widgets** — stateless vs stateful\n'
-          '- **Async programming** — futures, streams, isolates\n';
+          '- **Dart patterns** - singletons, factories, builders\n'
+          '- **Flutter widgets** - stateless vs stateful\n'
+          '- **Async programming** - futures, streams, isolates\n';
     }
 
     return '# Great Question\n\n'
@@ -262,7 +261,7 @@ class ExampleAiService {
           'theme uses rounded bubbles with cool blue tones. The Sunset theme '
           'goes for sharp corners and warm orange hues. And Default is the '
           'out-of-the-box Material style. Each theme also changes the input '
-          'field — check the hint text and border shape! Try typing a few '
+          'field - check the hint text and border shape! Try typing a few '
           'messages in each theme to get a feel for the differences. The '
           'bubble colors, text contrast, and overall vibe should feel '
           'distinct across all three. 🎨';
@@ -271,7 +270,7 @@ class ExampleAiService {
     if (lower.contains('theme')) {
       return 'Themes are configured through MessageOptions and InputOptions '
           'on AiChatWidget. BubbleStyle controls colors and border radii. '
-          'You can change them at runtime — just call setState with new '
+          'You can change them at runtime - just call setState with new '
           'options and the UI updates instantly. Try switching themes above! ✨';
     }
 
@@ -292,7 +291,7 @@ class ExampleAiService {
     final lower = query.toLowerCase();
 
     if (lower.endsWith('.pdf') || lower.contains('report')) {
-      return "Looks like a business report — want me to pull out the key "
+      return "Looks like a business report - want me to pull out the key "
           "numbers, or summarize it in a couple of sentences?";
     }
     if (lower.contains('weather')) {
@@ -302,17 +301,17 @@ class ExampleAiService {
     }
     if (lower.contains('fun fact') || lower.contains('flutter')) {
       return 'Flutter fun fact: the engine (Skia or Impeller) draws every '
-          "pixel itself instead of wrapping native platform widgets — "
+          "pixel itself instead of wrapping native platform widgets - "
           "that's how the same UI code renders identically on iOS, "
           "Android, web, and desktop.";
     }
     if (lower.contains('summarize')) {
-      return "Sure — in a real app, this is where you'd pass the "
+      return "Sure - in a real app, this is where you'd pass the "
           "conversation history to your LLM with a \"summarize this\" "
           "prompt and stream the result back the same way.";
     }
     if (lower.contains('hello') || lower.contains('hi') || query.length < 10) {
-      return "Hey! I'm a demo assistant — ask me anything, or try the "
+      return "Hey! I'm a demo assistant - ask me anything, or try the "
           "button above.";
     }
 

@@ -16,6 +16,7 @@ class DemoScaffold extends StatefulWidget {
     required this.body,
     required this.isDark,
     required this.onToggleTheme,
+    this.actions = const [],
   });
 
   /// Top-bar title, `label` 16/600.
@@ -28,6 +29,11 @@ class DemoScaffold extends StatefulWidget {
   final Widget body;
   final bool isDark;
   final VoidCallback onToggleTheme;
+
+  /// Demo-specific controls (e.g. the streaming demo's syntax-highlight
+  /// toggle and pin menu), rendered before the shared theme toggle and
+  /// source button.
+  final List<Widget> actions;
 
   @override
   State<DemoScaffold> createState() => _DemoScaffoldState();
@@ -76,6 +82,7 @@ class _DemoScaffoldState extends State<DemoScaffold> {
               onBack: () => Navigator.of(context).pop(),
               onToggleTheme: widget.onToggleTheme,
               onOpenSource: _openSource,
+              actions: widget.actions,
             ),
             Expanded(
               child: LayoutBuilder(
@@ -125,6 +132,7 @@ class _TopBar extends StatelessWidget {
     required this.onBack,
     required this.onToggleTheme,
     required this.onOpenSource,
+    this.actions = const [],
   });
 
   final double height;
@@ -134,6 +142,7 @@ class _TopBar extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onToggleTheme;
   final Future<void> Function() onOpenSource;
+  final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
@@ -168,6 +177,7 @@ class _TopBar extends StatelessWidget {
               ),
             ),
           ),
+          ...actions,
           IconButton(
             tooltip: isDark ? 'Switch to light theme' : 'Switch to dark theme',
             icon: Icon(

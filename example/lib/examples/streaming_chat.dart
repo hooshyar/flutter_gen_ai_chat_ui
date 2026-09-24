@@ -1,13 +1,17 @@
-// Streaming Chat — word-by-word streaming with full markdown support.
+// Streaming Chat - word-by-word streaming with full markdown support.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
 import '../services/mock_ai_service.dart';
+import '../shell/app_theme.dart';
+import '../shell/demo_scaffold.dart';
 
 class StreamingChatExample extends StatefulWidget {
-  const StreamingChatExample({super.key});
+  const StreamingChatExample({super.key, required this.onToggleTheme});
+
+  final VoidCallback onToggleTheme;
 
   @override
   State<StreamingChatExample> createState() => _StreamingChatExampleState();
@@ -25,8 +29,9 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
   StreamSubscription<String>? _streamSub;
   String? _currentStreamingId;
 
-  /// Drives `MessageOptions.enableSyntaxHighlighting` — toggled from the
-  /// AppBar so you can compare highlighted vs plain code blocks.
+  /// Drives `MessageOptions.enableSyntaxHighlighting` - toggled from the
+  /// demo scaffold's trailing actions so you can compare highlighted vs
+  /// plain code blocks.
   bool _syntaxHighlighting = true;
 
   /// Demo of `ScrollBehaviorConfig.pinDuringStreaming`: pick what stays at
@@ -63,7 +68,7 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
       customProperties: {'id': messageId},
     );
 
-    // The AI bubble is only added once the first chunk arrives — until then
+    // The AI bubble is only added once the first chunk arrives - until then
     // the LoadingWidget alone signals that a reply is being generated.
     var receivedFirstChunk = false;
     _streamSub = _aiService.streamResponse(message.text).listen(
@@ -116,59 +121,43 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
   }
 
   Widget _buildToolbar(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final iconColor = isDark ? Colors.white38 : Colors.black38;
+    final colors = context.appColors;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 2, 0, 4),
+      padding: const EdgeInsets.fromLTRB(4, 2, 0, 4),
       child: Row(
         children: [
           _ToolbarIcon(
             icon: Icons.code_rounded,
             tooltip: 'Write code',
-            color: iconColor,
+            color: colors.textSecondary,
             onTap: () => _insertPrompt('Write a Dart function that '),
           ),
           _ToolbarIcon(
             icon: Icons.bug_report_outlined,
             tooltip: 'Debug code',
-            color: iconColor,
+            color: colors.textSecondary,
             onTap: () => _insertPrompt('Debug this code: '),
           ),
           _ToolbarIcon(
             icon: Icons.lightbulb_outline_rounded,
             tooltip: 'Explain concept',
-            color: iconColor,
+            color: colors.textSecondary,
             onTap: () => _sendPrompt('Explain async/await with an example'),
           ),
           _ToolbarIcon(
             icon: Icons.table_chart_outlined,
             tooltip: 'Compare widgets',
-            color: iconColor,
+            color: colors.textSecondary,
             onTap: () =>
                 _sendPrompt('Compare StatelessWidget vs StatefulWidget'),
           ),
           _ToolbarIcon(
             icon: Icons.language,
             tooltip: 'Same function in 3 languages',
-            color: iconColor,
+            color: colors.textSecondary,
             onTap: () =>
                 _sendPrompt('Same function in Dart, Python and TypeScript'),
-          ),
-          const SizedBox(width: 2),
-          Container(
-            width: 1,
-            height: 16,
-            color: isDark ? Colors.white12 : Colors.black12,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            'Streaming',
-            style: TextStyle(
-              fontSize: 12,
-              color: isDark ? Colors.white30 : Colors.black26,
-              fontWeight: FontWeight.w500,
-            ),
           ),
         ],
       ),
@@ -186,80 +175,59 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.appColors;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Streaming + Markdown'),
-        actions: [
-          IconButton(
-            tooltip: 'Syntax highlighting',
-            icon: Icon(
-              _syntaxHighlighting ? Icons.code : Icons.code_off,
-            ),
-            onPressed: () =>
-                setState(() => _syntaxHighlighting = !_syntaxHighlighting),
+    return DemoScaffold(
+      title: 'Streaming',
+      route: '/streaming',
+      isDark: isDark,
+      onToggleTheme: widget.onToggleTheme,
+      actions: [
+        IconButton(
+          tooltip: 'Syntax highlighting',
+          icon: Icon(
+            _syntaxHighlighting ? Icons.code : Icons.code_off,
+            color: colors.textSecondary,
           ),
-          PopupMenuButton<StreamingPinAnchor>(
-            tooltip: 'Pin while streaming',
-            icon: const Icon(Icons.push_pin_outlined),
-            initialValue: _pinAnchor,
-            onSelected: _setPinAnchor,
-            itemBuilder: (context) => [
-              for (final anchor in StreamingPinAnchor.values)
-                CheckedPopupMenuItem(
-                  value: anchor,
-                  checked: anchor == _pinAnchor,
-                  child: Text(_pinLabels[anchor]!),
-                ),
-            ],
-          ),
-        ],
-      ),
+          onPressed: () =>
+              setState(() => _syntaxHighlighting = !_syntaxHighlighting),
+        ),
+        PopupMenuButton<StreamingPinAnchor>(
+          tooltip: 'Pin while streaming',
+          icon: Icon(Icons.push_pin_outlined, color: colors.textSecondary),
+          initialValue: _pinAnchor,
+          onSelected: _setPinAnchor,
+          itemBuilder: (context) => [
+            for (final anchor in StreamingPinAnchor.values)
+              CheckedPopupMenuItem(
+                value: anchor,
+                checked: anchor == _pinAnchor,
+                child: Text(_pinLabels[anchor]!),
+              ),
+          ],
+        ),
+      ],
       body: AiChatWidget(
-        maxWidth: 720,
         currentUser: _currentUser,
         aiUser: _aiUser,
         controller: _controller,
         onSendMessage: _onSendMessage,
         enableMarkdownStreaming: true,
         // The fixed-height persistent strip clips a chip row and covers the
-        // top of the message list — the input toolbar already offers prompts.
+        // top of the message list - the input toolbar already offers prompts.
         persistentExampleQuestions: false,
         loadingConfig: LoadingConfig(
           isLoading: _isLoading,
-          loadingIndicator: LoadingWidget(
-            texts: const ['Generating code...', 'Compiling thoughts...'],
-            textStyle: TextStyle(
-              color: isDark ? Colors.white70 : Colors.black54,
-            ),
-            shimmerBaseColor: isDark ? Colors.white38 : Colors.black45,
-            shimmerHighlightColor: isDark ? Colors.white : Colors.black87,
+          loadingIndicator: const LoadingWidget(
+            texts: ['Generating code...', 'Compiling thoughts...'],
           ),
         ),
         // Surfaces a stop button in the input while generating; tapping it
         // cancels the stream and finalizes the partial message.
         onCancelGenerating: _onCancelGenerating,
-        welcomeMessageConfig: WelcomeMessageConfig(
-          centerVertically: true,
+        welcomeMessageConfig: const WelcomeMessageConfig(
           title: 'Code Assistant',
-          titleStyle: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-          containerDecoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2A2A3A) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),
-            ),
-          ),
           questionsSectionTitle: 'Try asking:',
-          questionsSectionTitleStyle: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white54 : Colors.black45,
-          ),
         ),
         exampleQuestions: const [
           ExampleQuestion(question: 'Write a Dart singleton pattern'),
@@ -271,36 +239,6 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
         ],
         inputOptions: InputOptions(
           textController: _textController,
-          decoration: InputDecoration(
-            hintText: 'Ask about code...',
-            hintStyle: TextStyle(
-              color: isDark ? Colors.white30 : Colors.black26,
-              fontSize: 15,
-              fontWeight: FontWeight.w400,
-            ),
-            border: InputBorder.none,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          ),
-          containerDecoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF4F4F8),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.black.withValues(alpha: 0.08),
-            ),
-          ),
-          containerPadding:
-              const EdgeInsets.only(top: 4, bottom: 0, left: 4, right: 8),
-          sendButtonIcon: Icons.arrow_upward_rounded,
-          sendButtonColor: const Color(0xFF6366F1),
-          sendButtonIconSize: 20,
-          sendButtonPadding: const EdgeInsets.all(6),
-          textStyle: TextStyle(
-            fontSize: 15,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
           inputToolbarBuilder: _buildToolbar,
         ),
         messageOptions: MessageOptions(
@@ -311,31 +249,6 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
           enableSyntaxHighlighting: _syntaxHighlighting,
           codeBlockTheme: CodeBlockTheme.of(Theme.of(context).brightness),
           showCodeBlockCopyButton: true,
-          bubbleStyle: BubbleStyle(
-            userBubbleColor:
-                isDark ? const Color(0xFF4338CA) : const Color(0xFF6366F1),
-            aiBubbleColor:
-                isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF5F5FF),
-            // White on the coloured user bubble; the default blue name is
-            // unreadable on indigo. Light indigo keeps the AI name legible
-            // on dark AI bubbles too.
-            userNameColor: Colors.white70,
-            aiNameColor: isDark ? Colors.white70 : const Color(0xFF6366F1),
-            userBubbleTopLeftRadius: 18,
-            userBubbleTopRightRadius: 18,
-            aiBubbleTopLeftRadius: 18,
-            aiBubbleTopRightRadius: 18,
-            bottomLeftRadius: 18,
-            bottomRightRadius: 4,
-          ),
-          userTextColor: Colors.white,
-          aiTextColor:
-              isDark ? Colors.white.withValues(alpha: 0.95) : Colors.black87,
-          userTimeTextStyle: const TextStyle(
-            fontSize: 11,
-            letterSpacing: 0.1,
-            color: Colors.white70,
-          ),
         ),
       ),
     );
@@ -359,12 +272,13 @@ class _ToolbarIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: tooltip,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(6),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Icon(icon, size: 18, color: color),
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: onTap,
+          child: Icon(icon, size: 16, color: color),
         ),
       ),
     );

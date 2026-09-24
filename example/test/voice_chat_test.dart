@@ -5,7 +5,8 @@ import 'package:flutter_gen_ai_chat_ui_example/examples/voice_chat.dart';
 void main() {
   testWidgets('tapping the mic simulates listening then fills recognized text',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: VoiceChatExample()));
+    await tester
+        .pumpWidget(MaterialApp(home: VoiceChatExample(onToggleTheme: () {})));
     await tester.pump();
 
     expect(find.byIcon(Icons.mic_none), findsOneWidget);
@@ -31,7 +32,8 @@ void main() {
     // .conversational with themed_chat.dart, so recognized voice phrases —
     // none of which mention themes — got the "Try switching between the
     // Ocean/Sunset/Default themes above" reply anyway.
-    await tester.pumpWidget(const MaterialApp(home: VoiceChatExample()));
+    await tester
+        .pumpWidget(MaterialApp(home: VoiceChatExample(onToggleTheme: () {})));
     await tester.pump();
 
     await tester.tap(find.byIcon(Icons.mic_none));

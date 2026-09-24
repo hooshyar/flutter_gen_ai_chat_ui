@@ -33,7 +33,8 @@ void main() {
   testWidgets('multi-language reply renders one copy button per code block',
       (tester) async {
     useTallSurface(tester);
-    await tester.pumpWidget(const MaterialApp(home: StreamingChatExample()));
+    await tester.pumpWidget(
+        MaterialApp(home: StreamingChatExample(onToggleTheme: () {})));
     await tester.pump();
 
     await sendMultiLanguagePrompt(tester);
@@ -50,7 +51,8 @@ void main() {
   testWidgets('toggling syntax highlighting off renders single-colour code',
       (tester) async {
     useTallSurface(tester);
-    await tester.pumpWidget(const MaterialApp(home: StreamingChatExample()));
+    await tester.pumpWidget(
+        MaterialApp(home: StreamingChatExample(onToggleTheme: () {})));
     await tester.pump();
 
     // Toggle off before the reply renders — flutter_markdown_plus caches a

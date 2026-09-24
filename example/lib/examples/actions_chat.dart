@@ -1,12 +1,17 @@
-// AI Actions — demonstrates function calling with calculator, weather, and color actions.
+// AI Actions - demonstrates function calling with calculator, weather, and color actions.
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
+import '../shell/app_theme.dart';
+import '../shell/demo_scaffold.dart';
+
 class ActionsChatExample extends StatefulWidget {
-  const ActionsChatExample({super.key});
+  const ActionsChatExample({super.key, required this.onToggleTheme});
+
+  final VoidCallback onToggleTheme;
 
   @override
   State<ActionsChatExample> createState() => _ActionsChatExampleState();
@@ -69,12 +74,12 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
         await Future.delayed(const Duration(milliseconds: 800));
         final city = params['city'] as String;
         final units = params['units'] as String? ?? 'celsius';
-        // Deterministic per city — same question, same forecast.
+        // Deterministic per city - same question, same forecast.
         final seed = city.toLowerCase().codeUnits.fold<int>(0, (a, b) => a + b);
-        final tempC = 8 + seed % 25; // 8–32°C
+        final tempC = 8 + seed % 25; // 8-32 C
         final temp =
             units == 'fahrenheit' ? (tempC * 9 / 5 + 32).round() : tempC;
-        // Tie conditions to temperature so 32°C never reports rain.
+        // Tie conditions to temperature so 32C never reports rain.
         final conditions = tempC >= 26
             ? 'Sunny'
             : tempC >= 18
@@ -146,7 +151,7 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
   }
 
   /// Renders a tool call the way an LLM function call would appear on the
-  /// wire — as a highlighted ```json fence — so the demo reads like real
+  /// wire - as a highlighted ```json fence - so the demo reads like real
   /// function calling instead of a summary.
   String _toolCallBlock(String name, Map<String, dynamic> arguments) {
     final payload = {'name': name, 'arguments': arguments};
@@ -196,7 +201,7 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
               '${_toolCallBlock('get_weather', {'city': city})}\n\n'
               '**Weather in ${d['city']}**\n\n'
               '- ${d['conditions']}\n'
-              '- Temperature: ${d['temperature']}${d['units'] == 'celsius' ? '\u00b0C' : '\u00b0F'}\n'
+              '- Temperature: ${d['temperature']}${d['units'] == 'celsius' ? '°C' : '°F'}\n'
               '- Humidity: ${d['humidity']}%';
         } else {
           response = 'Could not get weather. Try "/weather London".';
@@ -217,7 +222,7 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
             _controller.addMessage(ChatMessage(
               text: 'Calling the color tool:\n\n'
                   '${_toolCallBlock('generate_color', {'mood': mood})}\n\n'
-                  'Here\'s your swatch:',
+                  'Here is your swatch:',
               user: _aiUser,
               createdAt: DateTime.now(),
               isMarkdown: true,
@@ -235,9 +240,9 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
         response = 'Could not generate color. Try "/color calm".';
       } else {
         response = 'I can run a few demo actions. Try:\n\n'
-            '- `/calculate 42 * 7` — evaluate a math expression\n'
-            '- `/weather Paris` — weather for a city\n'
-            '- `/color energetic` — turn a mood into a color swatch';
+            '- `/calculate 42 * 7` - evaluate a math expression\n'
+            '- `/weather Paris` - weather for a city\n'
+            '- `/color energetic` - turn a mood into a color swatch';
       }
 
       if (!mounted) return;
@@ -263,15 +268,17 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('AI Actions')),
+    return DemoScaffold(
+      title: 'Actions',
+      route: '/actions',
+      isDark: isDark,
+      onToggleTheme: widget.onToggleTheme,
       body: AiActionProvider(
         config: AiActionConfig(
           actions: _actionController.registeredActions,
         ),
         controller: _actionController,
         child: AiChatWidget(
-          maxWidth: 720,
           currentUser: _currentUser,
           aiUser: _aiUser,
           controller: _controller,
@@ -283,95 +290,22 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
               texts: ['Executing action...', 'Processing...'],
             ),
           ),
-          welcomeMessageConfig: WelcomeMessageConfig(
-            centerVertically: true,
+          welcomeMessageConfig: const WelcomeMessageConfig(
             title: 'AI Actions Demo',
-            titleStyle: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-            containerDecoration: BoxDecoration(
-              color: isDark ? const Color(0xFF2A2A3A) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color:
-                    isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),
-              ),
-            ),
             questionsSectionTitle: 'Try these actions:',
-            questionsSectionTitleStyle: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white54 : Colors.black45,
-            ),
           ),
           exampleQuestions: const [
             ExampleQuestion(question: '/calculate 42 * 7'),
             ExampleQuestion(question: '/weather Paris'),
             ExampleQuestion(question: '/color energetic'),
           ],
-          inputOptions: InputOptions(
-            decoration: InputDecoration(
-              hintText: 'Try /calculate, /weather, /color...',
-              hintStyle: TextStyle(
-                color: isDark ? Colors.white38 : Colors.black38,
-                fontSize: 15,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor:
-                  isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF2F2F7),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            sendButtonIcon: Icons.arrow_upward_rounded,
-            sendButtonColor: const Color(0xFF8B5CF6),
-            sendButtonIconSize: 20,
-            sendButtonPadding: const EdgeInsets.all(6),
-            textStyle: TextStyle(
-              fontSize: 15,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-          ),
-          messageOptions: MessageOptions(
-            showCopyButton: true,
-            showTime: true,
-            bubbleStyle: BubbleStyle(
-              userBubbleColor:
-                  isDark ? const Color(0xFF6D28D9) : const Color(0xFF8B5CF6),
-              aiBubbleColor:
-                  isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF5F0FF),
-              // White on the coloured user bubble; a light tone keeps the
-              // AI name legible on dark AI bubbles.
-              userNameColor: Colors.white70,
-              aiNameColor: isDark ? Colors.white70 : const Color(0xFF8B5CF6),
-              userBubbleTopLeftRadius: 18,
-              userBubbleTopRightRadius: 18,
-              aiBubbleTopLeftRadius: 18,
-              aiBubbleTopRightRadius: 18,
-              bottomLeftRadius: 18,
-              bottomRightRadius: 4,
-            ),
-            userTextColor: Colors.white,
-            aiTextColor:
-                isDark ? Colors.white.withValues(alpha: 0.95) : Colors.black87,
-            userTimeTextStyle: const TextStyle(
-              fontSize: 11,
-              letterSpacing: 0.1,
-              color: Colors.white70,
-            ),
-          ),
         ),
       ),
     );
   }
 }
 
-/// Inline widget message for `/color` — shows the generated colour as an
+/// Inline widget message for `/color` - shows the generated colour as an
 /// actual swatch next to its hex value instead of text alone.
 class _ColorSwatch extends StatelessWidget {
   const _ColorSwatch({required this.mood, required this.hex});
@@ -386,15 +320,12 @@ class _ColorSwatch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.white12 : Colors.grey.shade200,
-        ),
+        border: Border.all(color: colors.border),
       ),
       child: Row(
         children: [
@@ -402,9 +333,11 @@ class _ColorSwatch extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
+              // The swatch itself is the generated result data, not chat
+              // chrome - it must render the actual returned colour.
               color: _color,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.black12),
+              border: Border.all(color: colors.border),
             ),
           ),
           const SizedBox(width: 12),
@@ -415,7 +348,7 @@ class _ColorSwatch extends StatelessWidget {
                 'Color for "$mood"',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: colors.textPrimary,
                 ),
               ),
               Text(
@@ -423,7 +356,7 @@ class _ColorSwatch extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontFamily: 'monospace',
-                  color: isDark ? Colors.white54 : Colors.black45,
+                  color: colors.textSecondary,
                 ),
               ),
             ],

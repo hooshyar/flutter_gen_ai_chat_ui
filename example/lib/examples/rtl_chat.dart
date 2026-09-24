@@ -1,19 +1,19 @@
-// RTL Chat — Arabic / Kurdish / Hebrew streaming with auto bidi rendering.
+// RTL Chat - Arabic / Sorani Kurdish streaming with auto bidi rendering.
 //
 // What this screen demonstrates:
 //
 //   1. Wrapping the chat in `Directionality(textDirection: TextDirection.rtl)`
 //      so the input row, send button, and scroll mirror to the right edge.
-//      Bubble columns keep fixed sides (user right, AI left) — it is the
+//      Bubble columns keep fixed sides (user right, AI left) - it is the
 //      per-message direction detection in point 2 that adapts each bubble's
 //      text.
-//   2. Per-message bidirectional rendering — the package auto-detects the
-//      text direction of every message from its content (Arabic chars →
-//      RTL bubble, English chars → LTR bubble) so a mixed conversation
-//      lays out correctly without any extra config.
-//   3. Word-by-word streaming on Arabic prose. `flutter_streaming_text_markdown`
-//      1.7.0 (shipped with package 2.11.x) fixed Arabic word-splitting so the
-//      stream animates by whole words, not by code points.
+//   2. Per-message bidirectional rendering - the package auto-detects the
+//      text direction of every message from its content (Arabic/Kurdic
+//      chars -> RTL bubble, English chars -> LTR bubble) so a mixed
+//      conversation lays out correctly without any extra config.
+//   3. Word-by-word streaming on Arabic/Sorani prose, and `Vazirmatn`
+//      (DESIGN.md 3) as the text theme for far better Arabic/Kurdish
+//      rhythm than the default font.
 //
 // Real apps usually wrap the whole MaterialApp in a Directionality based on
 // the user's locale rather than per-screen. The wrap here is just to keep
@@ -23,9 +23,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../shell/demo_scaffold.dart';
 
 class RtlChatExample extends StatefulWidget {
-  const RtlChatExample({super.key});
+  const RtlChatExample({super.key, required this.onToggleTheme});
+
+  final VoidCallback onToggleTheme;
 
   @override
   State<RtlChatExample> createState() => _RtlChatExampleState();
@@ -55,10 +60,10 @@ class _RtlChatExampleState extends State<RtlChatExample> {
       customProperties: {'id': messageId},
     );
 
-    // The AI bubble is only added once the first chunk arrives — until then
+    // The AI bubble is only added once the first chunk arrives - until then
     // the LoadingWidget alone signals that a reply is being generated.
     var receivedFirstChunk = false;
-    _streamSub = _streamArabicResponse(message.text).listen(
+    _streamSub = _streamResponse(message.text).listen(
       (accumulated) {
         if (!mounted) return;
         if (receivedFirstChunk) {
@@ -96,7 +101,7 @@ class _RtlChatExampleState extends State<RtlChatExample> {
 
   /// Mock streaming response. Picks a canned reply based on the query, then
   /// yields it word-by-word so the streaming animation has something to chew.
-  Stream<String> _streamArabicResponse(String query) async* {
+  Stream<String> _streamResponse(String query) async* {
     await Future<void>.delayed(const Duration(milliseconds: 400));
 
     final lower = query.toLowerCase();
@@ -109,6 +114,12 @@ class _RtlChatExampleState extends State<RtlChatExample> {
           'تأسست في القرن الثامن الميلادي على يد الخليفة العباسي '
           'أبي جعفر المنصور، وكانت في عصرها الذهبي مركزًا للعلم '
           'والثقافة في العالم الإسلامي.';
+    } else if (query.contains('پایتەخت') || query.contains('کوردستان')) {
+      // Sorani Kurdish prompt: "What is the capital of Kurdistan Region?"
+      reply = '## پایتەختی هەرێمی کوردستان\n\n'
+          'پایتەختی هەرێمی کوردستان شاری **هەولێر**ە، کە یەکێکە لە '
+          'کۆنترین شارە ژیراوەکانی جیهان و ماوەیەکی زیاتر لە هەشت '
+          'هەزار ساڵە ژیانی تێدا بەردەوامە.';
     } else if (query.contains('قصيدة') || query.contains('اكتب')) {
       reply = '## قصيدة قصيرة\n\n'
           '> في صمتِ الليلِ تكلّمتُ مع النجمِ،\n'
@@ -117,7 +128,7 @@ class _RtlChatExampleState extends State<RtlChatExample> {
           '> فهمسَ: قلبٌ صادقٌ، ودربٌ طويل.\n\n'
           '_تمّت._';
     } else if (query.contains('كود') || lower.contains('dart')) {
-      // Code fences stay LTR inside the RTL bubble — CodeBlockView forces
+      // Code fences stay LTR inside the RTL bubble - CodeBlockView forces
       // TextDirection.ltr on the block itself, so nothing extra is needed.
       reply = '## مثال بلغة Dart\n\n'
           'إليك دالة بسيطة بلغة **Dart**. لاحظ أن الكتلة البرمجية تبقى '
@@ -133,7 +144,7 @@ class _RtlChatExampleState extends State<RtlChatExample> {
     } else if (query.contains('Flutter') ||
         lower.contains('flutter') ||
         lower.contains('what')) {
-      // Mixed-direction reply — package auto-detects per-message direction
+      // Mixed-direction reply - package auto-detects per-message direction
       // so this bubble will render as LTR even though the surrounding UI
       // is RTL.
       reply = '**Flutter** is Google\'s cross-platform UI toolkit. '
@@ -165,133 +176,70 @@ class _RtlChatExampleState extends State<RtlChatExample> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseTheme = Theme.of(context);
 
-    // Wrap the screen in RTL Directionality. In a real app, drive this
-    // from your locale (e.g. `Directionality(textDirection: Localizations.of(...))`).
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(title: const Text('RTL Chat (عربي)')),
-        body: AiChatWidget(
-          maxWidth: 720,
-          currentUser: _currentUser,
-          aiUser: _aiUser,
-          controller: _controller,
-          onSendMessage: _onSendMessage,
-          enableMarkdownStreaming: true,
-          streamingWordByWord: true,
-          // The fixed-height persistent strip clips the last chip row and
-          // covers the top of the message list.
-          persistentExampleQuestions: false,
-          // Surfaces a stop button in the input while generating; tapping it
-          // cancels the stream and finalizes the partial message.
-          onCancelGenerating: _onCancelGenerating,
-          loadingConfig: LoadingConfig(
-            isLoading: _isLoading,
-            loadingIndicator: LoadingWidget(
-              texts: const ['جارٍ التفكير...', 'لحظة من فضلك...'],
-              textStyle: TextStyle(
-                color: isDark ? Colors.white70 : Colors.black54,
-              ),
-              shimmerBaseColor: isDark ? Colors.white38 : Colors.black45,
-              shimmerHighlightColor: isDark ? Colors.white : Colors.black87,
-            ),
+    return DemoScaffold(
+      title: 'RTL',
+      route: '/rtl',
+      isDark: isDark,
+      onToggleTheme: widget.onToggleTheme,
+      // The demo scaffold's own chrome (back, title, toggles) stays LTR; only
+      // the chat surface below flips, as a real app would drive it from the
+      // active locale rather than the whole shell.
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Theme(
+          data: baseTheme.copyWith(
+            textTheme: GoogleFonts.vazirmatnTextTheme(baseTheme.textTheme),
           ),
-          welcomeMessageConfig: WelcomeMessageConfig(
-            centerVertically: true,
-            title: 'أهلاً وسهلاً 👋',
-            titleStyle: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-            containerDecoration: BoxDecoration(
-              color: isDark ? const Color(0xFF2A2A3A) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color:
-                    isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),
+          child: AiChatWidget(
+            currentUser: _currentUser,
+            aiUser: _aiUser,
+            controller: _controller,
+            onSendMessage: _onSendMessage,
+            enableMarkdownStreaming: true,
+            streamingWordByWord: true,
+            // The fixed-height persistent strip clips the last chip row and
+            // covers the top of the message list.
+            persistentExampleQuestions: false,
+            // Surfaces a stop button in the input while generating; tapping
+            // it cancels the stream and finalizes the partial message.
+            onCancelGenerating: _onCancelGenerating,
+            loadingConfig: LoadingConfig(
+              isLoading: _isLoading,
+              loadingIndicator: const LoadingWidget(
+                texts: ['جارٍ التفكير...', 'لحظة من فضلك...'],
               ),
             ),
-            questionsSectionTitle: 'جرّب أن تسأل:',
-            questionsSectionTitleStyle: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white54 : Colors.black45,
+            welcomeMessageConfig: const WelcomeMessageConfig(
+              title: 'أهلاً وسهلاً',
+              questionsSectionTitle: 'جرّب أن تسأل:',
             ),
-          ),
-          exampleQuestions: const [
-            ExampleQuestion(question: 'ما هي عاصمة العراق؟'),
-            ExampleQuestion(question: 'اكتب لي قصيدة قصيرة'),
-            // U+200E LRM keeps this Latin question's trailing "?" on the
-            // correct side inside an RTL chip.
-            ExampleQuestion(question: '‎What is Flutter?'),
-            // Arabic answer containing a ```dart block — the code stays
-            // LTR inside the RTL bubble.
-            ExampleQuestion(question: 'أرني مثالاً على كود Dart'),
-          ],
-          inputOptions: InputOptions(
-            decoration: InputDecoration(
-              hintText: 'اكتب رسالتك...',
-              hintStyle: TextStyle(
-                color: isDark ? Colors.white38 : Colors.black38,
-                fontSize: 15,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor:
-                  isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF2F2F7),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            sendButtonIcon: Icons.arrow_upward_rounded,
-            sendButtonColor: const Color(0xFF6366F1),
-            sendButtonIconSize: 20,
-            sendButtonPadding: const EdgeInsets.all(6),
-            textStyle: TextStyle(
-              fontSize: 15,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-          ),
-          messageOptions: MessageOptions(
-            showCopyButton: true,
-            copyButtonLabel: 'نسخ',
-            copiedToClipboardText: 'تم نسخ الرسالة',
-            showTime: true,
-            // Localized relative timestamp instead of the default "Just now".
-            timeFormat: (dt) {
-              final mins = DateTime.now().difference(dt).inMinutes;
-              if (mins < 1) return 'الآن';
-              if (mins < 60) return 'قبل $mins دقيقة';
-              final hrs = mins ~/ 60;
-              return 'قبل $hrs ساعة';
-            },
-            bubbleStyle: BubbleStyle(
-              userBubbleColor:
-                  isDark ? const Color(0xFF4338CA) : const Color(0xFF6366F1),
-              aiBubbleColor:
-                  isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF5F5FF),
-              // White on the coloured user bubble; light indigo keeps the
-              // AI name legible on dark AI bubbles.
-              userNameColor: Colors.white70,
-              aiNameColor: isDark ? Colors.white70 : const Color(0xFF6366F1),
-              userBubbleTopLeftRadius: 18,
-              userBubbleTopRightRadius: 18,
-              aiBubbleTopLeftRadius: 18,
-              aiBubbleTopRightRadius: 18,
-              bottomLeftRadius: 18,
-              bottomRightRadius: 4,
-            ),
-            userTextColor: Colors.white,
-            aiTextColor:
-                isDark ? Colors.white.withValues(alpha: 0.95) : Colors.black87,
-            userTimeTextStyle: const TextStyle(
-              fontSize: 11,
-              letterSpacing: 0.1,
-              color: Colors.white70,
+            exampleQuestions: const [
+              ExampleQuestion(question: 'ما هي عاصمة العراق؟'),
+              ExampleQuestion(question: 'پایتەختی هەرێمی کوردستان کوێیە؟'),
+              ExampleQuestion(question: 'اكتب لي قصيدة قصيرة'),
+              // U+200E LRM keeps this Latin question's trailing "?" on the
+              // correct side inside an RTL chip.
+              ExampleQuestion(question: '‎What is Flutter?'),
+              // Arabic answer containing a ```dart block - the code stays
+              // LTR inside the RTL bubble.
+              ExampleQuestion(question: 'أرني مثالاً على كود Dart'),
+            ],
+            messageOptions: MessageOptions(
+              showCopyButton: true,
+              copyButtonLabel: 'نسخ',
+              copiedToClipboardText: 'تم نسخ الرسالة',
+              showTime: true,
+              // Localized relative timestamp instead of the default
+              // "Just now".
+              timeFormat: (dt) {
+                final mins = DateTime.now().difference(dt).inMinutes;
+                if (mins < 1) return 'الآن';
+                if (mins < 60) return 'قبل $mins دقيقة';
+                final hrs = mins ~/ 60;
+                return 'قبل $hrs ساعة';
+              },
             ),
           ),
         ),

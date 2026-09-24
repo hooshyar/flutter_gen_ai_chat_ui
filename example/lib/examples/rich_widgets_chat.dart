@@ -1,9 +1,14 @@
-// Rich Widget Messages — demonstrates ChatMessage.rich() and ChatMessage.widget()
+// Rich Widget Messages - demonstrates ChatMessage.rich() and ChatMessage.widget()
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
+import '../shell/app_theme.dart';
+import '../shell/demo_scaffold.dart';
+
 class RichWidgetsChatExample extends StatefulWidget {
-  const RichWidgetsChatExample({super.key});
+  const RichWidgetsChatExample({super.key, required this.onToggleTheme});
+
+  final VoidCallback onToggleTheme;
 
   @override
   State<RichWidgetsChatExample> createState() => _RichWidgetsChatExampleState();
@@ -57,7 +62,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
       // Inline widget (no registry needed)
       _controller.addMessage(ChatMessage.widget(
         user: _aiUser,
-        builder: (context) => _StatsWidget(),
+        builder: (context) => const _StatsWidget(),
       ));
     } else if (text.contains('order') || text.contains('status')) {
       // Rich widget: order status
@@ -72,7 +77,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
         },
       ));
     } else if (text.contains('loading') || text.contains('morph')) {
-      // Loading → morph demo
+      // Loading -> morph demo
       const loadId = 'demo-loading';
       _controller.addMessage(ChatMessage.loading(
         user: _aiUser,
@@ -103,7 +108,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
             '- "product" for a product card\n'
             '- "stats" for an inline chart widget\n'
             '- "order status" for an order tracker\n'
-            '- "loading" to see shimmer → widget morph',
+            '- "loading" to see shimmer to widget morph',
         user: _aiUser,
         createdAt: DateTime.now(),
         isMarkdown: true,
@@ -141,13 +146,12 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rich Widget Messages'),
-        centerTitle: true,
-      ),
+    return DemoScaffold(
+      title: 'Rich results',
+      route: '/rich-widgets',
+      isDark: isDark,
+      onToggleTheme: widget.onToggleTheme,
       body: AiChatWidget(
-        maxWidth: 720,
         currentUser: _currentUser,
         aiUser: _aiUser,
         controller: _controller,
@@ -181,28 +185,10 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
           ),
         ),
         enableMarkdownStreaming: false,
-        welcomeMessageConfig: WelcomeMessageConfig(
-          centerVertically: true,
+        welcomeMessageConfig: const WelcomeMessageConfig(
           title: 'Rich Widget Messages',
-          titleStyle: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-          containerDecoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2A2A3A) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),
-            ),
-          ),
           questionsSectionTitle:
               'AI responses can include interactive widgets. Try these:',
-          questionsSectionTitleStyle: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white54 : Colors.black45,
-          ),
         ),
         exampleQuestions: const [
           ExampleQuestion(question: "What's the weather?"),
@@ -211,48 +197,24 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
           ExampleQuestion(question: 'Check order status'),
           ExampleQuestion(question: 'Show loading morph'),
         ],
-        inputOptions: InputOptions(
-          decoration: InputDecoration(
-            hintText: 'Try "weather", "product", "stats", or "order"...',
-            hintStyle: TextStyle(
-              color: isDark ? Colors.white38 : Colors.black38,
-              fontSize: 15,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(24),
-              borderSide: BorderSide.none,
-            ),
-            filled: true,
-            fillColor:
-                isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF2F2F7),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-          sendButtonIcon: Icons.arrow_upward_rounded,
-          sendButtonColor: const Color(0xFF6366F1),
-        ),
       ),
     );
   }
 
-  // ─── Result Renderers ───────────────────────────────────────────────
+  // Result Renderers - cards use tokens: radius 12, 1px outline, no
+  // elevation. DESIGN.md 9 "Rich results".
 
   static Widget _buildWeatherCard(
     BuildContext context,
     Map<String, dynamic> data,
   ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF1a237e), const Color(0xFF0d47a1)]
-              : [const Color(0xFF42a5f5), const Color(0xFF1976d2)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,23 +227,23 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
                 children: [
                   Text(
                     data['city'] as String? ?? '',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: colors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     data['condition'] as String? ?? '',
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    style: TextStyle(color: colors.textSecondary, fontSize: 14),
                   ),
                 ],
               ),
               Text(
-                '${data['temp']}°',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 48,
+                '${data['temp']} deg',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 40,
                   fontWeight: FontWeight.w200,
                 ),
               ),
@@ -291,10 +253,14 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
           Row(
             children: [
               _WeatherDetail(
-                  icon: Icons.water_drop, label: '${data['humidity']}%'),
+                  icon: Icons.water_drop,
+                  label: '${data['humidity']}%',
+                  colors: colors),
               const SizedBox(width: 24),
               _WeatherDetail(
-                  icon: Icons.air, label: data['wind'] as String? ?? ''),
+                  icon: Icons.air,
+                  label: data['wind'] as String? ?? '',
+                  colors: colors),
             ],
           ),
         ],
@@ -306,33 +272,31 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
     BuildContext context,
     Map<String, dynamic> data,
   ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.appColors;
     final features = (data['features'] as List?)?.cast<String>() ?? [];
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white12 : Colors.grey.shade200,
-        ),
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Product icon placeholder
+          // Product image placeholder: a neutral surfaceSunken tile.
           Container(
             width: double.infinity,
             height: 120,
             decoration: BoxDecoration(
-              color: isDark ? Colors.white10 : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(12),
+              color: colors.surfaceSunken,
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               Icons.laptop_mac,
-              size: 48,
-              color: isDark ? Colors.white30 : Colors.grey.shade400,
+              size: 40,
+              color: colors.textTertiary,
             ),
           ),
           const SizedBox(height: 12),
@@ -340,8 +304,8 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
             data['name'] as String? ?? '',
             style: TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.w600,
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
@@ -349,20 +313,18 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
             children: [
               Text(
                 data['price'] as String? ?? '',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF6366F1),
+                  color: colors.accent,
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.star, color: Colors.amber, size: 18),
+              Icon(Icons.star, color: colors.accent, size: 18),
               const SizedBox(width: 4),
               Text(
                 '${data['rating']}',
-                style: TextStyle(
-                  color: isDark ? Colors.white70 : Colors.black54,
-                ),
+                style: TextStyle(color: colors.textSecondary),
               ),
             ],
           ),
@@ -373,8 +335,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
             children: features
                 .map((f) => Chip(
                       label: Text(f, style: const TextStyle(fontSize: 12)),
-                      backgroundColor:
-                          isDark ? Colors.white10 : Colors.grey.shade100,
+                      backgroundColor: colors.surfaceSunken,
                       side: BorderSide.none,
                       padding: EdgeInsets.zero,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -406,15 +367,13 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
     BuildContext context,
     Map<String, dynamic> data,
   ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white12 : Colors.grey.shade200,
-        ),
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -424,11 +383,11 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
+                  color: colors.surfaceSunken,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.local_shipping,
-                    color: Colors.green, size: 20),
+                child:
+                    Icon(Icons.local_shipping, color: colors.accent, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -438,15 +397,15 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
                     Text(
                       data['orderId'] as String? ?? '',
                       style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textPrimary,
                       ),
                     ),
                     Text(
                       '${data['items']} items',
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark ? Colors.white54 : Colors.black45,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ],
@@ -456,13 +415,13 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
+                  color: colors.surfaceSunken,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   data['status'] as String? ?? '',
-                  style: const TextStyle(
-                    color: Colors.green,
+                  style: TextStyle(
+                    color: colors.accent,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -476,8 +435,8 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: 0.7,
-              backgroundColor: isDark ? Colors.white12 : Colors.grey.shade200,
-              color: Colors.green,
+              backgroundColor: colors.surfaceSunken,
+              color: colors.accent,
               minHeight: 6,
             ),
           ),
@@ -487,17 +446,14 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
             children: [
               Text(
                 'Estimated delivery',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? Colors.white54 : Colors.black45,
-                ),
+                style: TextStyle(fontSize: 12, color: colors.textSecondary),
               ),
               Text(
                 data['eta'] as String? ?? '',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: colors.textPrimary,
                 ),
               ),
             ],
@@ -508,38 +464,40 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
   }
 }
 
-// ─── Helper widgets ─────────────────────────────────────────────────────────
+// Helper widgets
 
 class _WeatherDetail extends StatelessWidget {
-  const _WeatherDetail({required this.icon, required this.label});
+  const _WeatherDetail(
+      {required this.icon, required this.label, required this.colors});
   final IconData icon;
   final String label;
+  final AppColors colors;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: Colors.white70, size: 16),
+        Icon(icon, color: colors.textSecondary, size: 16),
         const SizedBox(width: 4),
         Text(label,
-            style: const TextStyle(color: Colors.white70, fontSize: 13)),
+            style: TextStyle(color: colors.textSecondary, fontSize: 13)),
       ],
     );
   }
 }
 
 class _StatsWidget extends StatelessWidget {
+  const _StatsWidget();
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white12 : Colors.grey.shade200,
-        ),
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -547,9 +505,9 @@ class _StatsWidget extends StatelessWidget {
           Text(
             'Weekly activity',
             style: TextStyle(
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               fontSize: 16,
-              color: isDark ? Colors.white : Colors.black87,
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: 16),
@@ -557,26 +515,22 @@ class _StatsWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const _Bar(height: 40, label: 'Mon', color: Color(0xFF6366F1)),
-              const _Bar(height: 65, label: 'Tue', color: Color(0xFF6366F1)),
-              const _Bar(height: 35, label: 'Wed', color: Color(0xFF6366F1)),
-              const _Bar(
-                  height: 80,
-                  label: 'Thu',
-                  color: Color(0xFF6366F1),
-                  highlight: true),
-              const _Bar(height: 55, label: 'Fri', color: Color(0xFF6366F1)),
-              _Bar(height: 25, label: 'Sat', color: Colors.grey.shade400),
-              _Bar(height: 20, label: 'Sun', color: Colors.grey.shade400),
+              _Bar(height: 40, label: 'Mon', colors: colors),
+              _Bar(height: 65, label: 'Tue', colors: colors),
+              _Bar(height: 35, label: 'Wed', colors: colors),
+              _Bar(height: 80, label: 'Thu', colors: colors, highlight: true),
+              _Bar(height: 55, label: 'Fri', colors: colors),
+              _Bar(height: 25, label: 'Sat', colors: colors, muted: true),
+              _Bar(height: 20, label: 'Sun', colors: colors, muted: true),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _StatItem(label: 'Total', value: '1,284', isDark: isDark),
-              _StatItem(label: 'Avg', value: '183/day', isDark: isDark),
-              _StatItem(label: 'Peak', value: 'Thu', isDark: isDark),
+              _StatItem(label: 'Total', value: '1,284', colors: colors),
+              _StatItem(label: 'Avg', value: '183/day', colors: colors),
+              _StatItem(label: 'Peak', value: 'Thu', colors: colors),
             ],
           ),
         ],
@@ -589,35 +543,37 @@ class _Bar extends StatelessWidget {
   const _Bar({
     required this.height,
     required this.label,
-    required this.color,
+    required this.colors,
     this.highlight = false,
+    this.muted = false,
   });
   final double height;
   final String label;
-  final Color color;
+  final AppColors colors;
   final bool highlight;
+  final bool muted;
 
   @override
   Widget build(BuildContext context) {
+    final barColor = muted
+        ? colors.textTertiary.withValues(alpha: 0.4)
+        : highlight
+            ? colors.accent
+            : colors.accent.withValues(alpha: 0.5);
     return Column(
       children: [
         Container(
-          width: 28,
+          width: 24,
           height: height,
           decoration: BoxDecoration(
-            color: highlight ? color : color.withValues(alpha: 0.5),
+            color: barColor,
             borderRadius: BorderRadius.circular(6),
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white54
-                : Colors.black45,
-          ),
+          style: TextStyle(fontSize: 11, color: colors.textSecondary),
         ),
       ],
     );
@@ -628,11 +584,11 @@ class _StatItem extends StatelessWidget {
   const _StatItem({
     required this.label,
     required this.value,
-    required this.isDark,
+    required this.colors,
   });
   final String label;
   final String value;
-  final bool isDark;
+  final AppColors colors;
 
   @override
   Widget build(BuildContext context) {
@@ -641,17 +597,14 @@ class _StatItem extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             fontSize: 16,
-            color: isDark ? Colors.white : Colors.black87,
+            color: colors.textPrimary,
           ),
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: isDark ? Colors.white54 : Colors.black45,
-          ),
+          style: TextStyle(fontSize: 12, color: colors.textSecondary),
         ),
       ],
     );

@@ -1,6 +1,6 @@
 // Example-app design tokens and `ThemeData`, straight from DESIGN.md §3.
 //
-// These are the example app's own colours — deliberately independent from
+// These are the example app's own colours - deliberately independent from
 // the package's `ChatTokens` (added in a parallel slice) so this shell never
 // depends on in-flight package API. Package defaults still come from the
 // host `Theme`/`ColorScheme` built here, so the example continues to show
@@ -10,7 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// Example-app colour tokens, DESIGN.md §3.
 ///
-/// Not exported by the package — this is example-app-only styling, matched
+/// Not exported by the package - this is example-app-only styling, matched
 /// by hand to the design direction rather than sourced from `ChatTokens`.
 class AppColors {
   const AppColors._({
