@@ -1,3 +1,17 @@
+## Unreleased
+
+Zero breaking API changes. One visual default change worth noting: syntax highlighting is now **on by default** for fenced code blocks (disable it via `MessageOptions.enableSyntaxHighlighting: false`).
+
+### Fixed
+- **Per-line grey boxes in fenced code blocks.** Inline `code` spans carried a per-line `backgroundColor`; fenced blocks now render through the new `CodeBlockView`, which paints a single rounded background for the whole block, so no span sets a background.
+- **Legacy `MarkdownContent.enableSyntaxHighlighting` now works.** The field was accepted but never read; `MarkdownContent`'s fenced blocks now route through `CodeBlockView`, and its legacy `codeTheme` map (token-kind names — `comment`, `string`, `number`, `keyword`, `type`, `function`, `annotation` — mapped to `TextStyle`s whose `color` is used) is applied on top of the ambient `CodeBlockTheme`. Unknown keys are ignored.
+
+### Added
+- **Bundled monospace font.** Code blocks and inline `code` use JetBrains Mono (OFL, shipped in `fonts/`) on all platforms including web, with platform mono fallbacks.
+- **Built-in lightweight syntax highlighting (on by default).** A pure-Dart regex tokenizer — no extra dependency — covering Dart, JavaScript/TypeScript, Python, Java, Kotlin, Swift, Go, Rust, C/C++/C#, JSON, YAML, Bash, SQL, and HTML/XML, with a generic fallback for other language tags. Light and dark palettes via the new `CodeBlockTheme` (`CodeBlockTheme.of(brightness)`).
+- **Per-block copy button + language label header, horizontal scroll for long lines, and LTR code inside RTL chats** via the new `CodeBlockView` widget and `CodeBlockMarkdownBuilder` for `pre` elements.
+- **New `MessageOptions` fields:** `enableSyntaxHighlighting` (default `true`), `codeBlockTheme` (`CodeBlockTheme?`, defaults to ambient brightness palette), and `showCodeBlockCopyButton` (default `true`).
+
 ## 2.19.1 - 2026-09-03
 
 Zero breaking changes. A routine dependency-freshness bump, no code changes on this side.

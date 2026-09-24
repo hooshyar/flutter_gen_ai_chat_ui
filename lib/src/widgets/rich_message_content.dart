@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/code_block_theme.dart';
+import 'code/code_block_view.dart';
+
 /// Rich message content widget with advanced features
 class RichMessageContent extends StatelessWidget {
   final String text;
@@ -30,9 +33,7 @@ class RichMessageContent extends StatelessWidget {
       );
     }
 
-    return RichText(
-      text: _buildTextSpan(context),
-    );
+    return RichText(text: _buildTextSpan(context));
   }
 
   TextSpan _buildTextSpan(BuildContext context) {
@@ -87,10 +88,7 @@ class MarkdownContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: padding,
-      child: _buildMarkdownContent(context),
-    );
+    return Container(padding: padding, child: _buildMarkdownContent(context));
   }
 
   Widget _buildMarkdownContent(BuildContext context) {
@@ -104,7 +102,8 @@ class MarkdownContent extends StatelessWidget {
       final line = lines[i];
 
       if (line.startsWith('```')) {
-        // Code block
+        // Code block — the opening fence may carry a language tag.
+        final language = line.substring(3).trim();
         final codeLines = <String>[];
         i++; // Skip the opening ```
 
@@ -113,42 +112,47 @@ class MarkdownContent extends StatelessWidget {
           i++;
         }
 
-        spans.add(WidgetSpan(
-          child: _buildCodeBlock(codeLines.join('\n'), context),
-        ));
+        spans.add(
+          WidgetSpan(
+            child: _buildCodeBlock(
+              codeLines.join('\n'),
+              language.isEmpty ? null : language,
+              context,
+            ),
+          ),
+        );
       } else if (line.startsWith('# ')) {
         // Header
-        spans.add(TextSpan(
-          text: '${line.substring(2)}\n',
-          style: baseStyle.copyWith(
-            fontSize: (baseStyle.fontSize ?? 14) * 1.5,
-            fontWeight: FontWeight.bold,
+        spans.add(
+          TextSpan(
+            text: '${line.substring(2)}\n',
+            style: baseStyle.copyWith(
+              fontSize: (baseStyle.fontSize ?? 14) * 1.5,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ));
+        );
       } else if (line.startsWith('## ')) {
         // Sub-header
-        spans.add(TextSpan(
-          text: '${line.substring(3)}\n',
-          style: baseStyle.copyWith(
-            fontSize: (baseStyle.fontSize ?? 14) * 1.3,
-            fontWeight: FontWeight.bold,
+        spans.add(
+          TextSpan(
+            text: '${line.substring(3)}\n',
+            style: baseStyle.copyWith(
+              fontSize: (baseStyle.fontSize ?? 14) * 1.3,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ));
+        );
       } else if (line.startsWith('- ') || line.startsWith('* ')) {
         // List item
-        spans.add(TextSpan(
-          text: '• ${line.substring(2)}\n',
-          style: baseStyle,
-        ));
+        spans.add(TextSpan(text: '• ${line.substring(2)}\n', style: baseStyle));
       } else {
         // Regular text with inline formatting
         spans.add(_parseInlineMarkdown('$line\n', baseStyle));
       }
     }
 
-    return RichText(
-      text: TextSpan(children: spans),
-    );
+    return RichText(text: TextSpan(children: spans));
   }
 
   TextSpan _parseInlineMarkdown(String text, TextStyle baseStyle) {
@@ -165,10 +169,12 @@ class MarkdownContent extends StatelessWidget {
       if (char == '*' && nextChar == '*' && !inCode) {
         // Bold
         if (buffer.isNotEmpty) {
-          spans.add(TextSpan(
-            text: buffer.toString(),
-            style: _getCurrentStyle(baseStyle, inBold, inItalic, inCode),
-          ));
+          spans.add(
+            TextSpan(
+              text: buffer.toString(),
+              style: _getCurrentStyle(baseStyle, inBold, inItalic, inCode),
+            ),
+          );
           buffer.clear();
         }
         inBold = !inBold;
@@ -176,20 +182,24 @@ class MarkdownContent extends StatelessWidget {
       } else if (char == '*' && !inCode) {
         // Italic
         if (buffer.isNotEmpty) {
-          spans.add(TextSpan(
-            text: buffer.toString(),
-            style: _getCurrentStyle(baseStyle, inBold, inItalic, inCode),
-          ));
+          spans.add(
+            TextSpan(
+              text: buffer.toString(),
+              style: _getCurrentStyle(baseStyle, inBold, inItalic, inCode),
+            ),
+          );
           buffer.clear();
         }
         inItalic = !inItalic;
       } else if (char == '`') {
         // Inline code
         if (buffer.isNotEmpty) {
-          spans.add(TextSpan(
-            text: buffer.toString(),
-            style: _getCurrentStyle(baseStyle, inBold, inItalic, inCode),
-          ));
+          spans.add(
+            TextSpan(
+              text: buffer.toString(),
+              style: _getCurrentStyle(baseStyle, inBold, inItalic, inCode),
+            ),
+          );
           buffer.clear();
         }
         inCode = !inCode;
@@ -199,10 +209,12 @@ class MarkdownContent extends StatelessWidget {
     }
 
     if (buffer.isNotEmpty) {
-      spans.add(TextSpan(
-        text: buffer.toString(),
-        style: _getCurrentStyle(baseStyle, inBold, inItalic, inCode),
-      ));
+      spans.add(
+        TextSpan(
+          text: buffer.toString(),
+          style: _getCurrentStyle(baseStyle, inBold, inItalic, inCode),
+        ),
+      );
     }
 
     return TextSpan(children: spans);
@@ -232,41 +244,47 @@ class MarkdownContent extends StatelessWidget {
     return style;
   }
 
-  Widget _buildCodeBlock(String code, BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.grey[800]
-            : Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+  Widget _buildCodeBlock(String code, String? language, BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: SizedBox(
+        width: double.infinity,
+        child: CodeBlockView(
+          code: code,
+          language: language,
+          theme: _resolveCodeTheme(context),
+          enableSyntaxHighlighting: enableSyntaxHighlighting,
         ),
       ),
-      child: Stack(
-        children: [
-          SelectableText(
-            code,
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 13,
-              color: Theme.of(context).textTheme.bodyMedium?.color,
-            ),
-          ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: IconButton(
-              icon: const Icon(Icons.copy, size: 16),
-              onPressed: () => Clipboard.setData(ClipboardData(text: code)),
-              tooltip: 'Copy code',
-            ),
-          ),
-        ],
-      ),
+    );
+  }
+
+  /// Maps the legacy [codeTheme] token map onto a [CodeBlockTheme]. Keys are
+  /// token-kind names (`comment`, `string`, `number`, `keyword`, `type`,
+  /// `function`, `annotation`); each entry's `color` overrides that token's
+  /// color on top of the ambient light/dark palette. Unknown keys and
+  /// colorless styles are ignored.
+  CodeBlockTheme _resolveCodeTheme(BuildContext context) {
+    final base = CodeBlockTheme.of(Theme.of(context).brightness);
+    if (codeTheme.isEmpty) return base;
+
+    Color? colorOf(String key) => codeTheme[key]?.color;
+
+    return CodeBlockTheme(
+      backgroundColor: base.backgroundColor,
+      borderColor: base.borderColor,
+      headerTextColor: base.headerTextColor,
+      baseStyle: base.baseStyle,
+      commentColor: colorOf('comment') ?? base.commentColor,
+      stringColor: colorOf('string') ?? base.stringColor,
+      numberColor: colorOf('number') ?? base.numberColor,
+      keywordColor: colorOf('keyword') ?? base.keywordColor,
+      typeColor: colorOf('type') ?? base.typeColor,
+      functionColor: colorOf('function') ?? base.functionColor,
+      annotationColor: colorOf('annotation') ?? base.annotationColor,
+      punctuationColor: base.punctuationColor,
+      copyTooltip: base.copyTooltip,
+      copiedTooltip: base.copiedTooltip,
     );
   }
 }
@@ -326,10 +344,7 @@ class InteractiveContent extends StatelessWidget {
             Icon(action.icon, size: 16),
             const SizedBox(width: 4),
           ],
-          Text(
-            action.label,
-            style: const TextStyle(fontSize: 13),
-          ),
+          Text(action.label, style: const TextStyle(fontSize: 13)),
         ],
       ),
     );
@@ -433,10 +448,10 @@ class _CollapsibleContentState extends State<CollapsibleContent>
                 Expanded(
                   child: Text(
                     widget.title,
-                    style: widget.titleStyle ??
-                        Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                    style:
+                        widget.titleStyle ??
+                        Theme.of(context).textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -448,7 +463,8 @@ class _CollapsibleContentState extends State<CollapsibleContent>
               padding: const EdgeInsets.only(left: 28, top: 8),
               child: SelectableText(
                 widget.content,
-                style: widget.contentStyle ??
+                style:
+                    widget.contentStyle ??
                     Theme.of(context).textTheme.bodyMedium,
               ),
             ),
