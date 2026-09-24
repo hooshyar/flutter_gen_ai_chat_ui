@@ -1,0 +1,188 @@
+// The hero's live AiChatWidget: a framed, bordered panel that auto-plays one
+// scripted exchange on first build (a debounce-helper question), then leaves
+// the composer live so a visitor can keep typing into the mock service.
+import 'dart:async';
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
+
+import 'app_theme.dart';
+
+const _currentUser = ChatUser(id: 'user', name: 'You');
+const _aiUser = ChatUser(id: 'ai', name: 'Assistant');
+
+const _scriptedQuestion = 'Write a debounce helper in Dart';
+const _scriptedAnswer = "Here's a debounce helper for Dart:\n\n"
+    '```dart\n'
+    'void Function() debounce(void Function() action, Duration delay) {\n'
+    '  Timer? timer;\n'
+    '  return () {\n'
+    '    timer?.cancel();\n'
+    '    timer = Timer(delay, action);\n'
+    '  };\n'
+    '}\n'
+    '```\n\n'
+    'Call the returned function on every keystroke; only the last call '
+    'within `delay` actually fires.';
+
+/// A default-config [AiChatWidget] inside a bordered panel (radius 16,
+/// height per [height]) that plays [_scriptedQuestion]/[_scriptedAnswer]
+/// once, streamed word by word, the first time it builds. DESIGN.md §9.
+class LivePreview extends StatefulWidget {
+  const LivePreview({super.key, required this.height});
+
+  final double height;
+
+  @override
+  State<LivePreview> createState() => _LivePreviewState();
+}
+
+class _LivePreviewState extends State<LivePreview> {
+  final _controller = ChatMessagesController();
+  final _random = Random();
+  StreamSubscription<String>? _streamSub;
+  bool _isLoading = false;
+  String? _currentStreamingId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _playScript());
+  }
+
+  Future<void> _playScript() async {
+    if (!mounted) return;
+
+    _controller.addMessage(ChatMessage(
+      text: _scriptedQuestion,
+      user: _currentUser,
+      createdAt: DateTime.now(),
+    ));
+
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    if (!mounted) return;
+    _streamScriptedAnswer();
+  }
+
+  void _streamScriptedAnswer() {
+    setState(() => _isLoading = true);
+
+    final messageId = 'ai_preview_${DateTime.now().millisecondsSinceEpoch}';
+    _currentStreamingId = messageId;
+    final aiMessage = ChatMessage(
+      text: '',
+      user: _aiUser,
+      createdAt: DateTime.now(),
+      isMarkdown: true,
+      customProperties: {'id': messageId},
+    );
+
+    var receivedFirstChunk = false;
+    _streamSub = _wordByWord(_scriptedAnswer).listen(
+      (accumulated) {
+        if (!mounted) return;
+        if (receivedFirstChunk) {
+          _controller.updateMessage(aiMessage.copyWith(text: accumulated));
+        } else {
+          receivedFirstChunk = true;
+          _controller
+              .addStreamingMessage(aiMessage.copyWith(text: accumulated));
+        }
+      },
+      onDone: () {
+        if (!mounted) return;
+        _controller.stopStreamingMessage(messageId);
+        setState(() => _isLoading = false);
+      },
+    );
+  }
+
+  Stream<String> _wordByWord(String text) async* {
+    final words = text.split(' ');
+    var accumulated = '';
+    for (final word in words) {
+      accumulated += (accumulated.isEmpty ? '' : ' ') + word;
+      yield accumulated;
+      await Future<void>.delayed(
+        Duration(milliseconds: 12 + _random.nextInt(26)),
+      );
+    }
+  }
+
+  void _onSendMessage(ChatMessage message) {
+    // Keep the composer live after the scripted exchange: anything typed
+    // gets a short, generic reply so the panel never looks broken.
+    _controller.addMessage(message);
+    _streamSub?.cancel();
+    setState(() => _isLoading = true);
+
+    final messageId = 'ai_${DateTime.now().millisecondsSinceEpoch}';
+    _currentStreamingId = messageId;
+    final aiMessage = ChatMessage(
+      text: '',
+      user: _aiUser,
+      createdAt: DateTime.now(),
+      isMarkdown: true,
+      customProperties: {'id': messageId},
+    );
+
+    const reply = "In a real app, this is where your AI backend's response "
+        'would stream in.';
+    var receivedFirstChunk = false;
+    _streamSub = _wordByWord(reply).listen(
+      (accumulated) {
+        if (!mounted) return;
+        if (receivedFirstChunk) {
+          _controller.updateMessage(aiMessage.copyWith(text: accumulated));
+        } else {
+          receivedFirstChunk = true;
+          _controller
+              .addStreamingMessage(aiMessage.copyWith(text: accumulated));
+        }
+      },
+      onDone: () {
+        if (!mounted) return;
+        _controller.stopStreamingMessage(messageId);
+        setState(() => _isLoading = false);
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _streamSub?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+
+    return Container(
+      height: widget.height,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: AiChatWidget(
+        currentUser: _currentUser,
+        aiUser: _aiUser,
+        controller: _controller,
+        onSendMessage: _onSendMessage,
+        enableMarkdownStreaming: true,
+        persistentExampleQuestions: false,
+        loadingConfig: LoadingConfig(isLoading: _isLoading),
+        onCancelGenerating: () {
+          _streamSub?.cancel();
+          _streamSub = null;
+          final id = _currentStreamingId;
+          if (id != null) _controller.stopStreamingMessage(id);
+          setState(() => _isLoading = false);
+        },
+      ),
+    );
+  }
+}
