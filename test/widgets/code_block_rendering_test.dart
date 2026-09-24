@@ -287,7 +287,17 @@ void main() {
       await tester.pump();
 
       expect(find.byType(CodeBlockView), findsOneWidget);
-      expect(find.byIcon(Icons.copy_rounded), findsNothing);
+      // Scoped to the code block: MessageActionRow's own copy control (now
+      // shown by default) uses the same glyph (Icons.content_copy_rounded
+      // aliases Icons.copy_rounded), so an unscoped search would also match
+      // it.
+      expect(
+        find.descendant(
+          of: find.byType(CodeBlockView),
+          matching: find.byIcon(Icons.copy_rounded),
+        ),
+        findsNothing,
+      );
     });
 
     testWidgets('copy button copies the raw code without fences', (
@@ -317,7 +327,15 @@ void main() {
       );
       await tester.pump();
 
-      await tester.tap(find.byIcon(Icons.copy_rounded));
+      // Scoped to the code block: MessageActionRow's own copy control (now
+      // shown by default) uses the same glyph (Icons.content_copy_rounded
+      // aliases Icons.copy_rounded), so an unscoped tap would be ambiguous.
+      await tester.tap(
+        find.descendant(
+          of: find.byType(CodeBlockView),
+          matching: find.byIcon(Icons.copy_rounded),
+        ),
+      );
       await tester.pump();
       expect(copied, 'void main() {}');
     });

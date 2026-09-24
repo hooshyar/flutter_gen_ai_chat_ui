@@ -500,7 +500,7 @@ class _AiChatWidgetState extends State<AiChatWidget>
                 streamingTypingSpeed: widget.streamingDuration,
                 streamingEnabled: widget.enableMarkdownStreaming,
                 enableMathRendering: widget.enableMathRendering,
-                streamingFadeInEnabled: widget.streamingFadeInEnabled ?? false,
+                streamingFadeInEnabled: widget.streamingFadeInEnabled ?? true,
                 streamingFadeInDuration: widget.streamingFadeInDuration ??
                     const Duration(milliseconds: 260),
                 streamingFadeInCurve:

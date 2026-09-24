@@ -2,11 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../theme/code_block_theme.dart';
+import '../../theme/custom_theme_extension.dart';
 import '../ai_chat_config.dart';
 import 'chat_message.dart';
 import 'chat_user.dart';
 import 'citation.dart';
 import 'media.dart';
+
+/// The two AI-message presentations a [MessageOptions.aiMessageLayout] can
+/// resolve to (`DESIGN.md` §8.1).
+enum AiMessageLayout {
+  /// No card, no border, no shadow: the reading-column default. The AI's
+  /// answer reads like prose, with the action row underneath it.
+  document,
+
+  /// The legacy-compatible bordered/filled bubble, restyled per the design
+  /// tokens. Chosen automatically when the consumer has opted into bubble
+  /// colors via [BubbleStyle], [MessageOptions.decoration]/
+  /// [MessageOptions.effectiveDecoration], or a themed bubble color.
+  bubble,
+}
 
 /// Class for customizing chat bubble appearance
 class BubbleStyle {
@@ -99,15 +114,18 @@ class BubbleStyle {
     this.userAvatarWidgetBuilder,
   });
 
-  /// Default style for message bubbles
+  /// Default style for message bubbles, per `DESIGN.md` §5-§6: no shadow
+  /// (elevation is expressed by space and a hairline, never blur), the user
+  /// bubble uses a uniform 20 radius, and the (opt-in) AI bubble keeps a
+  /// small leading-top corner to read as "coming from the left".
   static const BubbleStyle defaultStyle = BubbleStyle(
-    userBubbleTopLeftRadius: 18,
-    userBubbleTopRightRadius: 4,
-    aiBubbleTopLeftRadius: 4,
-    aiBubbleTopRightRadius: 18,
-    bottomLeftRadius: 18,
-    bottomRightRadius: 18,
-    enableShadow: true,
+    userBubbleTopLeftRadius: 20,
+    userBubbleTopRightRadius: 20,
+    aiBubbleTopLeftRadius: 6,
+    aiBubbleTopRightRadius: 20,
+    bottomLeftRadius: 20,
+    bottomRightRadius: 20,
+    enableShadow: false,
     shadowOpacity: 0.08,
     shadowBlurRadius: 10,
     shadowOffset: Offset(0, 3),
@@ -255,8 +273,19 @@ class MessageOptions {
   /// 2. Provide a custom decoration or containerDecoration
   final BubbleStyle? bubbleStyle;
 
-  /// Whether to show user name
+  /// Whether to show user name.
+  ///
+  /// Defaults to `null`, which resolves per [resolveShowUserName]: `false`
+  /// for the document AI layout (the default — no name row, no avatar),
+  /// `true` for the bubble layout. An explicit `true`/`false` always wins
+  /// over that resolution, for both the user's own messages and the AI's.
   final bool? showUserName;
+
+  /// Chooses between the document (default) and bubble AI message
+  /// presentations. Leave `null` to let [resolveAiMessageLayout] pick
+  /// automatically from whether bubble colors/decoration are in play (see
+  /// [AiMessageLayout]).
+  final AiMessageLayout? aiMessageLayout;
 
   /// Style for user names
   final TextStyle? userNameStyle;
@@ -443,12 +472,13 @@ class MessageOptions {
     this.reactionSize = 24.0,
     this.enableQuickReply = true,
     this.bubbleStyle,
-    this.showUserName = true,
+    this.showUserName,
+    this.aiMessageLayout,
     this.userNameStyle,
     this.markdownStyleSheet,
     this.onTapLink,
     this.aiNameIcon,
-    this.showCopyButton = false,
+    this.showCopyButton = true,
     this.copyButtonLabel,
     this.copiedToClipboardText,
     this.onCopy,
@@ -487,6 +517,7 @@ class MessageOptions {
     bool? enableQuickReply,
     BubbleStyle? bubbleStyle,
     bool? showUserName,
+    AiMessageLayout? aiMessageLayout,
     TextStyle? userNameStyle,
     MarkdownStyleSheet? markdownStyleSheet,
     MarkdownTapLinkCallback? onTapLink,
@@ -530,6 +561,7 @@ class MessageOptions {
         enableQuickReply: enableQuickReply ?? this.enableQuickReply,
         bubbleStyle: bubbleStyle ?? this.bubbleStyle,
         showUserName: showUserName ?? this.showUserName,
+        aiMessageLayout: aiMessageLayout ?? this.aiMessageLayout,
         userNameStyle: userNameStyle ?? this.userNameStyle,
         markdownStyleSheet: markdownStyleSheet ?? this.markdownStyleSheet,
         onTapLink: onTapLink ?? this.onTapLink,
@@ -575,6 +607,29 @@ class MessageOptions {
     }
     return null;
   }
+
+  /// Resolves [aiMessageLayout] when explicitly set; otherwise infers it
+  /// from whether the consumer has opted into bubble colors/decoration
+  /// (`DESIGN.md` §8.1): a non-null [BubbleStyle.aiBubbleColor],
+  /// [effectiveDecoration], or [themeExt]'s `messageBubbleColor` all resolve
+  /// to [AiMessageLayout.bubble] so existing customized apps keep their
+  /// bubbles; otherwise [AiMessageLayout.document].
+  AiMessageLayout resolveAiMessageLayout(CustomThemeExtension? themeExt) {
+    if (aiMessageLayout != null) return aiMessageLayout!;
+    final hasBubbleColor = bubbleStyle?.aiBubbleColor != null;
+    final hasDecoration = effectiveDecoration != null;
+    final hasThemedBubble = themeExt?.messageBubbleColor != null;
+    if (hasBubbleColor || hasDecoration || hasThemedBubble) {
+      return AiMessageLayout.bubble;
+    }
+    return AiMessageLayout.document;
+  }
+
+  /// Resolves [showUserName]: an explicit value always wins, otherwise the
+  /// name row is hidden in [AiMessageLayout.document] and shown in
+  /// [AiMessageLayout.bubble].
+  bool resolveShowUserName(AiMessageLayout layout) =>
+      showUserName ?? (layout == AiMessageLayout.bubble);
 }
 
 /// Options for customizing the message list

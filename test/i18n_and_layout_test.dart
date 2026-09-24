@@ -7,7 +7,11 @@ void main() {
   final humanUser = ChatUser(id: 'user', name: 'User');
 
   group('Copy button localization (MessageOptions.copyButtonLabel)', () {
-    testWidgets('renders custom copy label on AI messages', (tester) async {
+    // The copy control is icon-only (DESIGN.md §8.8); copyButtonLabel now
+    // surfaces as its tooltip/semantics label rather than visible text.
+    testWidgets('renders custom copy label as the tooltip on AI messages', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
@@ -34,13 +38,15 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('نسخ'), findsOneWidget);
-      expect(find.text('Copy'), findsNothing);
+      expect(find.byTooltip('نسخ'), findsOneWidget);
+      expect(find.byTooltip('Copy'), findsNothing);
 
       controller.dispose();
     });
 
-    testWidgets('defaults to "Copy" when label not set', (tester) async {
+    testWidgets('tooltip defaults to "Copy" when label not set', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
@@ -64,7 +70,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('Copy'), findsOneWidget);
+      expect(find.byTooltip('Copy'), findsOneWidget);
 
       controller.dispose();
     });

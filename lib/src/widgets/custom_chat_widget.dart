@@ -14,11 +14,15 @@ import '../models/example_question.dart';
 import '../models/file_upload_options.dart';
 import '../models/input_options.dart';
 import '../models/welcome_message_config.dart';
+import '../theme/chat_markdown_style.dart';
+import '../theme/chat_tokens.dart';
 import '../theme/code_block_theme.dart';
 import '../theme/custom_theme_extension.dart';
 import '../utils/color_extensions.dart';
 import 'code/code_block_view.dart';
 import 'math_markdown.dart';
+import 'message/message_action_row.dart';
+import 'message/streaming_caret.dart';
 import 'message_attachment.dart';
 import 'result/result_renderer_registry.dart';
 
@@ -459,8 +463,30 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     );
   }
 
+  /// Index of the chronologically-latest AI (non-current-user) message in
+  /// [CustomChatWidget.messages], or `null` when there isn't one. Its action
+  /// row (see [MessageActionRow]) stays visible regardless of hover state so
+  /// the primary action is never hidden behind an undiscovered hover.
+  int? _lastAiMessageIndex(bool reverseOrder) {
+    final messages = widget.messages;
+    if (messages.isEmpty) return null;
+    if (reverseOrder) {
+      // Index 0 is the newest message in reverse order.
+      for (var i = 0; i < messages.length; i++) {
+        if (messages[i].user.id != widget.currentUser.id) return i;
+      }
+    } else {
+      for (var i = messages.length - 1; i >= 0; i--) {
+        if (messages[i].user.id != widget.currentUser.id) return i;
+      }
+    }
+    return null;
+  }
+
   Widget _buildMessageList() {
     final paginationConfig = widget.messageListOptions.paginationConfig;
+    final lastAiMessageIndex =
+        _lastAiMessageIndex(paginationConfig.reverseOrder);
 
     // Empty-conversation welcome: optionally center it vertically instead of
     // anchoring to the bottom of the (reverse) list, which leaves a large gap
@@ -598,12 +624,14 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           final messageId = widget.controller?.getMessageId(message) ??
               (message.customProperties?['id'] as String? ??
                   '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}');
+          final isLastAiMessage = !isUser && index == lastAiMessageIndex;
 
           // return _buildMessageBubble(message, isUser);
           return RepaintBoundary(
             child: KeyedSubtree(
               key: ValueKey(messageId),
-              child: _buildMessageBubble(message, isUser),
+              child:
+                  _buildMessageBubble(message, isUser, index, isLastAiMessage),
             ),
           );
         }
@@ -637,7 +665,12 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage message, bool isUser) {
+  Widget _buildMessageBubble(
+    ChatMessage message,
+    bool isUser,
+    int index,
+    bool isLastAiMessage,
+  ) {
     // Check for custom message builder from the message itself
     if (message.customBuilder != null) {
       return message.customBuilder!(context, message);
@@ -654,7 +687,8 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // Helper function to build the default bubble
     Widget buildDefaultBubble() {
-      return _buildDefaultMessageBubble(message, isUser);
+      return _buildDefaultMessageBubble(
+          message, isUser, index, isLastAiMessage);
     }
 
     // Wrapping builder takes precedence: it receives the default bubble so the
@@ -691,381 +725,334 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     return _buildMessageContent(message, context);
   }
 
+  /// Whether [message]'s text is still being progressively revealed on
+  /// screen right now.
+  ///
+  /// Deliberately reads the local reveal-loop bookkeeping ([_revealedChars],
+  /// the same id computation [_buildMessageContent] uses to enroll entries)
+  /// rather than `controller.currentlyStreamingMessageId`: the controller
+  /// flag stays set on the last AI message until the *next* one arrives
+  /// (`addMessage` never clears it for a message that wasn't started via
+  /// `addStreamingMessage`/`stopStreamingMessage`), which would otherwise
+  /// pin the live caret and hide the action row forever after a message
+  /// finishes revealing.
+  ///
+  /// Compares the revealed count directly against the current text length
+  /// rather than just checking map membership: the reveal ticker's own
+  /// "finished" bookkeeping is similarly gated on that controller flag
+  /// clearing, so an entry can linger at `revealed == text.length` — that's
+  /// still "done" as far as anything visible is concerned.
+  ///
+  /// Must be called after [_buildMessageContent] has run for this message in
+  /// the current build (that call is what performs the enrollment).
+  bool _isCurrentlyStreaming(ChatMessage message) {
+    final messageId = message.customProperties?['id'] as String? ??
+        '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
+    final revealed = _revealedChars[messageId];
+    return revealed != null && revealed < message.text.length;
+  }
+
+  /// Shared AI name row (avatar/icon + name) used by both the document
+  /// layout (only when [MessageOptions.showUserName] is explicitly true) and
+  /// the bubble layout (shown by default). Never falls back to a default
+  /// robot icon — only [BubbleStyle.aiAvatarWidgetBuilder] or
+  /// [MessageOptions.aiNameIcon], when supplied, render anything before the
+  /// name (`DESIGN.md` anti-pattern #2).
+  Widget _buildAiNameRow(
+    ChatMessage message,
+    ChatTokens tokens,
+    BubbleStyle bubbleStyle,
+  ) {
+    return Padding(
+      padding: widget.spacingConfig.messageUsernameBottomPadding,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (bubbleStyle.aiAvatarWidgetBuilder != null) ...[
+            bubbleStyle.aiAvatarWidgetBuilder!(message.user),
+            const SizedBox(width: 6),
+          ] else if (widget.messageOptions.aiNameIcon != null) ...[
+            widget.messageOptions.aiNameIcon!,
+            const SizedBox(width: 6),
+          ],
+          Text(
+            message.user.name,
+            style: widget.messageOptions.userNameStyle ??
+                TextStyle(
+                  fontSize: 12,
+                  height: 16 / 12,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.1,
+                  color: bubbleStyle.aiNameColor ?? tokens.textSecondary,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The action row + optional live caret shared by both AI layouts.
+  List<Widget> _buildAiFooter(
+    ChatMessage message,
+    bool isLastAiMessage,
+    bool isStreaming,
+  ) {
+    return [
+      if (isStreaming)
+        const Padding(
+          padding: EdgeInsetsDirectional.only(top: 4),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: StreamingCaret(key: ValueKey('chat-streaming-caret')),
+          ),
+        ),
+      const SizedBox(height: ChatSpace.s8),
+      MessageActionRow(
+        text: message.text,
+        timestampText: widget.messageOptions.timeFormat != null
+            ? widget.messageOptions.timeFormat!(message.createdAt)
+            : _defaultTimestampFormat(message.createdAt),
+        onCopy: widget.messageOptions.onCopy,
+        alwaysVisible: isLastAiMessage,
+        isStreaming: isStreaming,
+        showCopyButton: widget.messageOptions.showCopyButton ?? true,
+        copyButtonLabel: widget.messageOptions.copyButtonLabel,
+      ),
+    ];
+  }
+
+  /// User message: a filled, borderless, shadowless bubble aligned to the
+  /// end edge (`DESIGN.md` §8.1). [columnWidth] is the already-measured
+  /// (via [LayoutBuilder], never `MediaQuery.size`) reading-column width;
+  /// the bubble itself caps at 80% of that, or 560, whichever is smaller.
+  Widget _buildUserBubble(
+    ChatMessage message,
+    ChatTokens tokens,
+    CustomThemeExtension? themeExt,
+    BubbleStyle bubbleStyle,
+    double columnWidth,
+    bool sameSenderAsNext,
+  ) {
+    final maxWidth = min(
+      columnWidth * ChatLayout.userBubbleMaxFraction,
+      ChatLayout.userBubbleMaxWidth,
+    );
+    final fill = bubbleStyle.userBubbleColor ??
+        themeExt?.userBubbleColor ??
+        tokens.userBubble;
+    // The tail (6) corner only appears on the last bubble of a consecutive
+    // group; mid-group bubbles keep the full 20 radius on all corners.
+    final trailingBottom =
+        sameSenderAsNext ? ChatRadius.bubble : ChatRadius.tail;
+
+    return Align(
+      alignment: AlignmentDirectional.centerEnd,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: Container(
+          padding: widget.messageOptions.padding ??
+              const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadiusDirectional.only(
+              topStart: const Radius.circular(ChatRadius.bubble),
+              topEnd: const Radius.circular(ChatRadius.bubble),
+              bottomStart: const Radius.circular(ChatRadius.bubble),
+              bottomEnd: Radius.circular(trailingBottom),
+            ),
+          ),
+          child: _buildMessageContent(message, context),
+        ),
+      ),
+    );
+  }
+
+  /// Document (default) AI message: no container decoration at all — the
+  /// text starts at the reading column's start edge and spans up to its
+  /// full width (`DESIGN.md` §8.1, anti-pattern #1).
+  Widget _buildAiDocumentLayout(
+    ChatMessage message,
+    ChatTokens tokens,
+    BubbleStyle bubbleStyle,
+    double columnWidth,
+    bool isLastAiMessage,
+  ) {
+    final showName =
+        widget.messageOptions.resolveShowUserName(AiMessageLayout.document);
+
+    // _buildMessageContent must run before _isCurrentlyStreaming: it is what
+    // enrolls this message's id into the reveal-loop bookkeeping that
+    // _isCurrentlyStreaming reads.
+    final content = _buildMessageContent(message, context);
+    final isStreaming = _isCurrentlyStreaming(message);
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: columnWidth),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (showName) _buildAiNameRow(message, tokens, bubbleStyle),
+          content,
+          ..._buildAiFooter(message, isLastAiMessage, isStreaming),
+        ],
+      ),
+    );
+  }
+
+  /// Bubble (opt-in / legacy-compatible) AI message: today's bordered/filled
+  /// card, restyled with tokens (`DESIGN.md` §8.1).
+  Widget _buildAiBubbleLayout(
+    ChatMessage message,
+    ChatTokens tokens,
+    CustomThemeExtension? themeExt,
+    BubbleStyle bubbleStyle,
+    BoxDecoration? effectiveDecoration,
+    double columnWidth,
+    bool isDark,
+    bool isLastAiMessage,
+  ) {
+    final fill = bubbleStyle.aiBubbleColor ??
+        themeExt?.messageBubbleColor ??
+        (isDark ? tokens.surfaceSunken : tokens.surface);
+
+    final decoration = effectiveDecoration != null
+        ? effectiveDecoration.copyWith(color: fill)
+        : BoxDecoration(
+            color: fill,
+            border: Border.all(color: tokens.border, width: 1),
+            borderRadius: BorderRadiusDirectional.only(
+              topStart: Radius.circular(
+                bubbleStyle.aiBubbleTopLeftRadius ?? ChatRadius.tail,
+              ),
+              topEnd: Radius.circular(
+                bubbleStyle.aiBubbleTopRightRadius ?? ChatRadius.bubble,
+              ),
+              bottomStart: Radius.circular(
+                bubbleStyle.bottomLeftRadius ?? ChatRadius.bubble,
+              ),
+              bottomEnd: Radius.circular(
+                bubbleStyle.bottomRightRadius ?? ChatRadius.bubble,
+              ),
+            ),
+          );
+
+    final maxWidth = bubbleStyle.aiBubbleMaxWidth ?? columnWidth;
+    final showName =
+        widget.messageOptions.resolveShowUserName(AiMessageLayout.bubble);
+
+    // _buildMessageContent must run before _isCurrentlyStreaming: it is what
+    // enrolls this message's id into the reveal-loop bookkeeping that
+    // _isCurrentlyStreaming reads.
+    final content = _buildMessageContent(message, context);
+    final isStreaming = _isCurrentlyStreaming(message);
+
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: Container(
+          padding: widget.messageOptions.padding ??
+              widget.spacingConfig.messageBubbleInnerPadding,
+          decoration: decoration,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (showName) _buildAiNameRow(message, tokens, bubbleStyle),
+              content,
+              ..._buildAiFooter(message, isLastAiMessage, isStreaming),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Builds the default message bubble with all standard styling and features.
   ///
   /// This method contains the original bubble building logic and is used as
   /// the fallback when no custom bubble builder is provided, or as the default
   /// bubble passed to custom bubble builders.
-  Widget _buildDefaultMessageBubble(ChatMessage message, bool isUser) {
-    Size measureText(
-      String text, {
-      double maxWidth = double.infinity,
-      TextStyle? style,
-    }) {
-      final textPainter = TextPainter(
-        text: TextSpan(text: text, style: style),
-        maxLines: 1,
-        textDirection: TextDirection.ltr,
-      )..layout(minWidth: 0, maxWidth: maxWidth);
-
-      final size = textPainter.size;
-      // TextPainter holds native resources; dispose it now that we've read the
-      // measurement. This runs on the per-bubble build hot path.
-      textPainter.dispose();
-      return size;
-    }
-
-    final textSize = measureText(
-      message.text,
-      style: const TextStyle(fontSize: 15, height: 1.5, letterSpacing: 0.2),
-    );
-
-    ///need to add this to check username size
-    final usernameTextSize = measureText(
-      message.user.name,
-      style: const TextStyle(fontSize: 15, height: 1.5, letterSpacing: 0.2),
-    );
-
-    ///need to add this to check time stamp size
-    final timeTextSize = measureText(
-      widget.messageOptions.timeFormat != null
-          ? widget.messageOptions.timeFormat!(message.createdAt)
-          : _defaultTimestampFormat(message.createdAt),
-      style: const TextStyle(fontSize: 15, height: 1.5, letterSpacing: 0.2),
-    );
-
-    // Get effective decoration from MessageOptions
-    final effectiveDecoration = widget.messageOptions.effectiveDecoration;
+  ///
+  /// [index] is this message's position in [CustomChatWidget.messages]; it
+  /// drives the consecutive-same-sender grouping rhythm (`DESIGN.md` §5,
+  /// §8.1): 4px between same-sender neighbours, 24px on a sender change,
+  /// computed against the chronologically-adjacent message (which — per
+  /// `PaginationConfig.reverseOrder` — may be at `index + 1` rather than
+  /// `index - 1`).
+  Widget _buildDefaultMessageBubble(
+    ChatMessage message,
+    bool isUser,
+    int index,
+    bool isLastAiMessage,
+  ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = theme.primaryColor;
+    final tokens = ChatTokens.of(context);
     // A `CustomThemeExtension` (see the brand presets, e.g. `.chatgpt()`)
     // set on `ThemeData.extensions` supplies bubble/text colors as a
     // fallback layer below any explicit `BubbleStyle`/`MessageOptions`
-    // value and above the hardcoded defaults below. Null (the common case
-    // — nobody has opted into a custom theme) falls straight through to
+    // value and above the token defaults below. Null (the common case —
+    // nobody has opted into a custom theme) falls straight through to
     // those defaults, so this is purely additive.
     final themeExt = theme.extension<CustomThemeExtension>();
-
-    // Get bubble style configuration
     final bubbleStyle =
         widget.messageOptions.bubbleStyle ?? BubbleStyle.defaultStyle;
+    final effectiveDecoration = widget.messageOptions.effectiveDecoration;
 
-    // Premium design colors for a sophisticated look
-    final defaultUserBubbleColor = themeExt?.userBubbleColor ??
-        (isDark
-            ? primaryColor.withOpacityCompat(0.18)
-            : primaryColor.withOpacityCompat(0.06));
-    final defaultAiBubbleColor = themeExt?.messageBubbleColor ??
-        (isDark ? const Color(0xFF2D2D2D) : Colors.white);
+    final paginationConfig = widget.messageListOptions.paginationConfig;
+    final prevIndex = paginationConfig.reverseOrder ? index + 1 : index - 1;
+    final nextIndex = paginationConfig.reverseOrder ? index - 1 : index + 1;
+    final sameSenderAsPrev = prevIndex >= 0 &&
+        prevIndex < widget.messages.length &&
+        widget.messages[prevIndex].user.id == message.user.id;
+    final sameSenderAsNext = nextIndex >= 0 &&
+        nextIndex < widget.messages.length &&
+        widget.messages[nextIndex].user.id == message.user.id;
+    final topGap = sameSenderAsPrev ? ChatSpace.s4 : ChatSpace.s24;
+    final margin =
+        widget.messageOptions.containerMargin ?? EdgeInsets.only(top: topGap);
 
-    // Refined corner radius values for modern messaging apps
-    final topLeftRadius = isUser
-        ? bubbleStyle.userBubbleTopLeftRadius ?? 22
-        : bubbleStyle.aiBubbleTopLeftRadius ?? 2;
-    final topRightRadius = isUser
-        ? bubbleStyle.userBubbleTopRightRadius ?? 2
-        : bubbleStyle.aiBubbleTopRightRadius ?? 22;
-    final bottomLeftRadius = bubbleStyle.bottomLeftRadius ?? 22;
-    final bottomRightRadius = bubbleStyle.bottomRightRadius ?? 22;
-
-    final defaultMargin = widget.spacingConfig.messageBubbleMargin(isUser);
-
-    final defaultMaxWidth = MediaQuery.of(context).size.width * 0.75;
-    // Use different widths for user vs AI messages
-    final maxWidth = isUser
-        ? bubbleStyle.userBubbleMaxWidth ??
-            (textSize.width < defaultMaxWidth
-                ? (115 +
-                        max(
-                          textSize.width,
-                          max(usernameTextSize.width, timeTextSize.width),
-                        ))
-                    .toDouble()
-                : defaultMaxWidth)
-        : bubbleStyle.aiBubbleMaxWidth ??
-            MediaQuery.of(context).size.width * 0.88;
-    // final maxWidth = isUser
-    //     ? bubbleStyle.userBubbleMaxWidth ??
-    //         MediaQuery.of(context).size.width * 0.75
-    //     : bubbleStyle.aiBubbleMaxWidth ??
-    //         MediaQuery.of(context).size.width * 0.88;
-
-    final minWidth = isUser
-        ? bubbleStyle.userBubbleMinWidth ?? 0.0
-        : bubbleStyle.aiBubbleMinWidth ?? 0.0;
-
-    // Use custom colors if provided, otherwise use premium defaults
-    final userBubbleColor =
-        bubbleStyle.userBubbleColor ?? defaultUserBubbleColor;
-    final aiBubbleColor = bubbleStyle.aiBubbleColor ?? defaultAiBubbleColor;
-
-    // Enhanced text colors with precise opacity for readability
-    final _ = isDark
-        ? Colors.white.withOpacityCompat(0.96)
-        : Colors.black.withOpacityCompat(0.86);
-
-    // Premium AI message container border
-    final aiBorder = !isUser
-        ? Border.all(
-            color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-            width: 1,
-          )
-        : null;
-
-    // Premium shadow for depth and elevation
-    final boxShadow = bubbleStyle.enableShadow
-        ? [
-            BoxShadow(
-              color: Colors.black.withOpacityCompat(isUser ? 0.04 : 0.06),
-              blurRadius: isUser ? 4 : 8,
-              offset: Offset(0, isUser ? 1 : 2),
-              spreadRadius: isUser ? 0 : 1,
-            ),
-          ]
-        : null;
-
-    // Create a custom decoration that prioritizes bubbleStyle colors
-    BoxDecoration createBubbleDecoration() {
-      if (effectiveDecoration != null) {
-        // Start with the effective decoration
-        final decorator = BoxDecoration(
-          color: isUser ? userBubbleColor : aiBubbleColor,
-          borderRadius: effectiveDecoration.borderRadius ??
-              BorderRadius.only(
-                topLeft: Radius.circular(topLeftRadius),
-                topRight: Radius.circular(topRightRadius),
-                bottomLeft: Radius.circular(bottomLeftRadius),
-                bottomRight: Radius.circular(bottomRightRadius),
-              ),
-          gradient: effectiveDecoration.gradient,
-          image: effectiveDecoration.image,
-          boxShadow: effectiveDecoration.boxShadow ?? boxShadow,
-          border: effectiveDecoration.border ?? aiBorder,
-          backgroundBlendMode: effectiveDecoration.backgroundBlendMode,
-          shape: effectiveDecoration.shape,
-        );
-
-        return decorator;
-      } else {
-        // Use bubble style settings for decoration
-        return BoxDecoration(
-          color: isUser ? userBubbleColor : aiBubbleColor,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(topLeftRadius),
-            topRight: Radius.circular(topRightRadius),
-            bottomLeft: Radius.circular(bottomLeftRadius),
-            bottomRight: Radius.circular(bottomRightRadius),
-          ),
-          boxShadow: boxShadow,
-          border: aiBorder,
-        );
-      }
-    }
-
-    // Enhanced bubble implementation with premium styling
     return Padding(
-      padding: widget.spacingConfig.messageBubbleOuterPadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Align(
-            alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: maxWidth,
-                minWidth: minWidth,
-              ),
-              child: Container(
-                margin: widget.messageOptions.containerMargin ?? defaultMargin,
-                decoration: createBubbleDecoration(),
-                child: Padding(
-                  padding: widget.messageOptions.padding ??
-                      widget.spacingConfig.messageBubbleInnerPadding,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Display user name if needed
-                      if (widget.messageOptions.showUserName ?? true)
-                        Padding(
-                          padding:
-                              widget.spacingConfig.messageUsernameBottomPadding,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Avatar or fallback icon next to name
-                              if (isUser &&
-                                  bubbleStyle.userAvatarWidgetBuilder != null)
-                                bubbleStyle.userAvatarWidgetBuilder!(
-                                  message.user,
-                                )
-                              else if (!isUser &&
-                                  bubbleStyle.aiAvatarWidgetBuilder != null)
-                                bubbleStyle.aiAvatarWidgetBuilder!(message.user)
-                              else if (!isUser)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: widget.messageOptions.aiNameIcon ??
-                                      Icon(
-                                        Icons.smart_toy_outlined,
-                                        size: 14,
-                                        color: bubbleStyle.aiNameColor ??
-                                            primaryColor,
-                                      ),
-                                ),
-                              Text(
-                                message.user.name,
-                                style: widget.messageOptions.userNameStyle ??
-                                    TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                      letterSpacing: 0.1,
-                                      color: isUser
-                                          ? (bubbleStyle.userNameColor ??
-                                              Colors.blue[700])
-                                          : (bubbleStyle.aiNameColor ??
-                                              primaryColor),
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
+      padding: margin,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final columnWidth =
+              min(constraints.maxWidth, ChatLayout.readingMaxWidth);
 
-                      // Handle markdown or plain text with premium styling
-                      _buildMessageContent(message, context),
+          if (isUser) {
+            return _buildUserBubble(
+              message,
+              tokens,
+              themeExt,
+              bubbleStyle,
+              columnWidth,
+              sameSenderAsNext,
+            );
+          }
 
-                      // Custom footer content (e.g., citations)
-                      // Waits for streaming to complete before appearing
-                      if (widget.messageOptions.footerBuilder != null)
-                        _AnimatedFooter(
-                          message: message,
-                          isUser: isUser,
-                          footerBuilder: widget.messageOptions.footerBuilder!,
-                          controller: widget.controller,
-                          streamingEnabled: widget.streamingEnabled,
-                        ),
-
-                      // Footer with timestamp and action buttons
-                      Padding(
-                        padding: EdgeInsets.only(
-                          top: widget.messageOptions.showTime
-                              ? widget.spacingConfig.messageFooterTopPadding.top
-                              : 0,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            // Show timestamp with refined styling
-                            if (widget.messageOptions.showTime)
-                              Text(
-                                widget.messageOptions.timeFormat != null
-                                    ? widget.messageOptions.timeFormat!(
-                                        message.createdAt,
-                                      )
-                                    : _defaultTimestampFormat(
-                                        message.createdAt,
-                                      ),
-                                style: (isUser
-                                        ? widget
-                                            .messageOptions.userTimeTextStyle
-                                        : widget
-                                            .messageOptions.aiTimeTextStyle) ??
-                                    widget.messageOptions.timeTextStyle ??
-                                    TextStyle(
-                                      fontSize: 11,
-                                      letterSpacing: 0.1,
-                                      color: isDark
-                                          ? Colors.grey[500]
-                                          : Colors.grey[600],
-                                    ),
-                              ),
-
-                            // Show premium copy button for AI messages
-                            if (!isUser &&
-                                (widget.messageOptions.showCopyButton ?? false))
-                              Material(
-                                color: Colors.transparent,
-                                borderRadius: BorderRadius.circular(16),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(16),
-                                  onTap: () {
-                                    Clipboard.setData(
-                                      ClipboardData(text: message.text),
-                                    );
-                                    // Show premium feedback if provided
-                                    if (widget.messageOptions.onCopy != null) {
-                                      widget.messageOptions.onCopy!(
-                                        message.text,
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            widget.messageOptions
-                                                    .copiedToClipboardText ??
-                                                'Message copied to clipboard',
-                                          ),
-                                          duration: const Duration(seconds: 2),
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                          backgroundColor: isDark
-                                              ? Colors.grey[800]
-                                              : Colors.grey[900],
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.copy_outlined,
-                                          size: 14,
-                                          color: bubbleStyle.copyIconColor ??
-                                              primaryColor,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          widget.messageOptions
-                                                  .copyButtonLabel ??
-                                              'Copy',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            letterSpacing: 0.1,
-                                            color: bubbleStyle.copyIconColor ??
-                                                primaryColor,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+          final layout = widget.messageOptions.resolveAiMessageLayout(themeExt);
+          if (layout == AiMessageLayout.bubble) {
+            return _buildAiBubbleLayout(
+              message,
+              tokens,
+              themeExt,
+              bubbleStyle,
+              effectiveDecoration,
+              columnWidth,
+              isDark,
+              isLastAiMessage,
+            );
+          }
+          return _buildAiDocumentLayout(
+            message,
+            tokens,
+            bubbleStyle,
+            columnWidth,
+            isLastAiMessage,
+          );
+        },
       ),
     );
   }
@@ -1108,9 +1095,8 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       if (renderedWidget != null) return renderedWidget;
     }
 
-    // Get the theme's brightness
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeExt = Theme.of(context).extension<CustomThemeExtension>();
+    final tokens = ChatTokens.of(context);
     final isCurrentUser = message.user.id == widget.currentUser.id;
 
     // Check if this message should show streaming animation
@@ -1147,10 +1133,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       color: isCurrentUser
           ? widget.messageOptions.userTextColor ??
               themeExt?.messageTextColor ??
-              (isDark ? Colors.white : Colors.black)
+              tokens.textPrimary
           : widget.messageOptions.aiTextColor ??
               themeExt?.messageTextColor ??
-              (isDark ? Colors.white : Colors.black),
+              tokens.textPrimary,
       fontSize: widget.messageOptions.textStyle?.fontSize,
       fontWeight: widget.messageOptions.textStyle?.fontWeight,
       fontFamily: widget.messageOptions.textStyle?.fontFamily,
@@ -1162,33 +1148,14 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // Handle markdown and non-markdown text
     if (message.isMarkdown) {
+      // Fenced-code palette: an explicit MessageOptions.codeBlockTheme wins,
+      // otherwise resolve from ambient brightness (DESIGN.md §3/§8.3).
+      final cbt = widget.messageOptions.codeBlockTheme ??
+          CodeBlockTheme.of(Theme.of(context).brightness);
+
       // First, allow a custom markdown builder override
       final effectiveStyleSheet = widget.messageOptions.markdownStyleSheet ??
-          MarkdownStyleSheet(
-            p: textStyle,
-            // Inline `code` — subtle tinted chip in the bundled mono font.
-            code: TextStyle(
-              fontFamily: CodeBlockTheme.monoFontFamily,
-              package: 'flutter_gen_ai_chat_ui',
-              fontFamilyFallback: CodeBlockTheme.monoFontFallback,
-              fontSize: (textStyle.fontSize ?? 14) * 0.92,
-              color: textStyle.color,
-              backgroundColor: (isDark ? Colors.white : Colors.black)
-                  .withOpacityCompat(isDark ? 0.10 : 0.06),
-            ),
-            // Fenced code blocks — a padded, rounded, bordered card that reads
-            // as a distinct block rather than flat inline text.
-            codeblockPadding: const EdgeInsets.all(14),
-            codeblockDecoration: BoxDecoration(
-              color: isDark ? const Color(0xFF15151F) : const Color(0xFFF4F4F8),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: (isDark ? Colors.white : Colors.black).withOpacityCompat(
-                  0.08,
-                ),
-              ),
-            ),
-          );
+          chatMarkdownStyle(context, textStyle, cbt);
 
       final customMarkdown = widget.messageOptions.markdownBuilder?.call(
         context,
@@ -1255,18 +1222,19 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                         return Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
+                            color: tokens.surfaceSunken,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.broken_image, color: Colors.grey[600]),
+                              Icon(Icons.broken_image,
+                                  color: tokens.textTertiary),
                               if (alt != null)
                                 Text(
                                   alt,
                                   style: TextStyle(
-                                    color: Colors.grey[600],
+                                    color: tokens.textTertiary,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -1446,12 +1414,12 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // RTL Unicode ranges: Arabic, Hebrew, Persian/Kurdish extensions
     final rtlRegex = RegExp(
-      r'[\u0600-\u06FF' // Arabic
-      r'\u0750-\u077F' // Arabic Supplement
-      r'\u08A0-\u08FF' // Arabic Extended-A
-      r'\uFB50-\uFDFF' // Arabic Presentation Forms-A
-      r'\uFE70-\uFEFF' // Arabic Presentation Forms-B
-      r'\u0590-\u05FF' // Hebrew
+      r'[؀-ۿ' // Arabic
+      r'ݐ-ݿ' // Arabic Supplement
+      r'ࢠ-ࣿ' // Arabic Extended-A
+      r'ﭐ-﷿' // Arabic Presentation Forms-A
+      r'ﹰ-﻿' // Arabic Presentation Forms-B
+      r'֐-׿' // Hebrew
       r']',
     );
 
