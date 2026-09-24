@@ -122,6 +122,8 @@ class _AttachmentsChatExampleState extends State<AttachmentsChatExample> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Attachments')),
       body: AiChatWidget(
@@ -141,9 +143,59 @@ class _AttachmentsChatExampleState extends State<AttachmentsChatExample> {
           enableImageTaps: true,
           enableAttachmentLightbox: true,
         ),
-        welcomeMessageConfig: const WelcomeMessageConfig(
-          title: 'Tap the paperclip below to attach a file',
+        inputOptions: InputOptions(
+          decoration: InputDecoration(
+            hintText: 'Type a message, or attach a file...',
+            hintStyle: TextStyle(
+              color: isDark ? Colors.white38 : Colors.black38,
+              fontSize: 15,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(24),
+              borderSide: BorderSide.none,
+            ),
+            filled: true,
+            fillColor:
+                isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF2F2F7),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+          sendButtonIcon: Icons.arrow_upward_rounded,
+          sendButtonColor: const Color(0xFF6366F1),
+          sendButtonIconSize: 20,
+          sendButtonPadding: const EdgeInsets.all(6),
+          textStyle: TextStyle(
+            fontSize: 15,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
         ),
+        welcomeMessageConfig: WelcomeMessageConfig(
+          centerVertically: true,
+          title: 'Tap the paperclip below to attach a file',
+          titleStyle: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+          containerDecoration: BoxDecoration(
+            color: isDark ? const Color(0xFF2A2A3A) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),
+            ),
+          ),
+          questionsSectionTitle: 'Try asking:',
+          questionsSectionTitleStyle: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.white54 : Colors.black45,
+          ),
+        ),
+        exampleQuestions: const [
+          ExampleQuestion(question: 'Tell me a fun fact about Flutter'),
+          ExampleQuestion(question: 'What is the weather like today?'),
+          ExampleQuestion(question: 'Summarize this report'),
+        ],
       ),
     );
   }

@@ -160,6 +160,42 @@ class ExampleAiService {
           '`StatefulWidget` when you need local mutable state.\n';
     }
 
+    if (lower.contains('write a dart function') ||
+        lower.contains('write a function')) {
+      return '# Dart Function\n\n'
+          'Here\'s a clean, idiomatic Dart function:\n\n'
+          '```dart\n'
+          '/// Returns the factorial of [n].\n'
+          'int factorial(int n) {\n'
+          '  if (n < 0) {\n'
+          '    throw ArgumentError.value(n, \'n\', \'Must be non-negative\');\n'
+          '  }\n'
+          '  return n <= 1 ? 1 : n * factorial(n - 1);\n'
+          '}\n'
+          '```\n\n'
+          '**Why it\'s idiomatic:**\n'
+          '- The `///` doc comment shows up in IDE tooltips\n'
+          '- Input is validated with `ArgumentError`\n'
+          '- Recursion keeps the body a single expression\n';
+    }
+
+    if (lower.contains('debug')) {
+      return '# Debugging Checklist\n\n'
+          'When Dart code misbehaves, work through this list:\n\n'
+          '1. **Read the stack trace** — the top frame in *your* code is '
+          'usually the culprit.\n'
+          '2. **Add a breakpoint or `debugPrint`** where the data last '
+          'looked correct.\n'
+          '3. **Check nullability** — a `null` sneaking into a non-nullable '
+          'path is the classic failure.\n'
+          '4. **Shrink the input** — reproduce with the smallest value that '
+          'still fails.\n\n'
+          '```dart\n'
+          'assert(items.isNotEmpty, \'items must not be empty\');\n'
+          'debugPrint(\'items: \${items.length}\');\n'
+          '```\n';
+    }
+
     if (lower.contains('hello') || lower.contains('hi') || query.length < 10) {
       return '# Hey there! 👋\n\n'
           'I\'m a code assistant demo. Try asking me about:\n\n'

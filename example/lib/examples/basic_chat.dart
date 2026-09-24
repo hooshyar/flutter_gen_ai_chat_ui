@@ -109,7 +109,7 @@ class _BasicChatExampleState extends State<BasicChatExample> {
         exampleQuestions: const [
           ExampleQuestion(question: 'What can you help me with?'),
           ExampleQuestion(question: 'Tell me about Flutter'),
-          ExampleQuestion(question: 'Show me a code example'),
+          ExampleQuestion(question: 'What is Dart?'),
         ],
       ),
     );

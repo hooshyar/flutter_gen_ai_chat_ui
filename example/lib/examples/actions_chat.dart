@@ -4,8 +4,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
-import '../services/mock_ai_service.dart';
-
 class ActionsChatExample extends StatefulWidget {
   const ActionsChatExample({super.key});
 
@@ -16,7 +14,6 @@ class ActionsChatExample extends StatefulWidget {
 class _ActionsChatExampleState extends State<ActionsChatExample> {
   final _controller = ChatMessagesController();
   final _actionController = ActionController();
-  final _aiService = ExampleAiService(style: ResponseStyle.plain);
   bool _isLoading = false;
 
   static const _currentUser = ChatUser(id: 'user', name: 'You');
@@ -71,22 +68,25 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
         await Future.delayed(const Duration(milliseconds: 800));
         final city = params['city'] as String;
         final units = params['units'] as String? ?? 'celsius';
-        final random = Random();
-        final tempC = 15 + random.nextInt(20);
+        // Deterministic per city — same question, same forecast.
+        final seed = city.toLowerCase().codeUnits.fold<int>(0, (a, b) => a + b);
+        final tempC = 8 + seed % 25; // 8–32°C
         final temp =
             units == 'fahrenheit' ? (tempC * 9 / 5 + 32).round() : tempC;
-        final conditions = [
-          'Sunny',
-          'Partly Cloudy',
-          'Overcast',
-          'Light Rain'
-        ][random.nextInt(4)];
+        // Tie conditions to temperature so 32°C never reports rain.
+        final conditions = tempC >= 26
+            ? 'Sunny'
+            : tempC >= 18
+                ? 'Partly Cloudy'
+                : tempC >= 10
+                    ? 'Overcast'
+                    : 'Light Rain';
         return ActionResult.createSuccess({
           'city': city,
           'temperature': temp,
           'units': units,
           'conditions': conditions,
-          'humidity': 40 + random.nextInt(40),
+          'humidity': 35 + seed % 45,
         });
       },
     ));
@@ -149,13 +149,16 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
     setState(() => _isLoading = true);
 
     try {
-      final text = message.text.trim().toLowerCase();
+      // Parse the ORIGINAL input (not a lowercased copy) so "/weather Paris"
+      // displays "Paris", not "paris". `lower` is only used for matching.
+      final raw = message.text.trim();
+      final lower = raw.toLowerCase();
       String response;
 
-      if (text.startsWith('/calculate ') || text.contains('calculate')) {
-        final expr = text
-            .replaceFirst('/calculate ', '')
-            .replaceFirst(RegExp(r'.*calculate\s*'), '');
+      if (lower.startsWith('/calculate') || lower.contains('calculate')) {
+        final expr = raw
+            .replaceFirst(RegExp(r'.*?calculate\s*', caseSensitive: false), '')
+            .trim();
         final result = await _actionController
             .executeAction('calculate', {'expression': expr});
         if (result.success) {
@@ -166,13 +169,14 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
           response =
               'Could not calculate that. Try something like "calculate 5 + 3".';
         }
-      } else if (text.startsWith('/weather ') || text.contains('weather')) {
-        final city = text
-            .replaceFirst('/weather ', '')
-            .replaceFirst(RegExp(r'.*weather\s*(in\s*)?'), '')
+      } else if (lower.startsWith('/weather') || lower.contains('weather')) {
+        var city = raw
+            .replaceFirst(
+                RegExp(r'.*?weather\s*(in\s+)?', caseSensitive: false), '')
             .trim();
+        if (city.isEmpty) city = 'London';
         final result = await _actionController.executeAction('get_weather', {
-          'city': city.isNotEmpty ? city : 'London',
+          'city': city,
         });
         if (result.success) {
           final d = result.data as Map<String, dynamic>;
@@ -183,22 +187,35 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
         } else {
           response = 'Could not get weather. Try "/weather London".';
         }
-      } else if (text.startsWith('/color ') || text.contains('color')) {
-        final mood = text
-            .replaceFirst('/color ', '')
-            .replaceFirst(RegExp(r'.*color\s*(for\s*)?'), '')
+      } else if (lower.startsWith('/color') || lower.contains('color')) {
+        var mood = raw
+            .replaceFirst(
+                RegExp(r'.*?colou?r\s*(for\s+)?', caseSensitive: false), '')
             .trim();
+        if (mood.isEmpty) mood = 'calm';
         final result = await _actionController.executeAction('generate_color', {
-          'mood': mood.isNotEmpty ? mood : 'calm',
+          'mood': mood,
         });
         if (result.success) {
           final d = result.data as Map<String, dynamic>;
-          response = '**Color for "${d['mood']}"**\n\n`${d['color']}`';
-        } else {
-          response = 'Could not generate color. Try "/color calm".';
+          // A swatch reads better than a bare hex string.
+          if (mounted) {
+            _controller.addMessage(ChatMessage.widget(
+              user: _aiUser,
+              builder: (context) => _ColorSwatch(
+                mood: d['mood'] as String,
+                hex: d['color'] as String,
+              ),
+            ));
+          }
+          return;
         }
+        response = 'Could not generate color. Try "/color calm".';
       } else {
-        response = await _aiService.generateResponse(message.text);
+        response = 'I can run a few demo actions. Try:\n\n'
+            '- `/calculate 42 * 7` — evaluate a math expression\n'
+            '- `/weather Paris` — weather for a city\n'
+            '- `/color energetic` — turn a mood into a color swatch';
       }
 
       if (!mounted) return;
@@ -306,6 +323,10 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
                   isDark ? const Color(0xFF6D28D9) : const Color(0xFF8B5CF6),
               aiBubbleColor:
                   isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF5F0FF),
+              // White on the coloured user bubble; a light tone keeps the
+              // AI name legible on dark AI bubbles.
+              userNameColor: Colors.white70,
+              aiNameColor: isDark ? Colors.white70 : const Color(0xFF8B5CF6),
               userBubbleTopLeftRadius: 18,
               userBubbleTopRightRadius: 18,
               aiBubbleTopLeftRadius: 18,
@@ -316,8 +337,76 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
             userTextColor: Colors.white,
             aiTextColor:
                 isDark ? Colors.white.withValues(alpha: 0.95) : Colors.black87,
+            userTimeTextStyle: const TextStyle(
+              fontSize: 11,
+              letterSpacing: 0.1,
+              color: Colors.white70,
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Inline widget message for `/color` — shows the generated colour as an
+/// actual swatch next to its hex value instead of text alone.
+class _ColorSwatch extends StatelessWidget {
+  const _ColorSwatch({required this.mood, required this.hex});
+
+  final String mood;
+  final String hex;
+
+  Color get _color {
+    final value = int.tryParse(hex.replaceFirst('#', ''), radix: 16) ?? 0;
+    return Color(0xFF000000 | value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.grey.shade200,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: _color,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.black12),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Color for "$mood"',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              Text(
+                hex,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontFamily: 'monospace',
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

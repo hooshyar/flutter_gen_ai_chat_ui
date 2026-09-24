@@ -46,6 +46,7 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
 
   void _onSendMessage(ChatMessage message) {
     _controller.addMessage(message);
+    _streamSub?.cancel();
     setState(() => _isLoading = true);
 
     final messageId = 'ai_${DateTime.now().millisecondsSinceEpoch}';
@@ -58,12 +59,19 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
       customProperties: {'id': messageId},
     );
 
-    _controller.addStreamingMessage(aiMessage);
-
+    // The AI bubble is only added once the first chunk arrives — until then
+    // the LoadingWidget alone signals that a reply is being generated.
+    var receivedFirstChunk = false;
     _streamSub = _aiService.streamResponse(message.text).listen(
       (accumulated) {
         if (!mounted) return;
-        _controller.updateMessage(aiMessage.copyWith(text: accumulated));
+        if (receivedFirstChunk) {
+          _controller.updateMessage(aiMessage.copyWith(text: accumulated));
+        } else {
+          receivedFirstChunk = true;
+          _controller
+              .addStreamingMessage(aiMessage.copyWith(text: accumulated));
+        }
       },
       onDone: () {
         if (!mounted) return;
@@ -195,11 +203,18 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
         controller: _controller,
         onSendMessage: _onSendMessage,
         enableMarkdownStreaming: true,
-        persistentExampleQuestions: true,
+        // The fixed-height persistent strip clips a chip row and covers the
+        // top of the message list — the input toolbar already offers prompts.
+        persistentExampleQuestions: false,
         loadingConfig: LoadingConfig(
           isLoading: _isLoading,
-          loadingIndicator: const LoadingWidget(
-            texts: ['Generating code...', 'Compiling thoughts...'],
+          loadingIndicator: LoadingWidget(
+            texts: const ['Generating code...', 'Compiling thoughts...'],
+            textStyle: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+            ),
+            shimmerBaseColor: isDark ? Colors.white38 : Colors.black45,
+            shimmerHighlightColor: isDark ? Colors.white : Colors.black87,
           ),
         ),
         // Surfaces a stop button in the input while generating; tapping it
@@ -275,6 +290,11 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
                 isDark ? const Color(0xFF4338CA) : const Color(0xFF6366F1),
             aiBubbleColor:
                 isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF5F5FF),
+            // White on the coloured user bubble; the default blue name is
+            // unreadable on indigo. Light indigo keeps the AI name legible
+            // on dark AI bubbles too.
+            userNameColor: Colors.white70,
+            aiNameColor: isDark ? Colors.white70 : const Color(0xFF6366F1),
             userBubbleTopLeftRadius: 18,
             userBubbleTopRightRadius: 18,
             aiBubbleTopLeftRadius: 18,
@@ -285,6 +305,11 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
           userTextColor: Colors.white,
           aiTextColor:
               isDark ? Colors.white.withValues(alpha: 0.95) : Colors.black87,
+          userTimeTextStyle: const TextStyle(
+            fontSize: 11,
+            letterSpacing: 0.1,
+            color: Colors.white70,
+          ),
         ),
       ),
     );

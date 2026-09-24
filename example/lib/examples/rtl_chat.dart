@@ -3,8 +3,10 @@
 // What this screen demonstrates:
 //
 //   1. Wrapping the chat in `Directionality(textDirection: TextDirection.rtl)`
-//      so the input row, send button, scroll, and bubble alignment all mirror
-//      to the right edge.
+//      so the input row, send button, and scroll mirror to the right edge.
+//      Bubble columns keep fixed sides (user right, AI left) — it is the
+//      per-message direction detection in point 2 that adapts each bubble's
+//      text.
 //   2. Per-message bidirectional rendering — the package auto-detects the
 //      text direction of every message from its content (Arabic chars →
 //      RTL bubble, English chars → LTR bubble) so a mixed conversation
@@ -33,15 +35,18 @@ class _RtlChatExampleState extends State<RtlChatExample> {
   final _controller = ChatMessagesController();
   bool _isLoading = false;
   StreamSubscription<String>? _streamSub;
+  String? _currentStreamingId;
 
   static const _currentUser = ChatUser(id: 'user', name: 'أنت');
   static const _aiUser = ChatUser(id: 'ai', name: 'المساعد');
 
   void _onSendMessage(ChatMessage message) {
     _controller.addMessage(message);
+    _streamSub?.cancel();
     setState(() => _isLoading = true);
 
     final messageId = 'ai_${DateTime.now().millisecondsSinceEpoch}';
+    _currentStreamingId = messageId;
     final aiMessage = ChatMessage(
       text: '',
       user: _aiUser,
@@ -50,12 +55,19 @@ class _RtlChatExampleState extends State<RtlChatExample> {
       customProperties: {'id': messageId},
     );
 
-    _controller.addStreamingMessage(aiMessage);
-
+    // The AI bubble is only added once the first chunk arrives — until then
+    // the LoadingWidget alone signals that a reply is being generated.
+    var receivedFirstChunk = false;
     _streamSub = _streamArabicResponse(message.text).listen(
       (accumulated) {
         if (!mounted) return;
-        _controller.updateMessage(aiMessage.copyWith(text: accumulated));
+        if (receivedFirstChunk) {
+          _controller.updateMessage(aiMessage.copyWith(text: accumulated));
+        } else {
+          receivedFirstChunk = true;
+          _controller
+              .addStreamingMessage(aiMessage.copyWith(text: accumulated));
+        }
       },
       onDone: () {
         if (!mounted) return;
@@ -68,6 +80,18 @@ class _RtlChatExampleState extends State<RtlChatExample> {
         setState(() => _isLoading = false);
       },
     );
+  }
+
+  // Cancels the in-flight response. Wired to AiChatWidget.onCancelGenerating,
+  // which surfaces a stop button in the input while _isLoading is true.
+  void _onCancelGenerating() {
+    _streamSub?.cancel();
+    _streamSub = null;
+    final id = _currentStreamingId;
+    if (id != null) {
+      _controller.stopStreamingMessage(id);
+    }
+    setState(() => _isLoading = false);
   }
 
   /// Mock streaming response. Picks a canned reply based on the query, then
@@ -142,12 +166,21 @@ class _RtlChatExampleState extends State<RtlChatExample> {
           onSendMessage: _onSendMessage,
           enableMarkdownStreaming: true,
           streamingWordByWord: true,
-          persistentExampleQuestions: true,
-          persistentExampleQuestionsTitle: 'أسئلة مقترحة',
+          // The fixed-height persistent strip clips the last chip row and
+          // covers the top of the message list.
+          persistentExampleQuestions: false,
+          // Surfaces a stop button in the input while generating; tapping it
+          // cancels the stream and finalizes the partial message.
+          onCancelGenerating: _onCancelGenerating,
           loadingConfig: LoadingConfig(
             isLoading: _isLoading,
-            loadingIndicator: const LoadingWidget(
-              texts: ['جارٍ التفكير...', 'لحظة من فضلك...'],
+            loadingIndicator: LoadingWidget(
+              texts: const ['جارٍ التفكير...', 'لحظة من فضلك...'],
+              textStyle: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+              shimmerBaseColor: isDark ? Colors.white38 : Colors.black45,
+              shimmerHighlightColor: isDark ? Colors.white : Colors.black87,
             ),
           ),
           welcomeMessageConfig: WelcomeMessageConfig(
@@ -176,7 +209,9 @@ class _RtlChatExampleState extends State<RtlChatExample> {
           exampleQuestions: const [
             ExampleQuestion(question: 'ما هي عاصمة العراق؟'),
             ExampleQuestion(question: 'اكتب لي قصيدة قصيرة'),
-            ExampleQuestion(question: 'What is Flutter?'),
+            // U+200E LRM keeps this Latin question's trailing "?" on the
+            // correct side inside an RTL chip.
+            ExampleQuestion(question: '‎What is Flutter?'),
           ],
           inputOptions: InputOptions(
             decoration: InputDecoration(
@@ -222,6 +257,10 @@ class _RtlChatExampleState extends State<RtlChatExample> {
                   isDark ? const Color(0xFF4338CA) : const Color(0xFF6366F1),
               aiBubbleColor:
                   isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF5F5FF),
+              // White on the coloured user bubble; light indigo keeps the
+              // AI name legible on dark AI bubbles.
+              userNameColor: Colors.white70,
+              aiNameColor: isDark ? Colors.white70 : const Color(0xFF6366F1),
               userBubbleTopLeftRadius: 18,
               userBubbleTopRightRadius: 18,
               aiBubbleTopLeftRadius: 18,
@@ -232,6 +271,11 @@ class _RtlChatExampleState extends State<RtlChatExample> {
             userTextColor: Colors.white,
             aiTextColor:
                 isDark ? Colors.white.withValues(alpha: 0.95) : Colors.black87,
+            userTimeTextStyle: const TextStyle(
+              fontSize: 11,
+              letterSpacing: 0.1,
+              color: Colors.white70,
+            ),
           ),
         ),
       ),

@@ -20,6 +20,7 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
   final _aiService = ExampleAiService(style: ResponseStyle.conversational);
   bool _isLoading = false;
   StreamSubscription<String>? _streamSub;
+  String? _currentStreamingId;
   ChatTheme _selectedTheme = ChatTheme.defaultTheme;
 
   static const _currentUser = ChatUser(id: 'user', name: 'You');
@@ -27,9 +28,11 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
 
   void _onSendMessage(ChatMessage message) {
     _controller.addMessage(message);
+    _streamSub?.cancel();
     setState(() => _isLoading = true);
 
     final messageId = 'ai_${DateTime.now().millisecondsSinceEpoch}';
+    _currentStreamingId = messageId;
     final aiMessage = ChatMessage(
       text: '',
       user: _aiUser,
@@ -38,12 +41,19 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
       customProperties: {'id': messageId},
     );
 
-    _controller.addStreamingMessage(aiMessage);
-
+    // The AI bubble is only added once the first chunk arrives — until then
+    // the LoadingWidget alone signals that a reply is being generated.
+    var receivedFirstChunk = false;
     _streamSub = _aiService.streamResponse(message.text).listen(
       (accumulated) {
         if (!mounted) return;
-        _controller.updateMessage(aiMessage.copyWith(text: accumulated));
+        if (receivedFirstChunk) {
+          _controller.updateMessage(aiMessage.copyWith(text: accumulated));
+        } else {
+          receivedFirstChunk = true;
+          _controller
+              .addStreamingMessage(aiMessage.copyWith(text: accumulated));
+        }
       },
       onDone: () {
         if (!mounted) return;
@@ -56,6 +66,18 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
         setState(() => _isLoading = false);
       },
     );
+  }
+
+  // Cancels the in-flight response. Wired to AiChatWidget.onCancelGenerating,
+  // which surfaces a stop button in the input while _isLoading is true.
+  void _onCancelGenerating() {
+    _streamSub?.cancel();
+    _streamSub = null;
+    final id = _currentStreamingId;
+    if (id != null) {
+      _controller.stopStreamingMessage(id);
+    }
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -78,6 +100,8 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
               isDark ? const Color(0xFF005F8A) : const Color(0xFF0077B6),
           aiBubbleColor:
               isDark ? const Color(0xFF1A2F3A) : const Color(0xFFCAF0F8),
+          userNameColor: Colors.white70,
+          aiNameColor: isDark ? Colors.white70 : const Color(0xFF023E8A),
           userBubbleTopLeftRadius: 20,
           userBubbleTopRightRadius: 20,
           aiBubbleTopLeftRadius: 20,
@@ -92,6 +116,8 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
               isDark ? const Color(0xFFC44D03) : const Color(0xFFE85D04),
           aiBubbleColor:
               isDark ? const Color(0xFF3A2A1A) : const Color(0xFFFFF3E0),
+          userNameColor: Colors.white70,
+          aiNameColor: isDark ? Colors.white70 : const Color(0xFF6B3410),
           userBubbleTopLeftRadius: 4,
           userBubbleTopRightRadius: 16,
           aiBubbleTopLeftRadius: 16,
@@ -100,11 +126,25 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
           bottomRightRadius: 16,
         );
       case ChatTheme.defaultTheme:
-        return const BubbleStyle();
+        return BubbleStyle(
+          userBubbleColor:
+              isDark ? const Color(0xFF4338CA) : const Color(0xFF6366F1),
+          aiBubbleColor:
+              isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF5F5FF),
+          userNameColor: Colors.white70,
+          aiNameColor: isDark ? Colors.white70 : const Color(0xFF6366F1),
+          userBubbleTopLeftRadius: 18,
+          userBubbleTopRightRadius: 18,
+          aiBubbleTopLeftRadius: 18,
+          aiBubbleTopRightRadius: 18,
+          bottomLeftRadius: 18,
+          bottomRightRadius: 4,
+        );
     }
   }
 
   Color get _userTextColor {
+    // Every theme uses a saturated user bubble, so white stays readable.
     return Colors.white;
   }
 
@@ -144,7 +184,7 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
           hintText: 'Warm up a conversation...',
           hintStyle: TextStyle(color: hintColor, fontSize: hintSize),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(8),
             borderSide: BorderSide.none,
           ),
           filled: true,
@@ -157,7 +197,7 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
           hintText: 'Type a message...',
           hintStyle: TextStyle(color: hintColor, fontSize: hintSize),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
           filled: true,
@@ -211,10 +251,18 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
         controller: _controller,
         onSendMessage: _onSendMessage,
         enableMarkdownStreaming: true,
+        // Surfaces a stop button in the input while generating; tapping it
+        // cancels the stream and finalizes the partial message.
+        onCancelGenerating: _onCancelGenerating,
         loadingConfig: LoadingConfig(
           isLoading: _isLoading,
-          loadingIndicator: const LoadingWidget(
-            texts: ['Aria is typing...', 'Styling response...'],
+          loadingIndicator: LoadingWidget(
+            texts: const ['Aria is typing...', 'Styling response...'],
+            textStyle: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+            ),
+            shimmerBaseColor: isDark ? Colors.white38 : Colors.black45,
+            shimmerHighlightColor: isDark ? Colors.white : Colors.black87,
           ),
         ),
         messageOptions: MessageOptions(
@@ -222,6 +270,13 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
           bubbleStyle: _bubbleStyle,
           userTextColor: _userTextColor,
           aiTextColor: _aiTextColor,
+          // White on the coloured user bubble — the default grey is
+          // unreadable on indigo/blue/orange.
+          userTimeTextStyle: const TextStyle(
+            fontSize: 11,
+            letterSpacing: 0.1,
+            color: Colors.white70,
+          ),
         ),
         inputOptions: InputOptions(
           decoration: _inputDecoration,

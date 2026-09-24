@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen>
                         'pub.dev/packages/flutter_gen_ai_chat_ui',
                         style: TextStyle(
                           fontSize: 11,
-                          color: isDark ? Colors.white24 : Colors.black26,
+                          color: isDark ? Colors.white54 : Colors.black45,
                         ),
                       ),
                     ),

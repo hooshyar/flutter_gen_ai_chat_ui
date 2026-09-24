@@ -14,7 +14,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
   bool _isLoading = false;
 
   static const _currentUser = ChatUser(id: 'user', name: 'You');
-  static const _aiUser = ChatUser(id: 'ai', name: 'Parezar AI');
+  static const _aiUser = ChatUser(id: 'ai', name: 'Assistant');
 
   void _onSendMessage(ChatMessage message) async {
     _controller.addMessage(message);
@@ -67,7 +67,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
         data: {
           'orderId': 'ORD-2026-4892',
           'status': 'In Transit',
-          'eta': 'April 13, 2026',
+          'eta': _formatEta(DateTime.now().add(const Duration(days: 3))),
           'items': 3,
         },
       ));
@@ -81,6 +81,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
       ));
       // After 2 seconds, replace with the actual widget
       Future<void>.delayed(const Duration(seconds: 2), () {
+        if (!mounted) return;
         _controller.updateMessage(ChatMessage.rich(
           user: _aiUser,
           id: loadId,
@@ -111,6 +112,24 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
 
     setState(() => _isLoading = false);
   }
+
+  static const _monthNames = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
+  static String _formatEta(DateTime d) =>
+      '${_monthNames[d.month - 1]} ${d.day}, ${d.year}';
 
   @override
   void dispose() {
@@ -166,18 +185,31 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
           centerVertically: true,
           title: 'Rich Widget Messages',
           titleStyle: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
             color: isDark ? Colors.white : Colors.black87,
+          ),
+          containerDecoration: BoxDecoration(
+            color: isDark ? const Color(0xFF2A2A3A) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),
+            ),
           ),
           questionsSectionTitle:
               'AI responses can include interactive widgets. Try these:',
+          questionsSectionTitleStyle: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.white54 : Colors.black45,
+          ),
         ),
         exampleQuestions: const [
           ExampleQuestion(question: "What's the weather?"),
           ExampleQuestion(question: 'Show me a product'),
           ExampleQuestion(question: 'Show stats chart'),
           ExampleQuestion(question: 'Check order status'),
+          ExampleQuestion(question: 'Show loading morph'),
         ],
         inputOptions: InputOptions(
           decoration: InputDecoration(
@@ -356,10 +388,8 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(
-                      '${data['name'] ?? 'Item'} added to cart'
-                      ' 🛒',
-                    ),
+                    content: Text('${data['name'] ?? 'Item'} added to cart'),
+                    behavior: SnackBarBehavior.floating,
                     duration: const Duration(seconds: 2),
                   ),
                 );
@@ -394,7 +424,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacityCompat(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.local_shipping,
@@ -426,7 +456,7 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacityCompat(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -515,7 +545,7 @@ class _StatsWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Monthly Activity',
+            'Weekly activity',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
@@ -575,7 +605,7 @@ class _Bar extends StatelessWidget {
           width: 28,
           height: height,
           decoration: BoxDecoration(
-            color: highlight ? color : color.withOpacityCompat(0.5),
+            color: highlight ? color : color.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(6),
           ),
         ),

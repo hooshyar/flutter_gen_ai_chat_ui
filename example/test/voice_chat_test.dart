@@ -39,7 +39,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 950));
 
     // The first simulated phrase is "What is the weather like today?".
-    await tester.tap(find.byIcon(Icons.send));
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
     await tester.pump();
     // Let the mock AI service's simulated response delay (250-600ms) finish
     // and the resulting rebuild land. A single pump right at ~700ms is
