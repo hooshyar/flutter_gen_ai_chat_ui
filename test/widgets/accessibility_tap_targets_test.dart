@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
+import 'package:flutter_gen_ai_chat_ui/src/widgets/input/send_stop_button.dart';
 
 /// Tap-target sizing audit (issue #41 Phase 1).
 ///
@@ -12,6 +13,10 @@ import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 ///   the text field's height) was capping it at ~38px tall. Fixed by
 ///   flooring that approximated height at 48 in `chat_input.dart` — the
 ///   icon itself is unchanged, only its container gets enough room.
+///   (The default control is now `SendStopButton`, a 44x44 hit area per
+///   `DESIGN.md` §8.5/§8.13 — Apple's HIG floor rather than Material's
+///   48dp. The fixed-height `Container` floor above still applies to the
+///   legacy `IconButton` path, used only when a builder override is set.)
 /// - The scroll-to-bottom button (icon-only by default, `showText: false`)
 ///   sized its tap area directly from `Padding` + icon size, landing at
 ///   ~36-44px. Fixed by bumping that padding to 48 total in
@@ -31,8 +36,11 @@ void main() {
   const aiUser = ChatUser(id: 'ai', name: 'AI Assistant');
 
   const minTapTarget = Size(48, 48);
+  // The default send/stop control's own accessibility floor (`DESIGN.md`
+  // §8.13): 44x44, Apple's HIG minimum rather than Material's 48dp.
+  const minDefaultSendTapTarget = Size(44, 44);
 
-  testWidgets('default send button meets the 48x48 minimum tap target',
+  testWidgets('default send button meets its 44x44 minimum tap target',
       (tester) async {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
@@ -51,11 +59,11 @@ void main() {
     );
     await tester.pump();
 
-    final sendButton = find.widgetWithIcon(IconButton, Icons.send);
+    final sendButton = find.byType(SendStopButton);
     expect(sendButton, findsOneWidget);
     final size = tester.getSize(sendButton);
-    expect(size.width, greaterThanOrEqualTo(minTapTarget.width));
-    expect(size.height, greaterThanOrEqualTo(minTapTarget.height));
+    expect(size.width, greaterThanOrEqualTo(minDefaultSendTapTarget.width));
+    expect(size.height, greaterThanOrEqualTo(minDefaultSendTapTarget.height));
   });
 
   testWidgets(

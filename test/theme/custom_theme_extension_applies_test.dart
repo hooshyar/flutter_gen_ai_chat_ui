@@ -148,8 +148,10 @@ void main() {
     expect(text.style?.color, explicitUserText);
   });
 
-  testWidgets('sendButtonColor applies to the default send button icon',
-      (tester) async {
+  testWidgets(
+      'sendButtonColor applies to the default send button disc '
+      '(DESIGN.md §8.5: the default send control is a filled disc, not a '
+      'bare colored icon)', (tester) async {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 
@@ -163,13 +165,27 @@ void main() {
     ));
     await tester.pump();
 
-    final icon = tester.widget<Icon>(find.byIcon(Icons.send));
-    expect(icon.color, ext.sendButtonColor);
+    // The disc's fill override only applies in the enabled (non-empty,
+    // non-generating) state; the empty state always uses a token-derived
+    // alpha fill regardless of sendButtonColor.
+    await tester.enterText(find.byType(TextField), 'hi');
+    await tester.pump();
+
+    final disc = tester.widgetList<AnimatedContainer>(
+      find.descendant(
+        of: find.byTooltip('Send message'),
+        matching: find.byType(AnimatedContainer),
+      ),
+    );
+    final decoration = disc.first.decoration as BoxDecoration;
+    expect(decoration.color, ext.sendButtonColor);
   });
 
   testWidgets(
-      'inputBackgroundColor/inputTextColor apply to the text field '
-      'when no explicit decoration/style is set', (tester) async {
+      'inputBackgroundColor/inputTextColor apply to the composer '
+      'when no explicit decoration/style is set '
+      '(DESIGN.md §8.4: the fill now lives on the composer\'s own '
+      'container, not the TextField\'s decoration)', (tester) async {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 
@@ -183,9 +199,16 @@ void main() {
     ));
     await tester.pump();
 
+    final composer = tester.widget<AnimatedContainer>(find
+        .ancestor(
+          of: find.byType(TextField),
+          matching: find.byType(AnimatedContainer),
+        )
+        .first);
+    final decoration = composer.decoration as BoxDecoration;
+    expect(decoration.color, ext.inputBackgroundColor);
+
     final field = tester.widget<TextField>(find.byType(TextField));
-    expect(field.decoration?.fillColor, ext.inputBackgroundColor);
-    expect(field.decoration?.filled, isTrue);
     expect(field.style?.color, ext.inputTextColor);
     expect(field.decoration?.hintStyle?.color, ext.hintTextColor);
   });

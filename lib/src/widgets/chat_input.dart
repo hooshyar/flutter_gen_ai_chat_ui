@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 
 import '../models/file_upload_options.dart';
 import '../models/input_options.dart';
+import '../theme/chat_tokens.dart';
 import '../theme/custom_theme_extension.dart';
+import 'input/send_stop_button.dart';
 
 /// A custom chat input widget that supports extensive customization options.
 class ChatInput extends StatefulWidget {
@@ -51,11 +53,23 @@ class ChatInput extends StatefulWidget {
 class _ChatInputState extends State<ChatInput> {
   bool _isEmpty = true;
 
+  // Owned locally so the default composer chrome (`DESIGN.md` §8.4) can
+  // listen for focus changes and redraw its border/ring. When the consumer
+  // supplies its own `focusNode`, this simply wraps it (no new node created);
+  // when they don't, TextField would otherwise create an internal node we
+  // can't observe, so we create and own one instead — same effective
+  // behavior, just observable.
+  late FocusNode _focusNode;
+  bool _focused = false;
+
   @override
   void initState() {
     super.initState();
     _isEmpty = widget.controller.text.trim().isEmpty;
     widget.controller.addListener(_onTextChanged);
+    _focusNode = widget.focusNode ?? FocusNode();
+    _focused = _focusNode.hasFocus;
+    _focusNode.addListener(_onFocusChanged);
   }
 
   @override
@@ -66,11 +80,24 @@ class _ChatInputState extends State<ChatInput> {
       widget.controller.addListener(_onTextChanged);
       _isEmpty = widget.controller.text.trim().isEmpty;
     }
+    if (oldWidget.focusNode != widget.focusNode) {
+      _focusNode.removeListener(_onFocusChanged);
+      if (oldWidget.focusNode == null) {
+        _focusNode.dispose();
+      }
+      _focusNode = widget.focusNode ?? FocusNode();
+      _focused = _focusNode.hasFocus;
+      _focusNode.addListener(_onFocusChanged);
+    }
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_onTextChanged);
+    _focusNode.removeListener(_onFocusChanged);
+    if (widget.focusNode == null) {
+      _focusNode.dispose();
+    }
     super.dispose();
   }
 
@@ -78,6 +105,12 @@ class _ChatInputState extends State<ChatInput> {
     final empty = widget.controller.text.trim().isEmpty;
     if (empty != _isEmpty) {
       setState(() => _isEmpty = empty);
+    }
+  }
+
+  void _onFocusChanged() {
+    if (_focused != _focusNode.hasFocus) {
+      setState(() => _focused = _focusNode.hasFocus);
     }
   }
 
@@ -91,6 +124,14 @@ class _ChatInputState extends State<ChatInput> {
     // Ignore key-up and key-repeat. Acting on repeat would fire `onSend`
     // continuously while the user holds Enter.
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    // Esc cancels an in-flight generation (`DESIGN.md` §8.4 "Keyboard").
+    if (event.logicalKey == LogicalKeyboardKey.escape &&
+        widget.isGenerating &&
+        widget.onCancelGenerating != null) {
+      widget.onCancelGenerating!();
+      return KeyEventResult.handled;
+    }
 
     final isEnter = event.logicalKey == LogicalKeyboardKey.enter ||
         event.logicalKey == LogicalKeyboardKey.numpadEnter;
@@ -130,7 +171,6 @@ class _ChatInputState extends State<ChatInput> {
     final options = widget.options;
     final onSend = widget.onSend;
     final controller = widget.controller;
-    final focusNode = widget.focusNode;
     final fileUploadOptions = widget.fileUploadOptions;
     // Always use the app's text direction from context for consistency
     final appDirection = Directionality.of(context);
@@ -142,24 +182,27 @@ class _ChatInputState extends State<ChatInput> {
     // `options.decoration`/`options.textStyle` were before — no behavior
     // change for existing consumers.
     final themeExt = Theme.of(context).extension<CustomThemeExtension>();
+    final tokens = ChatTokens.of(context);
+
+    // Default composer decoration (`DESIGN.md` §8.4). Only reached when the
+    // consumer hasn't supplied their own `containerDecoration` (see the
+    // early-return below) — that case keeps rendering exactly as before,
+    // untouched by any of this.
+    final composerFill = themeExt?.inputBackgroundColor ?? tokens.surfaceSunken;
+    final composerBorderColor = _focused
+        ? tokens.borderStrong
+        : (themeExt?.inputBorderColor ?? tokens.border);
+
     final effectiveDecoration = options.decoration ??
-        (themeExt == null
-            ? null
-            : InputDecoration(
-                filled: true,
-                fillColor: themeExt.inputBackgroundColor,
-                hintStyle: themeExt.hintTextColor != null
-                    ? TextStyle(color: themeExt.hintTextColor)
-                    : null,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: themeExt.inputBorderColor != null
-                      ? BorderSide(color: themeExt.inputBorderColor!)
-                      : BorderSide.none,
-                ),
-              ));
+        InputDecoration(
+          hintText: 'Message...',
+          hintStyle: TextStyle(
+            color: themeExt?.hintTextColor ?? tokens.textSecondary,
+          ),
+          border: InputBorder.none,
+          isDense: true,
+          contentPadding: const EdgeInsetsDirectional.fromSTEB(16, 12, 8, 12),
+        );
     final effectiveTextStyle = options.textStyle ??
         (themeExt?.inputTextColor != null
             ? TextStyle(color: themeExt!.inputTextColor)
@@ -168,7 +211,7 @@ class _ChatInputState extends State<ChatInput> {
     // Basic content of the input area - the TextField and send button
     Widget textField = TextField(
       controller: controller,
-      focusNode: focusNode,
+      focusNode: _focusNode,
       autofocus: options.autofocus,
       autocorrect: options.autocorrect,
       style: effectiveTextStyle,
@@ -239,66 +282,105 @@ class _ChatInputState extends State<ChatInput> {
       child: textField,
     );
 
-    // Create input content with text field and send button
-    final inputRow = Row(
-      // Change to center alignment for better vertical alignment
-      crossAxisAlignment: CrossAxisAlignment.center,
-      // Use app direction consistently
-      textDirection: appDirection,
-      children: [
-        // Add file upload button if enabled
-        if (fileUploadOptions?.enabled == true) _buildFileUploadButton(context),
+    // The send/stop control. `SendStopButton` (`DESIGN.md` §8.5) is used only
+    // when none of sendButtonBuilder / sendOrMicBuilder / cancelButtonBuilder
+    // are supplied — any of those keeps the legacy builder-driven behavior
+    // exactly as before, including its own 48px tap-target floor.
+    final usesCustomSendControls = options.sendButtonBuilder != null ||
+        options.sendOrMicBuilder != null ||
+        options.cancelButtonBuilder != null;
 
-        // Leading builder (mic, attach, etc.) inside the input row
-        if (options.inputLeadingBuilder != null)
-          options.inputLeadingBuilder!(context),
+    final sendControlContainer = usesCustomSendControls
+        ? Container(
+            // Match the height to align with text field. Floored at 48 (the
+            // Material/WCAG minimum tap target) when falling back to the
+            // approximated height — a fixed Container height here overrides
+            // the send IconButton's own 48x48 minimum constraint, so without
+            // this floor a compact contentPadding could shrink the button's
+            // real tap target below the accessibility minimum even though it
+            // still LOOKS the same size (the icon itself doesn't change).
+            // An explicit `inputHeight` is a deliberate consumer choice and
+            // is left as-is.
+            height: options.inputHeight ??
+                ((options.decoration?.contentPadding?.vertical ?? 14) + 24)
+                    .clamp(48.0, double.infinity),
+            alignment: Alignment.center,
+            child: (widget.isGenerating && widget.onCancelGenerating != null)
+                ? options.effectiveStopButtonBuilder(widget.onCancelGenerating!)
+                : options.effectiveSendWidget(
+                    onSend,
+                    isEmpty: _isEmpty,
+                    themeSendButtonColor: themeExt?.sendButtonColor,
+                  ),
+          )
+        : SendStopButton(
+            isEmpty: _isEmpty,
+            onSend: onSend,
+            isGenerating: widget.isGenerating,
+            onCancel: widget.onCancelGenerating,
+            icon: options.sendButtonIcon,
+            enabledFillColor:
+                options.sendButtonColor ?? themeExt?.sendButtonColor,
+            tooltip: options.sendButtonTooltip,
+          );
 
-        Flexible(
-          child: textField,
-        ),
-        // Adjust send button to match text field height
-        Container(
-          // Match the height to align with text field. Floored at 48 (the
-          // Material/WCAG minimum tap target) when falling back to the
-          // approximated height — a fixed Container height here overrides
-          // the send IconButton's own 48x48 minimum constraint, so without
-          // this floor a compact contentPadding could shrink the button's
-          // real tap target below the accessibility minimum even though it
-          // still LOOKS the same size (the icon itself doesn't change).
-          // An explicit `inputHeight` is a deliberate consumer choice and is
-          // left as-is.
-          height: options.inputHeight ??
-              ((options.decoration?.contentPadding?.vertical ?? 14) + 24)
-                  .clamp(48.0, double.infinity),
-          // Center the button vertically
-          alignment: Alignment.center,
-          child: (widget.isGenerating && widget.onCancelGenerating != null)
-              ? options.effectiveStopButtonBuilder(widget.onCancelGenerating!)
-              : options.effectiveSendWidget(
-                  onSend,
-                  isEmpty: _isEmpty,
-                  themeSendButtonColor: themeExt?.sendButtonColor,
-                ),
-        ),
-      ],
-    );
-
-    // Combine: attachment preview (above) + text row + toolbar (below)
-    Widget inputContent;
+    // Leading content (attach / toolbar builder / mic) moves send + itself
+    // into a dedicated bottom row below the text field (`DESIGN.md` §8.4).
+    // With no leading content, the field and send control share one row.
+    final hasLeading = (fileUploadOptions?.enabled == true) ||
+        (options.inputLeadingBuilder != null);
     final hasToolbar = options.inputToolbarBuilder != null;
     final hasPreview = options.attachmentPreviewBuilder != null;
+    final hasBottomRow = hasLeading || hasToolbar;
 
-    if (hasToolbar || hasPreview) {
+    Widget inputContent;
+    if (hasBottomRow) {
+      final fieldRow = Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        textDirection: appDirection,
+        children: [Flexible(child: textField)],
+      );
+      final bottomRow = Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        textDirection: appDirection,
+        children: [
+          if (fileUploadOptions?.enabled == true)
+            _buildFileUploadButton(context),
+          if (options.inputLeadingBuilder != null)
+            options.inputLeadingBuilder!(context),
+          if (hasToolbar)
+            Expanded(child: options.inputToolbarBuilder!(context))
+          else
+            const Spacer(),
+          sendControlContainer,
+        ],
+      );
       inputContent = Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (hasPreview) options.attachmentPreviewBuilder!(context),
-          inputRow,
-          if (hasToolbar) options.inputToolbarBuilder!(context),
+          fieldRow,
+          bottomRow,
         ],
       );
     } else {
-      inputContent = inputRow;
+      final inputRow = Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        textDirection: appDirection,
+        children: [
+          Flexible(child: textField),
+          sendControlContainer,
+        ],
+      );
+      inputContent = hasPreview
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                options.attachmentPreviewBuilder!(context),
+                inputRow,
+              ],
+            )
+          : inputRow;
     }
 
     // Calculate appropriate background color based on settings
@@ -365,10 +447,29 @@ class _ChatInputState extends State<ChatInput> {
       );
     }
 
-    // Default rendering without container customization
-    Widget result = Container(
+    // Default rendering without container customization: the composer's own
+    // rounded, bordered chrome (`DESIGN.md` §8.4), animated between resting
+    // and focused states.
+    Widget result = AnimatedContainer(
+      duration: ChatMotion.of(context, ChatMotion.fast),
+      curve: ChatMotion.enter,
       // Use app direction consistently for margin resolution
-      padding: options.margin?.resolve(appDirection) ?? EdgeInsets.zero,
+      padding: options.margin?.resolve(appDirection) ??
+          const EdgeInsetsDirectional.fromSTEB(16, 12, 8, 8)
+              .resolve(appDirection),
+      decoration: BoxDecoration(
+        color: composerFill,
+        border: Border.all(color: composerBorderColor),
+        borderRadius: BorderRadius.circular(ChatRadius.composer),
+        boxShadow: _focused
+            ? [
+                BoxShadow(
+                  color: tokens.accent.withValues(alpha: 0.18),
+                  spreadRadius: 3,
+                ),
+              ]
+            : null,
+      ),
       child: inputContent,
     );
 
@@ -388,7 +489,7 @@ class _ChatInputState extends State<ChatInput> {
         behavior: HitTestBehavior.translucent,
         onTap: () {
           if (!options.unfocusOnTapOutside) {
-            focusNode?.requestFocus();
+            _focusNode.requestFocus();
           }
         },
         child: result,
@@ -400,7 +501,7 @@ class _ChatInputState extends State<ChatInput> {
       behavior: HitTestBehavior.translucent,
       onTap: () {
         if (!options.unfocusOnTapOutside) {
-          focusNode?.requestFocus();
+          _focusNode.requestFocus();
         }
       },
       child: Material(
