@@ -13,6 +13,8 @@ dependencies:
   flutter_gen_ai_chat_ui:
     path: ../
   cupertino_icons: ^1.0.6
+  google_fonts: ^8.2.1
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

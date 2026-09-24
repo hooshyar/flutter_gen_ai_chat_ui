@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'home_screen.dart';
+import 'shell/app_theme.dart';
 import 'examples/basic_chat.dart';
 import 'examples/streaming_chat.dart';
 import 'examples/themed_chat.dart';
@@ -36,12 +37,17 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _ExampleAppState extends State<ExampleApp> {
-  ThemeMode _themeMode = ThemeMode.light;
+  // Follows the system theme until the in-app toggle is used; from then on
+  // the manual choice overrides it for the rest of the session.
+  ThemeMode _themeMode = ThemeMode.system;
 
   void _toggleTheme() {
     setState(() {
-      _themeMode =
-          _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+      final isCurrentlyDark = _themeMode == ThemeMode.dark ||
+          (_themeMode == ThemeMode.system &&
+              WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+                  Brightness.dark);
+      _themeMode = isCurrentlyDark ? ThemeMode.light : ThemeMode.dark;
     });
   }
 
@@ -51,16 +57,10 @@ class _ExampleAppState extends State<ExampleApp> {
       title: 'Flutter Gen AI Chat UI',
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF6366F1),
-        useMaterial3: true,
-        brightness: Brightness.light,
+      theme: AppTheme.light().copyWith(
         pageTransitionsTheme: _fastPageTransitions,
       ),
-      darkTheme: ThemeData(
-        colorSchemeSeed: const Color(0xFF6366F1),
-        useMaterial3: true,
-        brightness: Brightness.dark,
+      darkTheme: AppTheme.dark().copyWith(
         pageTransitionsTheme: _fastPageTransitions,
       ),
       home: HomeScreen(onToggleTheme: _toggleTheme),
