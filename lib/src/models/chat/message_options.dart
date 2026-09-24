@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
+import '../../theme/code_block_theme.dart';
 import '../ai_chat_config.dart';
 import 'chat_message.dart';
 import 'chat_user.dart';
@@ -212,27 +213,33 @@ class MessageOptions {
   /// No effect: the footer's top padding is actually controlled by
   /// `ChatSpacingConfig.messageFooterTopPadding`. Will be removed in v3.0.0.
   @Deprecated(
-      'Has no effect — use ChatSpacingConfig.messageFooterTopPadding instead. '
-      'Will be removed in v3.0.0.')
+    'Has no effect — use ChatSpacingConfig.messageFooterTopPadding instead. '
+    'Will be removed in v3.0.0.',
+  )
   final double? timestampSpacing;
 
   /// No effect: no reaction UI is implemented anywhere in the widget tree.
   /// Will be removed in v3.0.0.
-  @Deprecated('Has no effect — no reaction UI exists to apply it to. '
-      'Will be removed in v3.0.0.')
+  @Deprecated(
+    'Has no effect — no reaction UI exists to apply it to. '
+    'Will be removed in v3.0.0.',
+  )
   final int maxReactions;
 
   /// No effect: no reaction UI is implemented anywhere in the widget tree.
   /// Will be removed in v3.0.0.
-  @Deprecated('Has no effect — no reaction UI exists to apply it to. '
-      'Will be removed in v3.0.0.')
+  @Deprecated(
+    'Has no effect — no reaction UI exists to apply it to. '
+    'Will be removed in v3.0.0.',
+  )
   final double reactionSize;
 
   /// No effect: quick replies are actually driven by the separate
   /// `QuickReplyOptions` passed to `AiChatWidget`. Will be removed in v3.0.0.
   @Deprecated(
-      'Has no effect — quick replies are controlled by QuickReplyOptions '
-      'on AiChatWidget instead. Will be removed in v3.0.0.')
+    'Has no effect — quick replies are controlled by QuickReplyOptions '
+    'on AiChatWidget instead. Will be removed in v3.0.0.',
+  )
   final bool enableQuickReply;
 
   /// Style options for message bubbles
@@ -302,6 +309,25 @@ class MessageOptions {
   /// Callback when an image in markdown content is tapped
   /// Provides the image URL, title, and alt text
   final void Function(String url, String? title, String? alt)? onImageTap;
+
+  /// Whether fenced code blocks are syntax-highlighted.
+  ///
+  /// When false, code renders as a single unhighlighted span in
+  /// [CodeBlockTheme.baseStyle] — useful for very large blocks or languages
+  /// the highlighter doesn't know. Defaults to true.
+  final bool enableSyntaxHighlighting;
+
+  /// Visual theme for fenced code blocks (background, border, header and
+  /// token colours).
+  ///
+  /// When null, [CodeBlockTheme.of] resolves a light or dark palette from the
+  /// ambient [Brightness]. Inline `code` chips are unaffected — they keep
+  /// using `markdownStyleSheet.code`.
+  final CodeBlockTheme? codeBlockTheme;
+
+  /// Whether fenced code blocks show a header copy button that copies the
+  /// raw code (without fences) to the clipboard. Defaults to true.
+  final bool showCodeBlockCopyButton;
 
   /// Custom builder for plain text content inside the bubble
   ///
@@ -432,6 +458,9 @@ class MessageOptions {
     this.enableImageTaps = false,
     this.enableAttachmentLightbox = false,
     this.onImageTap,
+    this.enableSyntaxHighlighting = true,
+    this.codeBlockTheme,
+    this.showCodeBlockCopyButton = true,
     this.textBuilder,
     this.markdownBuilder,
     this.customBubbleBuilder,
@@ -472,6 +501,9 @@ class MessageOptions {
     bool? enableImageTaps,
     bool? enableAttachmentLightbox,
     void Function(String url, String? title, String? alt)? onImageTap,
+    bool? enableSyntaxHighlighting,
+    CodeBlockTheme? codeBlockTheme,
+    bool? showCodeBlockCopyButton,
     Widget Function(BuildContext, String, TextStyle, bool)? textBuilder,
     Widget Function(BuildContext, String, MarkdownStyleSheet, bool)?
         markdownBuilder,
@@ -514,6 +546,11 @@ class MessageOptions {
         enableAttachmentLightbox:
             enableAttachmentLightbox ?? this.enableAttachmentLightbox,
         onImageTap: onImageTap ?? this.onImageTap,
+        enableSyntaxHighlighting:
+            enableSyntaxHighlighting ?? this.enableSyntaxHighlighting,
+        codeBlockTheme: codeBlockTheme ?? this.codeBlockTheme,
+        showCodeBlockCopyButton:
+            showCodeBlockCopyButton ?? this.showCodeBlockCopyButton,
         textBuilder: textBuilder ?? this.textBuilder,
         markdownBuilder: markdownBuilder ?? this.markdownBuilder,
         customBubbleBuilder: customBubbleBuilder ?? this.customBubbleBuilder,

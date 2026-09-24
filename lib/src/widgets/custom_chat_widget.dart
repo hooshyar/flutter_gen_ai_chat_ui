@@ -14,8 +14,10 @@ import '../models/example_question.dart';
 import '../models/file_upload_options.dart';
 import '../models/input_options.dart';
 import '../models/welcome_message_config.dart';
+import '../theme/code_block_theme.dart';
 import '../theme/custom_theme_extension.dart';
 import '../utils/color_extensions.dart';
+import 'code/code_block_view.dart';
 import 'math_markdown.dart';
 import 'message_attachment.dart';
 import 'result/result_renderer_registry.dart';
@@ -210,8 +212,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           final backlog = target - revealed;
           final step = backlog <= _revealMinCharsPerTick
               ? backlog
-              : max(_revealMinCharsPerTick,
-                  (backlog * _revealCatchUpFactor).ceil());
+              : max(
+                  _revealMinCharsPerTick,
+                  (backlog * _revealCatchUpFactor).ceil(),
+                );
           _revealedChars[id] = revealed + step;
           changed = true;
         } else if (widget.controller?.currentlyStreamingMessageId != id) {
@@ -365,50 +369,53 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     // Debounce scroll events to avoid excessive rebuilds
     _scrollDebounce?.cancel();
     _scrollDebounce = Timer(
-        widget.messageListOptions.paginationConfig.loadMoreDebounceTime, () {
-      if (!mounted) return;
+      widget.messageListOptions.paginationConfig.loadMoreDebounceTime,
+      () {
+        if (!mounted) return;
 
-      final position = _scrollController.position.pixels;
-      final maxScroll = _scrollController.position.maxScrollExtent;
+        final position = _scrollController.position.pixels;
+        final maxScroll = _scrollController.position.maxScrollExtent;
 
-      // Update scroll to bottom button visibility
-      final shouldShow = widget.messageListOptions.paginationConfig.reverseOrder
-          ? position >
-              100 // In reverse mode, scroll from bottom means we've scrolled up
-          : (maxScroll - position) >
-              100; // In normal mode, we need to check distance from bottom
+        // Update scroll to bottom button visibility
+        final shouldShow = widget
+                .messageListOptions.paginationConfig.reverseOrder
+            ? position >
+                100 // In reverse mode, scroll from bottom means we've scrolled up
+            : (maxScroll - position) >
+                100; // In normal mode, we need to check distance from bottom
 
-      if (shouldShow != _showScrollToBottom) {
-        setState(() => _showScrollToBottom = shouldShow);
-      }
-
-      // Check if we should load more messages
-      final paginationConfig = widget.messageListOptions.paginationConfig;
-      if (!paginationConfig.enabled || !paginationConfig.autoLoadOnScroll) {
-        return;
-      }
-
-      // Determine if we are near the edge for loading more messages
-      bool shouldLoadMore;
-      if (paginationConfig.reverseOrder) {
-        // In reverse mode: Check if we're near the top
-        shouldLoadMore = _scrollController.position.pixels <
-            paginationConfig.distanceToTriggerLoadPixels;
-      } else {
-        // Normal mode: Check if we're near the bottom
-        shouldLoadMore = (maxScroll - _scrollController.position.pixels) <
-            paginationConfig.distanceToTriggerLoadPixels;
-      }
-
-      if (shouldLoadMore &&
-          !widget.messageListOptions.isLoadingMore &&
-          widget.messageListOptions.hasMoreMessages) {
-        if (paginationConfig.enableHapticFeedback) {
-          HapticFeedback.lightImpact();
+        if (shouldShow != _showScrollToBottom) {
+          setState(() => _showScrollToBottom = shouldShow);
         }
-        widget.messageListOptions.onLoadMore?.call();
-      }
-    });
+
+        // Check if we should load more messages
+        final paginationConfig = widget.messageListOptions.paginationConfig;
+        if (!paginationConfig.enabled || !paginationConfig.autoLoadOnScroll) {
+          return;
+        }
+
+        // Determine if we are near the edge for loading more messages
+        bool shouldLoadMore;
+        if (paginationConfig.reverseOrder) {
+          // In reverse mode: Check if we're near the top
+          shouldLoadMore = _scrollController.position.pixels <
+              paginationConfig.distanceToTriggerLoadPixels;
+        } else {
+          // Normal mode: Check if we're near the bottom
+          shouldLoadMore = (maxScroll - _scrollController.position.pixels) <
+              paginationConfig.distanceToTriggerLoadPixels;
+        }
+
+        if (shouldLoadMore &&
+            !widget.messageListOptions.isLoadingMore &&
+            widget.messageListOptions.hasMoreMessages) {
+          if (paginationConfig.enableHapticFeedback) {
+            HapticFeedback.lightImpact();
+          }
+          widget.messageListOptions.onLoadMore?.call();
+        }
+      },
+    );
   }
 
   @override
@@ -437,9 +444,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: _buildMessageList(),
-            ),
+            Expanded(child: _buildMessageList()),
             if (widget.quickReplyOptions.quickReplies != null &&
                 widget.quickReplyOptions.quickReplies!.isNotEmpty)
               Padding(
@@ -710,31 +715,24 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       return size;
     }
 
-    final textSize = measureText(message.text,
-        style: const TextStyle(
-          fontSize: 15,
-          height: 1.5,
-          letterSpacing: 0.2,
-        ));
+    final textSize = measureText(
+      message.text,
+      style: const TextStyle(fontSize: 15, height: 1.5, letterSpacing: 0.2),
+    );
 
     ///need to add this to check username size
-    final usernameTextSize = measureText(message.user.name,
-        style: const TextStyle(
-          fontSize: 15,
-          height: 1.5,
-          letterSpacing: 0.2,
-        ));
+    final usernameTextSize = measureText(
+      message.user.name,
+      style: const TextStyle(fontSize: 15, height: 1.5, letterSpacing: 0.2),
+    );
 
     ///need to add this to check time stamp size
     final timeTextSize = measureText(
-        widget.messageOptions.timeFormat != null
-            ? widget.messageOptions.timeFormat!(message.createdAt)
-            : _defaultTimestampFormat(message.createdAt),
-        style: const TextStyle(
-          fontSize: 15,
-          height: 1.5,
-          letterSpacing: 0.2,
-        ));
+      widget.messageOptions.timeFormat != null
+          ? widget.messageOptions.timeFormat!(message.createdAt)
+          : _defaultTimestampFormat(message.createdAt),
+      style: const TextStyle(fontSize: 15, height: 1.5, letterSpacing: 0.2),
+    );
 
     // Get effective decoration from MessageOptions
     final effectiveDecoration = widget.messageOptions.effectiveDecoration;
@@ -779,8 +777,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         ? bubbleStyle.userBubbleMaxWidth ??
             (textSize.width < defaultMaxWidth
                 ? (115 +
-                        max(textSize.width,
-                            max(usernameTextSize.width, timeTextSize.width)))
+                        max(
+                          textSize.width,
+                          max(usernameTextSize.width, timeTextSize.width),
+                        ))
                     .toDouble()
                 : defaultMaxWidth)
         : bubbleStyle.aiBubbleMaxWidth ??
@@ -897,8 +897,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                               // Avatar or fallback icon next to name
                               if (isUser &&
                                   bubbleStyle.userAvatarWidgetBuilder != null)
-                                bubbleStyle
-                                    .userAvatarWidgetBuilder!(message.user)
+                                bubbleStyle.userAvatarWidgetBuilder!(
+                                  message.user,
+                                )
                               else if (!isUser &&
                                   bubbleStyle.aiAvatarWidgetBuilder != null)
                                 bubbleStyle.aiAvatarWidgetBuilder!(message.user)
@@ -948,10 +949,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                       // Footer with timestamp and action buttons
                       Padding(
                         padding: EdgeInsets.only(
-                            top: widget.messageOptions.showTime
-                                ? widget
-                                    .spacingConfig.messageFooterTopPadding.top
-                                : 0),
+                          top: widget.messageOptions.showTime
+                              ? widget.spacingConfig.messageFooterTopPadding.top
+                              : 0,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.max,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -961,10 +962,12 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                             if (widget.messageOptions.showTime)
                               Text(
                                 widget.messageOptions.timeFormat != null
-                                    ? widget.messageOptions
-                                        .timeFormat!(message.createdAt)
+                                    ? widget.messageOptions.timeFormat!(
+                                        message.createdAt,
+                                      )
                                     : _defaultTimestampFormat(
-                                        message.createdAt),
+                                        message.createdAt,
+                                      ),
                                 style: (isUser
                                         ? widget
                                             .messageOptions.userTimeTextStyle
@@ -990,14 +993,17 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                                   borderRadius: BorderRadius.circular(16),
                                   onTap: () {
                                     Clipboard.setData(
-                                        ClipboardData(text: message.text));
+                                      ClipboardData(text: message.text),
+                                    );
                                     // Show premium feedback if provided
                                     if (widget.messageOptions.onCopy != null) {
-                                      widget
-                                          .messageOptions.onCopy!(message.text);
+                                      widget.messageOptions.onCopy!(
+                                        message.text,
+                                      );
                                     } else {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         SnackBar(
                                           content: Text(
                                             widget.messageOptions
@@ -1007,8 +1013,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                                           duration: const Duration(seconds: 2),
                                           behavior: SnackBarBehavior.floating,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                           backgroundColor: isDark
                                               ? Colors.grey[800]
@@ -1093,8 +1100,11 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       final resultData =
           message.customProperties?['resultData'] as Map<String, dynamic>? ??
               {};
-      final renderedWidget =
-          registry?.buildResult(context, resultKind, resultData);
+      final renderedWidget = registry?.buildResult(
+        context,
+        resultKind,
+        resultData,
+      );
       if (renderedWidget != null) return renderedWidget;
     }
 
@@ -1156,9 +1166,11 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       final effectiveStyleSheet = widget.messageOptions.markdownStyleSheet ??
           MarkdownStyleSheet(
             p: textStyle,
-            // Inline `code` — subtle tinted chip.
+            // Inline `code` — subtle tinted chip in the bundled mono font.
             code: TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: CodeBlockTheme.monoFontFamily,
+              package: 'flutter_gen_ai_chat_ui',
+              fontFamilyFallback: CodeBlockTheme.monoFontFallback,
               fontSize: (textStyle.fontSize ?? 14) * 0.92,
               color: textStyle.color,
               backgroundColor: (isDark ? Colors.white : Colors.black)
@@ -1171,8 +1183,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
               color: isDark ? const Color(0xFF15151F) : const Color(0xFFF4F4F8),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: (isDark ? Colors.white : Colors.black)
-                    .withOpacityCompat(0.08),
+                color: (isDark ? Colors.white : Colors.black).withOpacityCompat(
+                  0.08,
+                ),
               ),
             ),
           );
@@ -1186,6 +1199,20 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       if (customMarkdown != null) {
         return customMarkdown;
       }
+
+      // One `pre` builder per message, shared by every markdown render path
+      // below: fenced blocks render as a CodeBlockView instead of per-line
+      // inline-code chips. CodeBlockView drops baseStyle.backgroundColor when
+      // merging, so the inline-code chip tint cannot bleed into block text.
+      final codeBlockBuilders = <String, MarkdownElementBuilder>{
+        'pre': CodeBlockMarkdownBuilder(
+          theme: widget.messageOptions.codeBlockTheme,
+          enableSyntaxHighlighting:
+              widget.messageOptions.enableSyntaxHighlighting,
+          showCopyButton: widget.messageOptions.showCodeBlockCopyButton,
+          baseStyle: effectiveStyleSheet.code,
+        ),
+      };
 
       final needsInteractiveMarkdown =
           widget.messageOptions.onTapLink != null ||
@@ -1210,6 +1237,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             }
           },
           styleSheet: effectiveStyleSheet,
+          builders: codeBlockBuilders,
           imageBuilder: widget.messageOptions.enableImageTaps
               ? null
               : (uri, title, alt) {
@@ -1233,10 +1261,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.broken_image,
-                                color: Colors.grey[600],
-                              ),
+                              Icon(Icons.broken_image, color: Colors.grey[600]),
                               if (alt != null)
                                 Text(
                                   alt,
@@ -1261,16 +1286,20 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           // with the incoming data (see the reveal-loop section above).
           textWidget = Markdown(
             data: _withholdIncompleteFence(
-                _revealedTextFor(messageId, message.text)),
+              _revealedTextFor(messageId, message.text),
+            ),
             selectable: false,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             styleSheet: effectiveStyleSheet,
+            builders: codeBlockBuilders,
             padding: EdgeInsets.zero,
           );
         } else if (shouldAnimate) {
           // One-shot animation for complete messages delivered via
-          // addMessage() with streamingWordByWord enabled.
+          // addMessage() with streamingWordByWord enabled. gpt_markdown calls
+          // codeBuilder for open fences too (closed == false); CodeBlockView
+          // renders them without throwing.
           textWidget = StreamingText(
             text: message.text,
             style: textStyle,
@@ -1281,6 +1310,15 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             fadeInCurve: widget.streamingFadeInCurve,
             wordByWord: widget.streamingWordByWord,
             showCursor: false,
+            codeBuilder: (context, name, code, closed) => CodeBlockView(
+              code: code,
+              language: name.trim().isEmpty ? null : name.trim(),
+              theme: widget.messageOptions.codeBlockTheme,
+              enableSyntaxHighlighting:
+                  widget.messageOptions.enableSyntaxHighlighting,
+              showCopyButton: widget.messageOptions.showCodeBlockCopyButton,
+              baseStyle: effectiveStyleSheet.code,
+            ),
           );
         } else if (widget.enableMathRendering) {
           // Math-aware markdown rendering (supports $...$ and $$...$$)
@@ -1289,6 +1327,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             styleSheet: effectiveStyleSheet,
             onTapLink: widget.messageOptions.onTapLink,
             textStyle: textStyle,
+            builders: codeBlockBuilders,
           );
         } else {
           // Static markdown rendering when streaming is disabled
@@ -1298,6 +1337,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             styleSheet: effectiveStyleSheet,
+            builders: codeBlockBuilders,
             padding: EdgeInsets.zero,
           );
         }
@@ -1337,10 +1377,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         );
       } else {
         // Static plain text for completed messages
-        textWidget = Text(
-          message.text,
-          style: textStyle,
-        );
+        textWidget = Text(message.text, style: textStyle);
       }
     }
 
@@ -1408,13 +1445,15 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         .trim();
 
     // RTL Unicode ranges: Arabic, Hebrew, Persian/Kurdish extensions
-    final rtlRegex = RegExp(r'[\u0600-\u06FF' // Arabic
-        r'\u0750-\u077F' // Arabic Supplement
-        r'\u08A0-\u08FF' // Arabic Extended-A
-        r'\uFB50-\uFDFF' // Arabic Presentation Forms-A
-        r'\uFE70-\uFEFF' // Arabic Presentation Forms-B
-        r'\u0590-\u05FF' // Hebrew
-        r']');
+    final rtlRegex = RegExp(
+      r'[\u0600-\u06FF' // Arabic
+      r'\u0750-\u077F' // Arabic Supplement
+      r'\u08A0-\u08FF' // Arabic Extended-A
+      r'\uFB50-\uFDFF' // Arabic Presentation Forms-A
+      r'\uFE70-\uFEFF' // Arabic Presentation Forms-B
+      r'\u0590-\u05FF' // Hebrew
+      r']',
+    );
 
     // Check first 100 characters for RTL
     final sample =
@@ -1545,10 +1584,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             const SizedBox(height: 8),
             Text(
               widget.messageListOptions.paginationConfig.loadingText,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),
@@ -1577,8 +1613,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       return const SizedBox.shrink();
     }
 
-    return widget.scrollToBottomOptions.scrollToBottomBuilder
-            ?.call(_scrollController) ??
+    return widget.scrollToBottomOptions.scrollToBottomBuilder?.call(
+          _scrollController,
+        ) ??
         Positioned(
           bottom: widget.scrollToBottomOptions.bottomOffset,
           right: widget.scrollToBottomOptions.rightOffset,
@@ -1754,8 +1791,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                         ),
                   ),
                   SizedBox(
-                      height:
-                          widget.welcomeMessageConfig?.questionSpacing ?? 12.0),
+                    height:
+                        widget.welcomeMessageConfig?.questionSpacing ?? 12.0,
+                  ),
                   ...widget.exampleQuestions.map(
                     (question) =>
                         _buildExampleQuestionInWelcome(question, isDarkMode),
@@ -1771,13 +1809,16 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
   /// Build an example question within the welcome message
   Widget _buildExampleQuestionInWelcome(
-      ExampleQuestion question, bool isDarkMode) {
+    ExampleQuestion question,
+    bool isDarkMode,
+  ) {
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
 
     return Padding(
       padding: EdgeInsets.only(
-          bottom: widget.welcomeMessageConfig?.questionSpacing ?? 12.0),
+        bottom: widget.welcomeMessageConfig?.questionSpacing ?? 12.0,
+      ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -1788,12 +1829,14 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: question.config?.containerDecoration ??
                 BoxDecoration(
-                  color:
-                      primaryColor.withOpacityCompat(isDarkMode ? 0.12 : 0.06),
+                  color: primaryColor.withOpacityCompat(
+                    isDarkMode ? 0.12 : 0.06,
+                  ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color:
-                        primaryColor.withOpacityCompat(isDarkMode ? 0.3 : 0.15),
+                    color: primaryColor.withOpacityCompat(
+                      isDarkMode ? 0.3 : 0.15,
+                    ),
                     width: 1,
                   ),
                 ),
@@ -2011,19 +2054,13 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
 
     // Very subtle upward slide - feels like content settling into place
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+    );
 
     // Listen to controller changes for streaming state updates
     widget.controller?.addListener(_onControllerChanged);
@@ -2048,11 +2085,14 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
 
     debugPrint('🎬 AnimatedFooter - messageId: $messageId');
     debugPrint(
-        '🎬 AnimatedFooter - controllerStreamingId: $controllerStreamingId');
+      '🎬 AnimatedFooter - controllerStreamingId: $controllerStreamingId',
+    );
     debugPrint(
-        '🎬 AnimatedFooter - isCurrentlyStreaming: $isCurrentlyStreaming');
+      '🎬 AnimatedFooter - isCurrentlyStreaming: $isCurrentlyStreaming',
+    );
     debugPrint(
-        '🎬 AnimatedFooter - streamingEnabled: ${widget.streamingEnabled}');
+      '🎬 AnimatedFooter - streamingEnabled: ${widget.streamingEnabled}',
+    );
     debugPrint('🎬 AnimatedFooter - isStreaming: $isStreaming');
     debugPrint('🎬 AnimatedFooter - _wasStreaming: $_wasStreaming');
 
@@ -2067,7 +2107,8 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
         _shouldShow = true;
         _animController.forward();
         debugPrint(
-            '🎬 AnimatedFooter - Streaming complete, animating footer in');
+          '🎬 AnimatedFooter - Streaming complete, animating footer in',
+        );
       } else {
         // Was never streaming (loaded message) - show immediately
         _shouldShow = true;
@@ -2099,7 +2140,8 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
   @override
   Widget build(BuildContext context) {
     debugPrint(
-        '🎬 AnimatedFooter.build - _shouldShow: $_shouldShow, isUser: ${widget.isUser}');
+      '🎬 AnimatedFooter.build - _shouldShow: $_shouldShow, isUser: ${widget.isUser}',
+    );
     if (!_shouldShow) {
       debugPrint('🎬 AnimatedFooter.build - Returning SizedBox (not showing)');
       return const SizedBox.shrink();
@@ -2112,20 +2154,19 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
     );
 
     debugPrint(
-        '🎬 AnimatedFooter.build - footerWidget is null: ${footerWidget == null}');
+      '🎬 AnimatedFooter.build - footerWidget is null: ${footerWidget == null}',
+    );
     if (footerWidget == null) {
       debugPrint(
-          '🎬 AnimatedFooter.build - Returning SizedBox (footer is null)');
+        '🎬 AnimatedFooter.build - Returning SizedBox (footer is null)',
+      );
       return const SizedBox.shrink();
     }
 
     debugPrint('🎬 AnimatedFooter.build - Returning animated footer');
     return SlideTransition(
       position: _slideAnimation,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: footerWidget,
-      ),
+      child: FadeTransition(opacity: _fadeAnimation, child: footerWidget),
     );
   }
 }
