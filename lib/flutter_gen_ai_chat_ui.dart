@@ -40,6 +40,7 @@ export 'src/widgets/ai_suggestions_bar.dart';
 export 'src/widgets/attachment_lightbox.dart';
 export 'src/widgets/chat_input.dart';
 export 'src/widgets/citation_chip.dart';
+export 'src/widgets/code/code_block_view.dart';
 export 'src/widgets/code/code_highlighter.dart';
 export 'src/widgets/copilot_textarea.dart';
 export 'src/widgets/custom_chat_widget.dart';

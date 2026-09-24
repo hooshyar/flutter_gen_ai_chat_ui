@@ -56,6 +56,7 @@ dependencies:
     sdk: flutter
   clock: ^1.1.2
   flutter_markdown_plus: ^1.0.3
+  markdown: ^7.3.1
   google_fonts: ^8.1.0
   flutter_streaming_text_markdown: ^1.10.1
   url_launcher: ^6.3.1
