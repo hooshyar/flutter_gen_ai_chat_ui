@@ -22,6 +22,8 @@ class MessageActionRow extends StatefulWidget {
     this.isStreaming = false,
     this.showCopyButton = true,
     this.copyButtonLabel,
+    this.showTimestamp = true,
+    this.timestampStyle,
   });
 
   /// The raw message text copied to the clipboard.
@@ -45,6 +47,15 @@ class MessageActionRow extends StatefulWidget {
 
   /// Tooltip/semantics label for the copy control. Defaults to `'Copy'`.
   final String? copyButtonLabel;
+
+  /// Whether the timestamp [Text] renders at all (`MessageOptions.showTime`).
+  /// The copy control is unaffected — only the trailing timestamp is hidden.
+  final bool showTimestamp;
+
+  /// Style for the timestamp text. Falls back to the row's caption/
+  /// `textTertiary` default when null (`MessageOptions.aiTimeTextStyle` ??
+  /// `timeTextStyle`, resolved by the caller).
+  final TextStyle? timestampStyle;
 
   @override
   State<MessageActionRow> createState() => _MessageActionRowState();
@@ -100,16 +111,19 @@ class _MessageActionRowState extends State<MessageActionRow> {
               ),
             ),
           ),
-        const SizedBox(width: ChatSpace.s8),
-        Text(
-          widget.timestampText,
-          style: TextStyle(
-            fontSize: 12,
-            height: 16 / 12,
-            letterSpacing: 0.1,
-            color: tokens.textTertiary,
+        if (widget.showTimestamp) ...[
+          const SizedBox(width: ChatSpace.s8),
+          Text(
+            widget.timestampText,
+            style: widget.timestampStyle ??
+                TextStyle(
+                  fontSize: 12,
+                  height: 16 / 12,
+                  letterSpacing: 0.1,
+                  color: tokens.textTertiary,
+                ),
           ),
-        ),
+        ],
       ],
     );
 
