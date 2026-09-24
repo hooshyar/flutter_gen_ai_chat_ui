@@ -132,7 +132,7 @@ Three Flutter chat UI packages dominate searches: `flutter_gen_ai_chat_ui`, `flu
 | Concern | `flutter_gen_ai_chat_ui` | `flutter_chat_ui` | `dash_chat_2` |
 |---|---|---|---|
 | Word-by-word streaming animation | Built-in | No | No |
-| Markdown + code highlight in messages | Built-in | Manual | Manual |
+| Markdown + code highlight in messages | Built-in (highlighter + copy button, no extra dep) | Manual | Manual |
 | LaTeX / math rendering | Opt-in flag | No | No |
 | Rich inline widget messages (full-width, no bubble) | `ChatMessage.rich()` | Custom bubble only | No |
 | AI tool-use / function-calling UI | `AiActionProvider` | No | No |
@@ -214,7 +214,7 @@ flutter run
 ### Core Features
 - 🎨 Dark/light mode with adaptive theming
 - 💫 Word-by-word streaming with animations (like ChatGPT and Claude)
-- 📝 Enhanced markdown support with code highlighting for technical content
+- 📝 Enhanced markdown support — fenced code blocks get built-in syntax highlighting (Dart, JS/TS, Python, Java, Kotlin, Swift, Go, Rust, C/C++/C#, JSON, YAML, Bash, SQL, HTML/XML) in a bundled monospace font
 - 🎤 Optional speech-to-text integration
 - 📱 Responsive layout with customizable width
 - 🌐 RTL language support for global applications
@@ -261,14 +261,14 @@ flutter run
 - 🔄 Loading indicators with shimmer effects
 - ⬇️ Smart scroll management for chat history
 - 🎨 Enhanced theme customization to match your brand
-- 📝 Better code block styling for developers
+- 📝 Code blocks with syntax highlighting, per-block copy button, and horizontal scroll for long lines
 
 ## ⚡ Performance & Features
 
 ### Key Capabilities
 - **✨ Unique Streaming Text**: Word-by-word animations like ChatGPT and Claude
 - **📁 Complete File Support**: Multi-format, multi-file attachments (images, documents, videos) with a built-in image lightbox and per-file upload progress — see the [attachments cookbook recipe](doc/cookbook/README.md#customize-how-attachments-are-displayed)
-- **📝 Advanced Markdown**: Full support with syntax highlighting for code blocks
+- **📝 Advanced Markdown**: Full support — fenced code blocks render in a bundled monospace font (JetBrains Mono, OFL) with built-in lightweight syntax highlighting, light/dark themes, a per-block copy button, horizontal scrolling, and LTR code inside RTL chats
 - **🚀 High Performance**: Optimized for large conversations (10K+ messages)
 - **🎨 Extensive Theming**: Complete customization to match your brand
 - **📱 Cross-Platform**: Works on all Flutter-supported platforms
@@ -299,7 +299,7 @@ The package ships first-class support for right-to-left scripts (Arabic, Hebrew,
 - **Locale-aware layout** — wrap the chat in `Directionality(textDirection: TextDirection.rtl, ...)` (or rely on your app's `Localizations`) and every surface mirrors: input row, send button, scroll, bubble alignment, copy button.
 - **Per-message bidi auto-detect** — each bubble's `TextDirection` is inferred from its content (Arabic chars → RTL, ASCII → LTR), so mixed conversations render correctly in a single thread without per-message config.
 - **Arabic word-splitting for streaming** — word-by-word streaming animates by whole Arabic words, not by code points (powered by `flutter_streaming_text_markdown` 1.7.0+).
-- **Markdown still works** — headings, code blocks, blockquotes, tables all render bidi-correctly inside RTL bubbles.
+- **Markdown still works** — headings, code blocks, blockquotes, tables all render bidi-correctly inside RTL bubbles (code itself stays LTR).
 
 Minimal RTL setup:
 
@@ -629,6 +629,21 @@ MessageOptions(
     bottomLeftRadius: 22,
     bottomRightRadius: 22,
     enableShadow: true,
+  ),
+)
+```
+
+### Code Blocks & Syntax Highlighting
+
+Fenced code blocks render through a built-in `CodeBlockView`: a header with the language label and a copy button, above horizontally-scrollable highlighted code. Highlighting is a lightweight pure-Dart tokenizer — no extra dependency — covering Dart, JavaScript/TypeScript, Python, Java, Kotlin, Swift, Go, Rust, C/C++/C#, JSON, YAML, Bash, SQL, and HTML/XML (other tags fall back to a generic tokenizer). Light and dark palettes follow the ambient brightness, code uses the bundled JetBrains Mono font on all platforms including web, and blocks stay LTR inside RTL chats.
+
+```dart
+AiChatWidget(
+  // ... required parameters
+  messageOptions: MessageOptions(
+    enableSyntaxHighlighting: true,        // default; false renders plain mono text
+    codeBlockTheme: CodeBlockTheme.dark(), // or your own CodeBlockTheme(...)
+    showCodeBlockCopyButton: true,         // default; false hides the copy icon
   ),
 )
 ```
