@@ -201,7 +201,11 @@ void main() {
         id: 'load-render',
         text: 'Processing...',
       ));
-      await tester.pumpAndSettle();
+      // Not pumpAndSettle: the default loading placeholder now has a
+      // repeating shimmer (`DESIGN.md` §8.7, [ChatLoadingBars]), which never
+      // settles by design.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.text('Processing...'), findsOneWidget);
 
@@ -234,7 +238,10 @@ void main() {
         id: 'morph-1',
         text: 'Loading weather...',
       ));
-      await tester.pumpAndSettle();
+      // Not pumpAndSettle: the default loading placeholder now has a
+      // repeating shimmer (`DESIGN.md` §8.7), which never settles by design.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
       expect(find.text('Loading weather...'), findsOneWidget);
 
       // Replace with rich widget
@@ -276,7 +283,10 @@ void main() {
         text: 'Thinking...',
       );
       controller.addMessage(loadingMsg);
-      await tester.pumpAndSettle();
+      // Not pumpAndSettle: the default loading placeholder now has a
+      // repeating shimmer (`DESIGN.md` §8.7), which never settles by design.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
       expect(find.text('Thinking...'), findsOneWidget);
 
       // Replace entire messages list with final text
@@ -413,7 +423,10 @@ void main() {
         loadingKind: 'unknown_kind',
         text: 'Processing...',
       ));
-      await tester.pumpAndSettle();
+      // Not pumpAndSettle: the default loading placeholder now has a
+      // repeating shimmer (`DESIGN.md` §8.7), which never settles by design.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       // Should show default loading with text, not the custom renderer
       expect(find.text('Processing...'), findsOneWidget);
@@ -491,7 +504,10 @@ void main() {
         id: 'default-shimmer',
         text: 'Thinking...',
       ));
-      await tester.pumpAndSettle();
+      // Not pumpAndSettle: the default loading placeholder now has a
+      // repeating shimmer (`DESIGN.md` §8.7), which never settles by design.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       // Default shimmer with text
       expect(find.text('Thinking...'), findsOneWidget);

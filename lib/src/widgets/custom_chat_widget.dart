@@ -18,7 +18,9 @@ import '../theme/chat_markdown_style.dart';
 import '../theme/chat_tokens.dart';
 import '../theme/code_block_theme.dart';
 import '../theme/custom_theme_extension.dart';
-import '../utils/color_extensions.dart';
+import 'chrome/chat_empty_state.dart';
+import 'chrome/scroll_to_bottom_button.dart';
+import 'chrome/thinking_indicator.dart';
 import 'code/code_block_view.dart';
 import 'math_markdown.dart';
 import 'message/message_action_row.dart';
@@ -1454,13 +1456,14 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   }
 
   Widget _buildQuickReplies() {
+    final tokens = ChatTokens.of(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: widget.quickReplyOptions.quickReplies!.map((quickReply) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: ElevatedButton(
+            child: OutlinedButton(
               onPressed: () {
                 widget.quickReplyOptions.onQuickReplyTap?.call(quickReply);
                 widget.onSend(
@@ -1471,12 +1474,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                   ),
                 );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[200],
-                foregroundColor: Colors.black87,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: tokens.textPrimary,
+                side: BorderSide(color: tokens.border),
+                shape: const StadiumBorder(),
               ),
               child: Text(quickReply),
             ),
@@ -1501,37 +1502,15 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       );
     }
 
-    // Default typing indicator dots
+    // Default typing indicator: three bouncing dots, no background pill
+    // (`DESIGN.md` §8.7).
     return Padding(
       padding: widget.spacingConfig.typingIndicatorMargin,
       child: Row(
         children: [
-          Container(
-            padding: widget.spacingConfig.typingIndicatorPadding,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                _DotIndicator(
-                  color: widget.typingIndicatorColor,
-                  size: widget.typingIndicatorSize,
-                ),
-                const SizedBox(width: 4),
-                _DotIndicator(
-                  delay: 0.2,
-                  color: widget.typingIndicatorColor,
-                  size: widget.typingIndicatorSize,
-                ),
-                const SizedBox(width: 4),
-                _DotIndicator(
-                  delay: 0.4,
-                  color: widget.typingIndicatorColor,
-                  size: widget.typingIndicatorSize,
-                ),
-              ],
-            ),
+          ChatTypingDots(
+            color: widget.typingIndicatorColor,
+            size: widget.typingIndicatorSize,
           ),
         ],
       ),
@@ -1539,21 +1518,26 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   }
 
   Widget _buildDefaultLoadingIndicator() {
+    // Pagination "loading more" state: a bare spinner (`DESIGN.md` §8.7).
+    // `PaginationConfig.loadingText` stays rendered underneath, tokenized —
+    // it is a documented, load-bearing knob (see
+    // pagination_config_dead_parameter_test.dart), not decoration.
+    final tokens = ChatTokens.of(context);
+    final loadingText = widget.messageListOptions.paginationConfig.loadingText;
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Center(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 3),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.messageListOptions.paginationConfig.loadingText,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
+            const ChatPaginationSpinner(),
+            if (loadingText.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                loadingText,
+                style: TextStyle(fontSize: 12, color: tokens.textTertiary),
+              ),
+            ],
           ],
         ),
       ),
@@ -1561,19 +1545,43 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   }
 
   Widget _buildNoMoreMessagesIndicator() {
+    final tokens = ChatTokens.of(context);
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Center(
         child: Text(
           widget.messageListOptions.paginationConfig.noMoreMessagesText,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontStyle: FontStyle.italic,
-            color: Colors.grey,
+            color: tokens.textTertiary,
           ),
         ),
       ),
     );
+  }
+
+  void _handleScrollToBottomTap() {
+    // The reader asked for the bottom: end any streaming pin first so it
+    // does not pull the list straight back up.
+    widget.controller?.releaseStreamingPin();
+    if (_scrollController.hasClients) {
+      final paginationConfig = widget.messageListOptions.paginationConfig;
+      final reduced = ChatMotion.reduced(context);
+      final target = paginationConfig.reverseOrder
+          ? 0.0
+          : _scrollController.position.maxScrollExtent;
+      if (reduced) {
+        _scrollController.jumpTo(target);
+      } else {
+        _scrollController.animateTo(
+          target,
+          duration: ChatMotion.slow,
+          curve: ChatMotion.enter,
+        );
+      }
+    }
+    widget.scrollToBottomOptions.onScrollToBottomPress?.call();
   }
 
   Widget _buildScrollToBottomButton() {
@@ -1581,96 +1589,23 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       return const SizedBox.shrink();
     }
 
-    return widget.scrollToBottomOptions.scrollToBottomBuilder?.call(
-          _scrollController,
-        ) ??
-        Positioned(
-          bottom: widget.scrollToBottomOptions.bottomOffset,
-          right: widget.scrollToBottomOptions.rightOffset,
-          child: AnimatedOpacity(
-            opacity: _showScrollToBottom ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 200),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[800]
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacityCompat(0.08),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(24),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: () {
-                    // The reader asked for the bottom: end any streaming pin
-                    // first so it does not pull the list straight back up.
-                    widget.controller?.releaseStreamingPin();
-                    if (_scrollController.hasClients) {
-                      final paginationConfig =
-                          widget.messageListOptions.paginationConfig;
-                      if (paginationConfig.reverseOrder) {
-                        // In reverse mode, scroll to top (0)
-                        _scrollController.animateTo(
-                          0,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
-                      } else {
-                        // In chronological mode, scroll to bottom (maxScrollExtent)
-                        _scrollController.animateTo(
-                          _scrollController.position.maxScrollExtent,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
-                      }
-                    }
-                    widget.scrollToBottomOptions.onScrollToBottomPress?.call();
-                  },
-                  child: Padding(
-                    // 14 on all sides brings the icon-only (default
-                    // showText: false) tap target up to the 48x48
-                    // Material/WCAG minimum (20 icon + 14 + 14 = 48); with
-                    // text shown the row is already wider than 48.
-                    padding: const EdgeInsets.all(14),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.keyboard_arrow_down,
-                          size: 20,
-                          color: Theme.of(context)
-                                  .extension<CustomThemeExtension>()
-                                  ?.backToBottomButtonColor ??
-                              Theme.of(context).primaryColor,
-                        ),
-                        if (widget.scrollToBottomOptions.showText) ...[
-                          const SizedBox(width: 4),
-                          Text(
-                            widget.scrollToBottomOptions.buttonText,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
+    final custom = widget.scrollToBottomOptions.scrollToBottomBuilder?.call(
+      _scrollController,
+    );
+    if (custom != null) return custom;
+
+    final controller = widget.controller;
+    final showNewContentDot = controller != null &&
+        controller.currentlyStreamingMessageId != null &&
+        !controller.isStreamingPinActive;
+
+    return ScrollToBottomButton(
+      visible:
+          _showScrollToBottom || widget.scrollToBottomOptions.alwaysVisible,
+      onPressed: _handleScrollToBottomTap,
+      options: widget.scrollToBottomOptions,
+      showNewContentDot: showNewContentDot,
+    );
   }
 
   /// Build the welcome message widget
@@ -1683,172 +1618,13 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       );
     }
 
-    // Otherwise, build default welcome message with title and example questions
-    return _buildDefaultWelcomeMessage();
-  }
-
-  /// Build default welcome message with title and example questions
-  Widget _buildDefaultWelcomeMessage() {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-
-    return Container(
-      margin: widget.welcomeMessageConfig?.containerMargin ??
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: widget.welcomeMessageConfig?.containerPadding ??
-          const EdgeInsets.all(24),
-      decoration: widget.welcomeMessageConfig?.containerDecoration ??
-          BoxDecoration(
-            color: isDarkMode
-                ? const Color(0xFF1E2026).withOpacityCompat(0.9)
-                : Colors.white.withOpacityCompat(0.95),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacityCompat(isDarkMode ? 0.2 : 0.06),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-                spreadRadius: -5,
-              ),
-            ],
-            border: Border.all(
-              color: isDarkMode
-                  ? Colors.white.withOpacityCompat(0.1)
-                  : Colors.black.withOpacityCompat(0.05),
-              width: 0.5,
-            ),
-          ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title
-          if (widget.welcomeMessageConfig?.title != null) ...[
-            Text(
-              widget.welcomeMessageConfig!.title!,
-              style: widget.welcomeMessageConfig?.titleStyle ??
-                  TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: isDarkMode ? Colors.white : Colors.black,
-                  ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // Example questions
-          if (widget.exampleQuestions.isNotEmpty) ...[
-            Container(
-              padding: widget.welcomeMessageConfig?.questionsSectionPadding ??
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration:
-                  widget.welcomeMessageConfig?.questionsSectionDecoration,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.welcomeMessageConfig?.questionsSectionTitle ??
-                        'Here are some questions you can ask:',
-                    style: widget
-                            .welcomeMessageConfig?.questionsSectionTitleStyle ??
-                        TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: isDarkMode ? Colors.white70 : Colors.black87,
-                        ),
-                  ),
-                  SizedBox(
-                    height:
-                        widget.welcomeMessageConfig?.questionSpacing ?? 12.0,
-                  ),
-                  ...widget.exampleQuestions.map(
-                    (question) =>
-                        _buildExampleQuestionInWelcome(question, isDarkMode),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  /// Build an example question within the welcome message
-  Widget _buildExampleQuestionInWelcome(
-    ExampleQuestion question,
-    bool isDarkMode,
-  ) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.primaryColor;
-
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: widget.welcomeMessageConfig?.questionSpacing ?? 12.0,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _handleExampleQuestionTap(question.question),
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: question.config?.containerPadding ??
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: question.config?.containerDecoration ??
-                BoxDecoration(
-                  color: primaryColor.withOpacityCompat(
-                    isDarkMode ? 0.12 : 0.06,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: primaryColor.withOpacityCompat(
-                      isDarkMode ? 0.3 : 0.15,
-                    ),
-                    width: 1,
-                  ),
-                ),
-            child: Row(
-              children: [
-                Icon(
-                  question.config?.iconData ??
-                      Icons.chat_bubble_outline_rounded,
-                  size: question.config?.iconSize ?? 18,
-                  color: question.config?.iconColor ??
-                      (isDarkMode
-                          ? Colors.white.withOpacityCompat(0.8)
-                          : primaryColor.withOpacityCompat(0.8)),
-                ),
-                SizedBox(width: question.config?.spacing ?? 12),
-                Expanded(
-                  child: Text(
-                    question.question,
-                    style: question.config?.textStyle ??
-                        TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: isDarkMode
-                              ? Colors.white.withOpacityCompat(0.9)
-                              : Colors.black.withOpacityCompat(0.8),
-                          height: 1.4,
-                        ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  question.config?.trailingIconData ??
-                      Icons.arrow_forward_ios_rounded,
-                  size: question.config?.trailingIconSize ?? 16,
-                  color: question.config?.trailingIconColor ??
-                      (isDarkMode
-                          ? Colors.white.withOpacityCompat(0.5)
-                          : primaryColor.withOpacityCompat(0.5)),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    // Otherwise, build the package default empty state (`DESIGN.md` §8.6):
+    // no card, positioned at 38% of the available height, start-aligned
+    // inside the reading column.
+    return ChatEmptyState(
+      welcomeMessageConfig: widget.welcomeMessageConfig,
+      exampleQuestions: widget.exampleQuestions,
+      onQuestionTap: _handleExampleQuestionTap,
     );
   }
 
@@ -1871,113 +1647,19 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   }
 
   Widget _buildLoadingPlaceholder(BuildContext context, ChatMessage message) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Pre-first-token: no caption yet -> the "Thinking" sweep. Once a
+    // caption arrives, switch to the skeleton bars with that caption above
+    // them (`DESIGN.md` §8.7).
+    if (message.text.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16),
+        child: ThinkingIndicator(),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (message.text.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                message.text,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? Colors.white54 : Colors.black45,
-                ),
-              ),
-            ),
-          _ShimmerBar(widthFactor: 1.0, isDark: isDark),
-          const SizedBox(height: 8),
-          _ShimmerBar(widthFactor: 0.7, isDark: isDark),
-          const SizedBox(height: 8),
-          _ShimmerBar(widthFactor: 0.5, isDark: isDark),
-        ],
-      ),
+      child: ChatLoadingBars(caption: message.text),
     );
-  }
-}
-
-class _ShimmerBar extends StatelessWidget {
-  const _ShimmerBar({required this.widthFactor, required this.isDark});
-  final double widthFactor;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return FractionallySizedBox(
-      widthFactor: widthFactor,
-      alignment: Alignment.centerLeft,
-      child: Container(
-        height: 12,
-        decoration: BoxDecoration(
-          color: isDark ? Colors.white10 : Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(6),
-        ),
-      ),
-    );
-  }
-}
-
-class _DotIndicator extends StatefulWidget {
-  final double delay;
-  final Color? color;
-  final double? size;
-
-  const _DotIndicator({this.delay = 0.0, this.color, this.size});
-
-  @override
-  State<_DotIndicator> createState() => _DotIndicatorState();
-}
-
-class _DotIndicatorState extends State<_DotIndicator>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-
-    _animation = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Interval(widget.delay, 1.0, curve: Curves.easeInOut),
-      ),
-    );
-
-    _controller.repeat(reverse: true);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final dotSize = widget.size ?? 8.0;
-    final dimColor = widget.color?.withOpacityCompat(0.45) ?? Colors.grey[400]!;
-    final brightColor = widget.color ?? Colors.grey[800]!;
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Container(
-          width: dotSize,
-          height: dotSize,
-          decoration: BoxDecoration(
-            color: Color.lerp(dimColor, brightColor, _animation.value),
-            shape: BoxShape.circle,
-          ),
-        );
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 }
 
