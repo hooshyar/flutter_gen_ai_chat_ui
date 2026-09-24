@@ -35,3 +35,11 @@ and while the closing fence is still missing.
 - [ ] Benchmark: highlighting a 300-line block adds under 16ms per rebuild on the perf harness, or
       the result is cached per block.
 - [ ] `flutter build web --wasm` still clean. pana 160/160. No floor bump, or a documented one.
+
+## Live check (2026-09-24)
+
+Seen on the live demo (v2.19.1, Streaming + Markdown → "Explain async/await with an example"):
+code blocks are plain monochrome text, with no highlighting. **Also:** every line inside a fenced code block
+gets its own grey inline-code background box, so inline `code` styling is leaking into block code.
+Fix both together. Acceptance: a fenced ```dart block renders with token colours and a single block
+background, with no per-line boxes.
