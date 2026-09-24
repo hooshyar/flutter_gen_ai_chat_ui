@@ -299,13 +299,13 @@ class _FeaturedCard extends StatelessWidget {
                     ),
               ),
               const SizedBox(height: 16),
-              Row(
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
                 children: [
                   _FeatureChip(label: 'Streaming', isDark: isDark),
-                  const SizedBox(width: 6),
                   _FeatureChip(label: 'Markdown', isDark: isDark),
-                  const SizedBox(width: 6),
-                  _FeatureChip(label: 'Code blocks', isDark: isDark),
+                  _FeatureChip(label: 'Syntax highlighting', isDark: isDark),
                 ],
               ),
             ],

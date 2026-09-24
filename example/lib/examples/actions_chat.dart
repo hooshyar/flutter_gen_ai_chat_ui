@@ -1,4 +1,5 @@
 // AI Actions — demonstrates function calling with calculator, weather, and color actions.
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -144,6 +145,16 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
     }
   }
 
+  /// Renders a tool call the way an LLM function call would appear on the
+  /// wire — as a highlighted ```json fence — so the demo reads like real
+  /// function calling instead of a summary.
+  String _toolCallBlock(String name, Map<String, dynamic> arguments) {
+    final payload = {'name': name, 'arguments': arguments};
+    return '```json\n'
+        '${const JsonEncoder.withIndent('  ').convert(payload)}'
+        '\n```';
+  }
+
   void _onSendMessage(ChatMessage message) async {
     _controller.addMessage(message);
     setState(() => _isLoading = true);
@@ -163,8 +174,9 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
             .executeAction('calculate', {'expression': expr});
         if (result.success) {
           final data = result.data as Map<String, dynamic>;
-          response =
-              '**Calculator**\n\n`${data['expression']}` = **${data['result']}**';
+          response = 'Calling the calculator tool:\n\n'
+              '${_toolCallBlock('calculate', {'expression': expr})}\n\n'
+              '**Result:** `${data['expression']}` = **${data['result']}**';
         } else {
           response =
               'Could not calculate that. Try something like "calculate 5 + 3".';
@@ -180,7 +192,9 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
         });
         if (result.success) {
           final d = result.data as Map<String, dynamic>;
-          response = '**Weather in ${d['city']}**\n\n'
+          response = 'Calling the weather tool:\n\n'
+              '${_toolCallBlock('get_weather', {'city': city})}\n\n'
+              '**Weather in ${d['city']}**\n\n'
               '- ${d['conditions']}\n'
               '- Temperature: ${d['temperature']}${d['units'] == 'celsius' ? '\u00b0C' : '\u00b0F'}\n'
               '- Humidity: ${d['humidity']}%';
@@ -200,6 +214,14 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
           final d = result.data as Map<String, dynamic>;
           // A swatch reads better than a bare hex string.
           if (mounted) {
+            _controller.addMessage(ChatMessage(
+              text: 'Calling the color tool:\n\n'
+                  '${_toolCallBlock('generate_color', {'mood': mood})}\n\n'
+                  'Here\'s your swatch:',
+              user: _aiUser,
+              createdAt: DateTime.now(),
+              isMarkdown: true,
+            ));
             _controller.addMessage(ChatMessage.widget(
               user: _aiUser,
               builder: (context) => _ColorSwatch(

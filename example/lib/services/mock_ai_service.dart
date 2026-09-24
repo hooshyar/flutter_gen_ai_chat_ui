@@ -69,6 +69,40 @@ class ExampleAiService {
   String _markdownResponse(String query) {
     final lower = query.toLowerCase();
 
+    if (lower.contains('same function') || lower.contains('typescript')) {
+      return '# Fibonacci in Three Languages\n\n'
+          'The same tiny recursive function — note how each fence carries '
+          'its own language tag.\n\n'
+          '## Dart\n'
+          '```dart\n'
+          'int fib(int n) => n <= 1 ? n : fib(n - 1) + fib(n - 2);\n'
+          '```\n\n'
+          '## Python\n'
+          '```python\n'
+          'def fib(n):\n'
+          '    return n if n <= 1 else fib(n - 1) + fib(n - 2)\n'
+          '```\n\n'
+          '## TypeScript\n'
+          '```ts\n'
+          'function fib(n: number): number {\n'
+          '  return n <= 1 ? n : fib(n - 1) + fib(n - 2);\n'
+          '}\n'
+          '```\n\n'
+          '## Try the package\n'
+          '```bash\n'
+          'flutter pub add flutter_gen_ai_chat_ui\n'
+          '```\n\n'
+          '```yaml\n'
+          'dependencies:\n'
+          '  flutter_gen_ai_chat_ui: ^2.19.1\n'
+          '```\n\n'
+          'And a fence with **no language tag** falls back to the plain '
+          'base style:\n\n'
+          '```\n'
+          'no language here — just monospace text\n'
+          '```\n';
+    }
+
     if (lower.contains('singleton')) {
       return '# Singleton Pattern in Dart\n\n'
           'A singleton ensures only one instance of a class exists.\n\n'

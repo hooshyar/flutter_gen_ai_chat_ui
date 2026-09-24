@@ -25,6 +25,10 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
   StreamSubscription<String>? _streamSub;
   String? _currentStreamingId;
 
+  /// Drives `MessageOptions.enableSyntaxHighlighting` — toggled from the
+  /// AppBar so you can compare highlighted vs plain code blocks.
+  bool _syntaxHighlighting = true;
+
   /// Demo of `ScrollBehaviorConfig.pinDuringStreaming`: pick what stays at
   /// the top of the viewport while a long answer streams in.
   StreamingPinAnchor _pinAnchor = StreamingPinAnchor.responseStart;
@@ -144,6 +148,13 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
             onTap: () =>
                 _sendPrompt('Compare StatelessWidget vs StatefulWidget'),
           ),
+          _ToolbarIcon(
+            icon: Icons.language,
+            tooltip: 'Same function in 3 languages',
+            color: iconColor,
+            onTap: () =>
+                _sendPrompt('Same function in Dart, Python and TypeScript'),
+          ),
           const SizedBox(width: 2),
           Container(
             width: 1,
@@ -180,6 +191,14 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
       appBar: AppBar(
         title: const Text('Streaming + Markdown'),
         actions: [
+          IconButton(
+            tooltip: 'Syntax highlighting',
+            icon: Icon(
+              _syntaxHighlighting ? Icons.code : Icons.code_off,
+            ),
+            onPressed: () =>
+                setState(() => _syntaxHighlighting = !_syntaxHighlighting),
+          ),
           PopupMenuButton<StreamingPinAnchor>(
             tooltip: 'Pin while streaming',
             icon: const Icon(Icons.push_pin_outlined),
@@ -247,6 +266,8 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
           ExampleQuestion(question: 'Explain async/await with an example'),
           ExampleQuestion(
               question: 'Compare StatelessWidget vs StatefulWidget'),
+          ExampleQuestion(
+              question: 'Same function in Dart, Python and TypeScript'),
         ],
         inputOptions: InputOptions(
           textController: _textController,
@@ -285,6 +306,11 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
         messageOptions: MessageOptions(
           showCopyButton: true,
           showTime: true,
+          // Fenced code blocks: highlighted by default, copy button in the
+          // header, theme resolved from ambient brightness.
+          enableSyntaxHighlighting: _syntaxHighlighting,
+          codeBlockTheme: CodeBlockTheme.of(Theme.of(context).brightness),
+          showCodeBlockCopyButton: true,
           bubbleStyle: BubbleStyle(
             userBubbleColor:
                 isDark ? const Color(0xFF4338CA) : const Color(0xFF6366F1),

@@ -116,6 +116,20 @@ class _RtlChatExampleState extends State<RtlChatExample> {
           '> قلتُ: ومن لي بالصبرِ حتى أراهُ؟\n'
           '> فهمسَ: قلبٌ صادقٌ، ودربٌ طويل.\n\n'
           '_تمّت._';
+    } else if (query.contains('كود') || lower.contains('dart')) {
+      // Code fences stay LTR inside the RTL bubble — CodeBlockView forces
+      // TextDirection.ltr on the block itself, so nothing extra is needed.
+      reply = '## مثال بلغة Dart\n\n'
+          'إليك دالة بسيطة بلغة **Dart**. لاحظ أن الكتلة البرمجية تبقى '
+          'باتجاه اليسار إلى اليمين حتى داخل فقاعة عربية:\n\n'
+          '```dart\n'
+          'int add(int a, int b) => a + b;\n'
+          '\n'
+          'void main() {\n'
+          '  print(add(2, 3)); // 5\n'
+          '}\n'
+          '```\n\n'
+          'النص العربي يعود إلى اتجاهه الطبيعي بعد انتهاء الكود.';
     } else if (query.contains('Flutter') ||
         lower.contains('flutter') ||
         lower.contains('what')) {
@@ -212,6 +226,9 @@ class _RtlChatExampleState extends State<RtlChatExample> {
             // U+200E LRM keeps this Latin question's trailing "?" on the
             // correct side inside an RTL chip.
             ExampleQuestion(question: '‎What is Flutter?'),
+            // Arabic answer containing a ```dart block — the code stays
+            // LTR inside the RTL bubble.
+            ExampleQuestion(question: 'أرني مثالاً على كود Dart'),
           ],
           inputOptions: InputOptions(
             decoration: InputDecoration(
