@@ -31,7 +31,8 @@ void main() {
   }
 
   group('MarkdownContent code blocks', () {
-    testWidgets('enableSyntaxHighlighting false renders plain code in a '
+    testWidgets(
+        'enableSyntaxHighlighting false renders plain code in a '
         'CodeBlockView', (tester) async {
       await tester.pumpWidget(
         wrap(
@@ -53,7 +54,8 @@ void main() {
       expect(span.children, isNull);
     });
 
-    testWidgets('enableSyntaxHighlighting true renders multiple coloured '
+    testWidgets(
+        'enableSyntaxHighlighting true renders multiple coloured '
         'spans', (tester) async {
       await tester.pumpWidget(
         wrap(

@@ -32,9 +32,9 @@ void main() {
   });
 
   testWidgets('send button tooltip is localizable', (tester) async {
-    await tester.pumpWidget(host(
-      inputOptions: const InputOptions(sendButtonTooltip: 'إرسال'),
-    ));
+    await tester.pumpWidget(
+      host(inputOptions: const InputOptions(sendButtonTooltip: 'إرسال')),
+    );
     await tester.pump();
 
     expect(find.byTooltip('إرسال'), findsOneWidget);

@@ -42,8 +42,9 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('default welcome has no leading/trailing suggestion icons',
-      (tester) async {
+  testWidgets('default welcome has no leading/trailing suggestion icons', (
+    tester,
+  ) async {
     await pumpEmptyState(tester);
 
     expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsNothing);
@@ -61,8 +62,9 @@ void main() {
     expect(sent!.text, 'Alpha question');
   });
 
-  testWidgets('explicit WelcomeMessageConfig.builder still wins',
-      (tester) async {
+  testWidgets('explicit WelcomeMessageConfig.builder still wins', (
+    tester,
+  ) async {
     controller.showWelcomeMessage = true;
     await tester.pumpWidget(
       MaterialApp(
@@ -89,22 +91,23 @@ void main() {
   });
 
   testWidgets(
-      'suggestion tiles share a row at 800 width but stack at 390 width',
-      (tester) async {
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    tester.view.devicePixelRatio = 1.0;
+    'suggestion tiles share a row at 800 width but stack at 390 width',
+    (tester) async {
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      tester.view.devicePixelRatio = 1.0;
 
-    tester.view.physicalSize = const Size(800, 900);
-    await pumpEmptyState(tester);
-    final wideFirst = tester.getTopLeft(find.text('Alpha question')).dy;
-    final wideSecond = tester.getTopLeft(find.text('Beta question')).dy;
-    expect(wideFirst, closeTo(wideSecond, 0.5));
+      tester.view.physicalSize = const Size(800, 900);
+      await pumpEmptyState(tester);
+      final wideFirst = tester.getTopLeft(find.text('Alpha question')).dy;
+      final wideSecond = tester.getTopLeft(find.text('Beta question')).dy;
+      expect(wideFirst, closeTo(wideSecond, 0.5));
 
-    tester.view.physicalSize = const Size(390, 900);
-    await pumpEmptyState(tester);
-    final narrowFirst = tester.getTopLeft(find.text('Alpha question')).dy;
-    final narrowSecond = tester.getTopLeft(find.text('Beta question')).dy;
-    expect(narrowFirst, isNot(closeTo(narrowSecond, 0.5)));
-  });
+      tester.view.physicalSize = const Size(390, 900);
+      await pumpEmptyState(tester);
+      final narrowFirst = tester.getTopLeft(find.text('Alpha question')).dy;
+      final narrowSecond = tester.getTopLeft(find.text('Beta question')).dy;
+      expect(narrowFirst, isNot(closeTo(narrowSecond, 0.5)));
+    },
+  );
 }

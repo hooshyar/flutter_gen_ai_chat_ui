@@ -78,8 +78,7 @@ class _AnimatedTextMessageState extends State<AnimatedTextMessage>
     // Handle regular text with fade animation
     return FadeTransition(
       opacity: _fadeAnimation,
-      child:
-          widget.textBuilder?.call(widget.text, widget.style) ??
+      child: widget.textBuilder?.call(widget.text, widget.style) ??
           (widget.isMarkdown
               ? MarkdownBody(
                   data: widget.text,

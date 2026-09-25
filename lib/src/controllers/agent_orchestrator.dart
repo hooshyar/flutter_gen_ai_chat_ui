@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/foundation.dart';
+
 import '../models/ai_agent.dart';
 
 /// Multi-agent orchestration system similar to CopilotKit's CoAgents.
@@ -142,7 +144,8 @@ class AgentOrchestrator extends ChangeNotifier {
 
     if (targetAgent == null) {
       throw AgentException(
-          'Target agent ${routingDecision.targetAgentId} not found');
+        'Target agent ${routingDecision.targetAgentId} not found',
+      );
     }
 
     try {
@@ -356,7 +359,9 @@ class AgentOrchestrator extends ChangeNotifier {
 
   /// Handle delegation to another agent
   Future<AgentResponse> _handleDelegation(
-      AgentRequest originalRequest, AgentResponse delegationResponse) async {
+    AgentRequest originalRequest,
+    AgentResponse delegationResponse,
+  ) async {
     // Extract delegation information from response metadata
     final targetAgentId = delegationResponse.metadata['delegate_to'] as String?;
     final delegatedQuery =
@@ -385,7 +390,9 @@ class AgentOrchestrator extends ChangeNotifier {
 
   /// Handle collaboration request
   Future<AgentResponse> _handleCollaborationRequest(
-      AgentRequest originalRequest, AgentResponse collaborationResponse) async {
+    AgentRequest originalRequest,
+    AgentResponse collaborationResponse,
+  ) async {
     final participantIds =
         collaborationResponse.metadata['participants'] as List<String>?;
     final coordinatorId =

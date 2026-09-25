@@ -20,8 +20,9 @@ void main() {
             (w.decoration! as BoxDecoration).shape == BoxShape.circle,
       );
 
-  testWidgets('default typing indicator uses the configured size',
-      (tester) async {
+  testWidgets('default typing indicator uses the configured size', (
+    tester,
+  ) async {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 

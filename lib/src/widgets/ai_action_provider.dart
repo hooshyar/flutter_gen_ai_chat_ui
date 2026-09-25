@@ -22,8 +22,11 @@ class AiActionConfig {
   /// `confirmationConfig` is non-null), this builder is called and is
   /// expected to return `true` to allow execution or `false` to cancel.
   /// When null, a default Material `AlertDialog` is shown.
-  final Future<bool> Function(BuildContext context, AiAction action,
-      Map<String, dynamic> parameters)? confirmationBuilder;
+  final Future<bool> Function(
+    BuildContext context,
+    AiAction action,
+    Map<String, dynamic> parameters,
+  )? confirmationBuilder;
 
   /// Whether to emit verbose debug logging from the underlying controller.
   final bool debug;
@@ -218,9 +221,7 @@ class _AiActionProviderState extends State<AiActionProvider> {
 
             // Use custom builder if provided
             if (config.builder != null) {
-              return Dialog(
-                child: config.builder!(context, parameters),
-              );
+              return Dialog(child: config.builder!(context, parameters));
             }
 
             // Default confirmation dialog
@@ -230,8 +231,10 @@ class _AiActionProviderState extends State<AiActionProvider> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(config.message ??
-                      'Do you want to execute "${action.name}"?'),
+                  Text(
+                    config.message ??
+                        'Do you want to execute "${action.name}"?',
+                  ),
                   const SizedBox(height: 16),
                   if (parameters.isNotEmpty) ...[
                     const Text(
@@ -433,10 +436,7 @@ class AiActionBuilder extends StatelessWidget {
   final Widget Function(BuildContext context, AiActionHook hook) builder;
 
   /// Creates an [AiActionBuilder]. The [builder] is required.
-  const AiActionBuilder({
-    super.key,
-    required this.builder,
-  });
+  const AiActionBuilder({super.key, required this.builder});
 
   @override
   Widget build(BuildContext context) {

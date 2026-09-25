@@ -124,10 +124,7 @@ class _SmartChatInputState extends State<SmartChatInput>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: widget.padding,
-      child: _buildInputForStyle(),
-    );
+    return Container(padding: widget.padding, child: _buildInputForStyle());
   }
 
   Widget _buildInputForStyle() {
@@ -205,16 +202,12 @@ class _SmartChatInputState extends State<SmartChatInput>
           decoration: BoxDecoration(
             color: const Color(0xFF1E1E2E),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: const Color(0xFF00D9FF),
-              width: 2,
-            ),
+            border: Border.all(color: const Color(0xFF00D9FF), width: 2),
             boxShadow: _isFocused
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF00D9FF).withValues(
-                        alpha: _glowAnimation.value * 0.5,
-                      ),
+                      color: const Color(0xFF00D9FF)
+                          .withValues(alpha: _glowAnimation.value * 0.5),
                       blurRadius: 20 * _glowAnimation.value,
                       spreadRadius: 2 * _glowAnimation.value,
                     ),
@@ -362,13 +355,7 @@ class _SmartChatInputState extends State<SmartChatInput>
 }
 
 /// Smart input styles
-enum SmartInputStyle {
-  modern,
-  glassmorphic,
-  neon,
-  minimal,
-  elegant,
-}
+enum SmartInputStyle { modern, glassmorphic, neon, minimal, elegant }
 
 /// Animated attachment button widget
 class AttachmentButton extends StatefulWidget {
@@ -402,9 +389,10 @@ class _AttachmentButtonState extends State<AttachmentButton>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
   }
 
   @override

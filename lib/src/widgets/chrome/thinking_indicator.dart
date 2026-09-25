@@ -51,11 +51,16 @@ class _ThinkingIndicatorState extends State<ThinkingIndicator>
   @override
   Widget build(BuildContext context) {
     final tokens = ChatTokens.of(context);
+    // Base colour: `textSecondary` at full opacity, never dimmed further —
+    // the sweep band below only ever brightens toward `textPrimary` and
+    // clamps back to this same full-opacity `textSecondary` at its edges,
+    // so the label is never fainter than its resting state.
+    final baseLabelColor = tokens.textSecondary.withValues(alpha: 1.0);
     final labelStyle = TextStyle(
       fontSize: 14,
       height: 20 / 14,
       fontWeight: FontWeight.w500,
-      color: tokens.textSecondary,
+      color: baseLabelColor,
     );
 
     final controller = _controller;
@@ -87,14 +92,18 @@ class _ThinkingIndicatorState extends State<ThinkingIndicator>
           return ShaderMask(
             blendMode: BlendMode.srcIn,
             shaderCallback: (bounds) => LinearGradient(
-              colors: [
-                tokens.textSecondary,
-                tokens.textPrimary,
-                tokens.textSecondary,
-              ],
+              // Never a third, dimmer color here: the band only ever
+              // interpolates between the full-opacity resting color
+              // (`baseLabelColor`) and the brighter `textPrimary` highlight,
+              // and `TileMode.clamp` (explicit below) holds the label at
+              // that same resting color outside the moving band — so the
+              // label can brighten but never fade below its own base
+              // contrast.
+              colors: [baseLabelColor, tokens.textPrimary, baseLabelColor],
               stops: const [0.0, 0.5, 1.0],
               begin: Alignment(dx - 1, 0),
               end: Alignment(dx + 1, 0),
+              tileMode: TileMode.clamp,
             ).createShader(bounds),
             child: Text('Thinking', style: labelStyle),
           );
@@ -177,11 +186,7 @@ class _ChatTypingDotsState extends State<ChatTypingDots>
                   width: dotSize,
                   height: dotSize,
                   decoration: BoxDecoration(
-                    color: Color.lerp(
-                      dimColor,
-                      brightColor,
-                      interval.value,
-                    ),
+                    color: Color.lerp(dimColor, brightColor, interval.value),
                     shape: BoxShape.circle,
                   ),
                 );

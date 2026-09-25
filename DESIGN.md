@@ -232,7 +232,7 @@ Inline code: `monoInline`, fill `inlineCodeBg`, radius 4 (via `code` style `back
 - Placeholder default copy: "Message..." (no ellipsis character, three dots).
 
 ### 8.5 Send / stop button
-- 36x36 visual disc inside a 44x44 hit area, full radius.
+- 36x36 visual disc inside a 48x48 hit area (Material/WCAG), full radius.
 - Enabled: fill `ink`, icon `Icons.arrow_upward_rounded` 20px `onInk`.
 - Empty input: fill `ink` at 12% alpha (light) / 16% (dark), icon `textTertiary`, not tappable, semantics "Send message, disabled".
 - Generating: same disc, fill `ink`, icon a 12x12 square radius 3 in `onInk`, tooltip "Stop generating". Morph per section 7.
@@ -283,7 +283,7 @@ Inline code: `monoInline`, fill `inlineCodeBg`, radius 4 (via `code` style `back
 - Per-message direction detection (existing) stays; a message whose detected direction differs from the ambient direction still aligns to its sender's edge but sets its own text direction.
 
 ### 8.13 Accessibility floor
-- Hit targets 44x44 minimum for every icon control.
+- Hit targets 48x48 minimum (Material/WCAG) for every icon control; the send/stop button meets this directly (§8.5), other controls document their own hit area under their own section.
 - Every icon-only control has a tooltip and a semantics label.
 - Contrast per section 3; no information by colour alone (disabled send also changes icon colour and semantics).
 - `MediaQuery.textScaler` respected up to 2.0 without clipping: no fixed heights on text containers.

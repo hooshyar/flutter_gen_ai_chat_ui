@@ -58,14 +58,18 @@ class ChatSpacingConfig {
   }
 
   factory ChatSpacingConfig.compact() => const ChatSpacingConfig(
-        messageBubbleInnerPadding:
-            EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        messageBubbleInnerPadding: EdgeInsets.symmetric(
+          vertical: 10,
+          horizontal: 12,
+        ),
         messageListPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       );
 
   factory ChatSpacingConfig.comfortable() => const ChatSpacingConfig(
-        messageBubbleInnerPadding:
-            EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        messageBubbleInnerPadding: EdgeInsets.symmetric(
+          vertical: 16,
+          horizontal: 20,
+        ),
         messageListPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       );
 

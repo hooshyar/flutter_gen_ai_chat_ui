@@ -65,11 +65,7 @@ class ChatEmptyState extends StatelessWidget {
               color: tokens.textPrimary,
             );
         final subtitleStyle = config?.subtitleStyle ??
-            TextStyle(
-              fontSize: 16,
-              height: 1.56,
-              color: tokens.textSecondary,
-            );
+            TextStyle(fontSize: 16, height: 1.56, color: tokens.textSecondary);
 
         Widget content = Column(
           mainAxisSize: MainAxisSize.min,
@@ -94,9 +90,9 @@ class ChatEmptyState extends StatelessWidget {
             ],
             if (exampleQuestions.isNotEmpty) ...[
               const SizedBox(height: ChatSpace.s24),
-              if (config?.questionsSectionTitle != null) ...[
+              if ((config?.questionsSectionTitle ?? '').isNotEmpty) ...[
                 Text(
-                  config!.questionsSectionTitle!,
+                  config!.questionsSectionTitle,
                   style: config.questionsSectionTitleStyle ??
                       TextStyle(
                         fontSize: 14,

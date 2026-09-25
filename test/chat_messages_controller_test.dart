@@ -43,41 +43,41 @@ void main() {
       controller.dispose();
     });
 
-    test('loadMore adds messages in correct order (chronological mode)',
-        () async {
-      // Create controller with chronological pagination
-      final controller = ChatMessagesController(
-        paginationConfig: const PaginationConfig(
-          enabled: true,
-          loadingDelay: Duration(milliseconds: 100),
-          reverseOrder: false,
-        ),
-      );
+    test(
+      'loadMore adds messages in correct order (chronological mode)',
+      () async {
+        // Create controller with chronological pagination
+        final controller = ChatMessagesController(
+          paginationConfig: const PaginationConfig(
+            enabled: true,
+            loadingDelay: Duration(milliseconds: 100),
+            reverseOrder: false,
+          ),
+        );
 
-      // Initial batch of messages (oldest 10, messages 1-10)
-      final initialBatch = testMessages.sublist(0, 10);
-      controller.setMessages(initialBatch);
-      expect(controller.messages.length, 10);
-      expect(controller.messages.first.text, 'Message 1');
-      expect(controller.messages.last.text, 'Message 10');
+        // Initial batch of messages (oldest 10, messages 1-10)
+        final initialBatch = testMessages.sublist(0, 10);
+        controller.setMessages(initialBatch);
+        expect(controller.messages.length, 10);
+        expect(controller.messages.first.text, 'Message 1');
+        expect(controller.messages.last.text, 'Message 10');
 
-      // Load more (next 10 messages, 11-20)
-      final nextBatch = testMessages.sublist(10, 20);
-      await controller.loadMore(() async => nextBatch);
+        // Load more (next 10 messages, 11-20)
+        final nextBatch = testMessages.sublist(10, 20);
+        await controller.loadMore(() async => nextBatch);
 
-      // Should now have 20 messages, with correct ordering
-      expect(controller.messages.length, 20);
-      expect(controller.messages.first.text, 'Message 1');
-      expect(controller.messages.last.text, 'Message 20');
+        // Should now have 20 messages, with correct ordering
+        expect(controller.messages.length, 20);
+        expect(controller.messages.first.text, 'Message 1');
+        expect(controller.messages.last.text, 'Message 20');
 
-      controller.dispose();
-    });
+        controller.dispose();
+      },
+    );
 
     test('hasMoreMessages flag updates correctly', () async {
       final controller = ChatMessagesController(
-        paginationConfig: const PaginationConfig(
-          enabled: true,
-        ),
+        paginationConfig: const PaginationConfig(enabled: true),
       );
 
       // Initial state
@@ -179,9 +179,7 @@ void main() {
 
     test('empty results update hasMoreMessages flag', () async {
       final controller = ChatMessagesController(
-        paginationConfig: const PaginationConfig(
-          enabled: true,
-        ),
+        paginationConfig: const PaginationConfig(enabled: true),
       );
 
       // Initially has more messages
@@ -199,9 +197,7 @@ void main() {
     test('paginationConfig is respected', () async {
       // Test with disabled pagination
       final controller = ChatMessagesController(
-        paginationConfig: const PaginationConfig(
-          enabled: false,
-        ),
+        paginationConfig: const PaginationConfig(enabled: false),
       );
 
       // Loading more should be a no-op when pagination is disabled
@@ -218,9 +214,7 @@ void main() {
 
     test('controller correctly transitions to hasMoreMessages=false', () async {
       final controller = ChatMessagesController(
-        paginationConfig: const PaginationConfig(
-          enabled: true,
-        ),
+        paginationConfig: const PaginationConfig(enabled: true),
       );
 
       // First load gets messages

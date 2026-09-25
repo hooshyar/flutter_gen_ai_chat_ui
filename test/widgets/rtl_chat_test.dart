@@ -61,8 +61,9 @@ void main() {
 
         // Directionality resolves to rtl when read from inside the widget
         // (covers the "wrap once, descendants inherit" promise).
-        final BuildContext chatContext =
-            tester.element(find.byType(AiChatWidget));
+        final BuildContext chatContext = tester.element(
+          find.byType(AiChatWidget),
+        );
         expect(Directionality.of(chatContext), TextDirection.rtl);
       },
     );
@@ -88,11 +89,13 @@ void main() {
         );
 
         const arabicReply = 'بغداد هي عاصمة العراق';
-        controller.addMessage(ChatMessage(
-          text: arabicReply,
-          user: aiUser,
-          createdAt: DateTime.now(),
-        ));
+        controller.addMessage(
+          ChatMessage(
+            text: arabicReply,
+            user: aiUser,
+            createdAt: DateTime.now(),
+          ),
+        );
 
         // Settle animations/layout. Don't await an indefinite settle because
         // streaming widgets may keep tickers warm — bounded pump is enough.
@@ -103,14 +106,12 @@ void main() {
 
         // The Arabic content is now in the controller's message list.
         expect(controller.messages.length, greaterThanOrEqualTo(1));
-        expect(
-          controller.messages.any((m) => m.text == arabicReply),
-          isTrue,
-        );
+        expect(controller.messages.any((m) => m.text == arabicReply), isTrue);
 
         // Ambient direction is still RTL after a message is added.
-        final BuildContext chatContext =
-            tester.element(find.byType(AiChatWidget));
+        final BuildContext chatContext = tester.element(
+          find.byType(AiChatWidget),
+        );
         expect(Directionality.of(chatContext), TextDirection.rtl);
       },
     );

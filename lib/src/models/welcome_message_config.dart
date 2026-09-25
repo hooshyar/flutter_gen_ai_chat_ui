@@ -13,7 +13,7 @@ class WelcomeMessageConfig {
       horizontal: 16,
       vertical: 12,
     ),
-    this.questionsSectionTitle,
+    this.questionsSectionTitle = '',
     this.questionsSectionTitleStyle,
     this.questionsSectionDecoration,
     this.questionsSectionPadding = const EdgeInsets.symmetric(
@@ -51,10 +51,13 @@ class WelcomeMessageConfig {
   /// Margin for the main container
   final EdgeInsets containerMargin;
 
-  /// Optional heading shown above the suggestion tiles. Null by default —
-  /// the package default empty state (`DESIGN.md` §8.6) has no "Here are
-  /// some questions you can ask:" label; set this explicitly to opt back in.
-  final String? questionsSectionTitle;
+  /// Optional heading shown above the suggestion tiles. Empty (`''`) by
+  /// default — the package default empty state (`DESIGN.md` §8.6) has no
+  /// "Here are some questions you can ask:" label; set this explicitly to
+  /// opt back in. An empty string is always treated the same as "no
+  /// heading", so `copyWith()` can't accidentally clear it back to the
+  /// non-null-but-unset default with a bare `''`.
+  final String questionsSectionTitle;
 
   /// Style for the questions section title
   final TextStyle? questionsSectionTitleStyle;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/chat/media.dart';
 import '../utils/color_extensions.dart';
 import 'attachment_lightbox.dart';
@@ -65,7 +66,10 @@ class MessageAttachment extends StatelessWidget {
   /// same "uploading" treatment without each type-specific builder needing
   /// its own progress-rendering logic.
   Widget _withUploadProgressOverlay(
-      BuildContext context, Widget child, double progress) {
+    BuildContext context,
+    Widget child,
+    double progress,
+  ) {
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -119,8 +123,11 @@ class MessageAttachment extends StatelessWidget {
       gallery.insert(0, media);
       initialIndex = 0;
     }
-    AttachmentLightbox.show(context,
-        images: gallery, initialIndex: initialIndex);
+    AttachmentLightbox.show(
+      context,
+      images: gallery,
+      initialIndex: initialIndex,
+    );
   }
 
   Widget _buildByType(BuildContext context) {
@@ -210,9 +217,7 @@ class MessageAttachment extends StatelessWidget {
               width: 200,
               height: 150,
               color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-              child: const Center(
-                child: Icon(Icons.broken_image, size: 40),
-              ),
+              child: const Center(child: Icon(Icons.broken_image, size: 40)),
             );
           },
         ),

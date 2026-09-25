@@ -45,8 +45,9 @@ void main() {
       expect(find.byType(ListView), findsOneWidget);
     });
 
-    testWidgets('can display messages in controller',
-        (WidgetTester tester) async {
+    testWidgets('can display messages in controller', (
+      WidgetTester tester,
+    ) async {
       // Prepare test by adding messages to controller
       final userMsg = ChatMessage(
         text: 'Hello AI',
@@ -86,8 +87,9 @@ void main() {
       expect(find.text('Hello human'), findsOneWidget);
     });
 
-    testWidgets('typing and sending messages works',
-        (WidgetTester tester) async {
+    testWidgets('typing and sending messages works', (
+      WidgetTester tester,
+    ) async {
       bool messageSent = false;
       String? sentMessageText;
 
@@ -134,8 +136,9 @@ void main() {
       expect(find.text('Test message'), findsNothing);
     });
 
-    testWidgets('shows loading animation when isLoading is true',
-        (WidgetTester tester) async {
+    testWidgets('shows loading animation when isLoading is true', (
+      WidgetTester tester,
+    ) async {
       // Build the widget with loading indicator
       await tester.pumpWidget(
         MaterialApp(
@@ -199,58 +202,58 @@ void main() {
     });
 
     testWidgets(
-        'scrolls to beginning of AI response with scrollToFirstResponseMessage enabled',
-        (WidgetTester tester) async {
-      // Use a new controller for this test to avoid state from other tests
-      final localController = ChatMessagesController();
-      final localScrollController = ScrollController();
+      'scrolls to beginning of AI response with scrollToFirstResponseMessage enabled',
+      (WidgetTester tester) async {
+        // Use a new controller for this test to avoid state from other tests
+        final localController = ChatMessagesController();
+        final localScrollController = ScrollController();
 
-      // Force a large widget size to ensure scrolling is possible
-      tester.binding.window.physicalSizeTestValue = const Size(1080, 1920);
-      tester.binding.window.devicePixelRatioTestValue = 1.0;
+        // Force a large widget size to ensure scrolling is possible
+        tester.binding.window.physicalSizeTestValue = const Size(1080, 1920);
+        tester.binding.window.devicePixelRatioTestValue = 1.0;
 
-      // Build the widget with scrollToFirstResponseMessage enabled
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Material(
-            child: Scaffold(
-              body: Container(
-                height: 600, // Fixed height to ensure scrolling is possible
-                child: AiChatWidget(
-                  currentUser: testUser,
-                  aiUser: aiUser,
-                  controller: localController,
-                  onSendMessage: (_) async {},
-                  scrollController: localScrollController,
-                  scrollBehaviorConfig: const ScrollBehaviorConfig(
-                    scrollToFirstResponseMessage: true,
-                    // Use a very short animation duration for faster tests
-                    scrollAnimationDuration: Duration(milliseconds: 50),
+        // Build the widget with scrollToFirstResponseMessage enabled
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Material(
+              child: Scaffold(
+                body: Container(
+                  height: 600, // Fixed height to ensure scrolling is possible
+                  child: AiChatWidget(
+                    currentUser: testUser,
+                    aiUser: aiUser,
+                    controller: localController,
+                    onSendMessage: (_) async {},
+                    scrollController: localScrollController,
+                    scrollBehaviorConfig: const ScrollBehaviorConfig(
+                      scrollToFirstResponseMessage: true,
+                      // Use a very short animation duration for faster tests
+                      scrollAnimationDuration: Duration(milliseconds: 50),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Wait for widget to build and attach the scroll controller
-      await tester.pumpAndSettle();
+        // Wait for widget to build and attach the scroll controller
+        await tester.pumpAndSettle();
 
-      // Set the controller's scroll controller after the widget is built
-      localController.setScrollController(localScrollController);
+        // Set the controller's scroll controller after the widget is built
+        localController.setScrollController(localScrollController);
 
-      // First add a user message
-      final userMsg = ChatMessage(
-        text: 'Can you explain quantum computing?',
-        user: testUser,
-        createdAt: DateTime.now(),
-      );
-      localController.addMessage(userMsg);
-      await tester.pumpAndSettle();
+        // First add a user message
+        final userMsg = ChatMessage(
+          text: 'Can you explain quantum computing?',
+          user: testUser,
+          createdAt: DateTime.now(),
+        );
+        localController.addMessage(userMsg);
+        await tester.pumpAndSettle();
 
-      // Create a very long AI response (multi-paragraph)
-      final longAiResponse = '''
+        // Create a very long AI response (multi-paragraph)
+        final longAiResponse = '''
 Quantum computing is a type of computation that harnesses the collective properties of quantum states, such as superposition, interference, and entanglement, to perform calculations. 
 
 Traditional computers use binary digits (bits) that can be either 0 or 1. Quantum computers use quantum bits or qubits, which can exist in a superposition of states, essentially being both 0 and 1 simultaneously until measured.
@@ -271,91 +274,92 @@ The field faces significant engineering challenges, particularly in maintaining 
 Despite these challenges, quantum computing promises revolutionary advancements in fields like cryptography, materials science, artificial intelligence, and pharmaceutical research.
 ''';
 
-      // Add the AI response - this should trigger scrolling to first part of response
-      final aiMsg = ChatMessage(
-        text: longAiResponse,
-        user: aiUser,
-        createdAt: DateTime.now(),
-        customProperties: {
-          'isStartOfResponse': true
-        }, // Mark as start of response
-      );
+        // Add the AI response - this should trigger scrolling to first part of response
+        final aiMsg = ChatMessage(
+          text: longAiResponse,
+          user: aiUser,
+          createdAt: DateTime.now(),
+          customProperties: {
+            'isStartOfResponse': true,
+          }, // Mark as start of response
+        );
 
-      localController.addMessage(aiMsg);
+        localController.addMessage(aiMsg);
 
-      // Allow time for scroll events to complete
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 50));
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pumpAndSettle();
+        // Allow time for scroll events to complete
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pumpAndSettle();
 
-      // Verify the messages were added to the controller
-      expect(localController.messages.length, greaterThanOrEqualTo(2));
-      final hasQuantumMsg = localController.messages.any(
-        (m) => m.text.contains('Quantum computing'),
-      );
-      expect(hasQuantumMsg, isTrue);
+        // Verify the messages were added to the controller
+        expect(localController.messages.length, greaterThanOrEqualTo(2));
+        final hasQuantumMsg = localController.messages.any(
+          (m) => m.text.contains('Quantum computing'),
+        );
+        expect(hasQuantumMsg, isTrue);
 
-      // Cleanup
-      localController.dispose();
-      localScrollController.dispose();
-      tester.binding.window.clearPhysicalSizeTestValue();
-      tester.binding.window.clearDevicePixelRatioTestValue();
-    });
+        // Cleanup
+        localController.dispose();
+        localScrollController.dispose();
+        tester.binding.window.clearPhysicalSizeTestValue();
+        tester.binding.window.clearDevicePixelRatioTestValue();
+      },
+    );
 
     testWidgets(
-        'scrolls to end of AI response by default (scrollToFirstResponseMessage disabled)',
-        (WidgetTester tester) async {
-      // Use a new controller for this test
-      final localController = ChatMessagesController();
-      final localScrollController = ScrollController();
+      'scrolls to end of AI response by default (scrollToFirstResponseMessage disabled)',
+      (WidgetTester tester) async {
+        // Use a new controller for this test
+        final localController = ChatMessagesController();
+        final localScrollController = ScrollController();
 
-      // Force a large widget size to ensure scrolling is possible
-      tester.binding.window.physicalSizeTestValue = const Size(1080, 1920);
-      tester.binding.window.devicePixelRatioTestValue = 1.0;
+        // Force a large widget size to ensure scrolling is possible
+        tester.binding.window.physicalSizeTestValue = const Size(1080, 1920);
+        tester.binding.window.devicePixelRatioTestValue = 1.0;
 
-      // Build the widget with default scroll behavior (scrollToFirstResponseMessage = false)
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Material(
-            child: Scaffold(
-              body: Container(
-                height: 600, // Fixed height to ensure scrolling is possible
-                child: AiChatWidget(
-                  currentUser: testUser,
-                  aiUser: aiUser,
-                  controller: localController,
-                  onSendMessage: (_) async {},
-                  scrollController: localScrollController,
-                  // No custom scrollBehaviorConfig = using default (scrollToFirstResponseMessage = false)
-                  scrollBehaviorConfig: const ScrollBehaviorConfig(
-                    scrollToFirstResponseMessage: false, // Default behavior
-                    scrollAnimationDuration: Duration(milliseconds: 50),
+        // Build the widget with default scroll behavior (scrollToFirstResponseMessage = false)
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Material(
+              child: Scaffold(
+                body: Container(
+                  height: 600, // Fixed height to ensure scrolling is possible
+                  child: AiChatWidget(
+                    currentUser: testUser,
+                    aiUser: aiUser,
+                    controller: localController,
+                    onSendMessage: (_) async {},
+                    scrollController: localScrollController,
+                    // No custom scrollBehaviorConfig = using default (scrollToFirstResponseMessage = false)
+                    scrollBehaviorConfig: const ScrollBehaviorConfig(
+                      scrollToFirstResponseMessage: false, // Default behavior
+                      scrollAnimationDuration: Duration(milliseconds: 50),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Wait for widget to build and attach the scroll controller
-      await tester.pumpAndSettle();
+        // Wait for widget to build and attach the scroll controller
+        await tester.pumpAndSettle();
 
-      // Set the controller's scroll controller after the widget is built
-      localController.setScrollController(localScrollController);
+        // Set the controller's scroll controller after the widget is built
+        localController.setScrollController(localScrollController);
 
-      // First add a user message
-      final userMsg = ChatMessage(
-        text: 'Can you explain quantum computing?',
-        user: testUser,
-        createdAt: DateTime.now(),
-      );
-      localController.addMessage(userMsg);
-      await tester.pumpAndSettle();
+        // First add a user message
+        final userMsg = ChatMessage(
+          text: 'Can you explain quantum computing?',
+          user: testUser,
+          createdAt: DateTime.now(),
+        );
+        localController.addMessage(userMsg);
+        await tester.pumpAndSettle();
 
-      // Create the same long AI response
-      final longAiResponse = '''
+        // Create the same long AI response
+        final longAiResponse = '''
 Quantum computing is a type of computation that harnesses the collective properties of quantum states, such as superposition, interference, and entanglement, to perform calculations. 
 
 Traditional computers use binary digits (bits) that can be either 0 or 1. Quantum computers use quantum bits or qubits, which can exist in a superposition of states, essentially being both 0 and 1 simultaneously until measured.
@@ -376,37 +380,38 @@ The field faces significant engineering challenges, particularly in maintaining 
 Despite these challenges, quantum computing promises revolutionary advancements in fields like cryptography, materials science, artificial intelligence, and pharmaceutical research.
 ''';
 
-      // Add the AI response
-      final aiMsg = ChatMessage(
-        text: longAiResponse,
-        user: aiUser,
-        createdAt: DateTime.now(),
-        customProperties: {
-          'isStartOfResponse': true
-        }, // Mark as start of response
-      );
+        // Add the AI response
+        final aiMsg = ChatMessage(
+          text: longAiResponse,
+          user: aiUser,
+          createdAt: DateTime.now(),
+          customProperties: {
+            'isStartOfResponse': true,
+          }, // Mark as start of response
+        );
 
-      localController.addMessage(aiMsg);
+        localController.addMessage(aiMsg);
 
-      // Allow time for scroll events to complete
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 50));
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pumpAndSettle();
+        // Allow time for scroll events to complete
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pumpAndSettle();
 
-      // Verify the messages were added to the controller
-      expect(localController.messages.length, greaterThanOrEqualTo(2));
-      final hasCryptoMsg = localController.messages.any(
-        (m) => m.text.contains('cryptography'),
-      );
-      expect(hasCryptoMsg, isTrue);
+        // Verify the messages were added to the controller
+        expect(localController.messages.length, greaterThanOrEqualTo(2));
+        final hasCryptoMsg = localController.messages.any(
+          (m) => m.text.contains('cryptography'),
+        );
+        expect(hasCryptoMsg, isTrue);
 
-      // Cleanup
-      localController.dispose();
-      localScrollController.dispose();
-      tester.binding.window.clearPhysicalSizeTestValue();
-      tester.binding.window.clearDevicePixelRatioTestValue();
-    });
+        // Cleanup
+        localController.dispose();
+        localScrollController.dispose();
+        tester.binding.window.clearPhysicalSizeTestValue();
+        tester.binding.window.clearDevicePixelRatioTestValue();
+      },
+    );
   });
 
   group('AiChatWidget Configuration', () {
@@ -440,103 +445,110 @@ Despite these challenges, quantum computing promises revolutionary advancements 
       expect(find.text('Custom hint text'), findsOneWidget);
     });
 
-    testWidgets('preserves isStartOfResponse property during streaming updates',
-        (WidgetTester tester) async {
-      // Use new controller for this test
-      final localController = ChatMessagesController();
-      final localScrollController = ScrollController();
+    testWidgets(
+      'preserves isStartOfResponse property during streaming updates',
+      (WidgetTester tester) async {
+        // Use new controller for this test
+        final localController = ChatMessagesController();
+        final localScrollController = ScrollController();
 
-      // Build the widget with scrollToFirstResponseMessage enabled
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Material(
-            child: Scaffold(
-              body: Container(
-                height: 600,
-                child: AiChatWidget(
-                  currentUser: testUser,
-                  aiUser: aiUser,
-                  controller: localController,
-                  onSendMessage: (_) async {},
-                  scrollController: localScrollController,
-                  scrollBehaviorConfig: const ScrollBehaviorConfig(
-                    scrollToFirstResponseMessage: true,
+        // Build the widget with scrollToFirstResponseMessage enabled
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Material(
+              child: Scaffold(
+                body: Container(
+                  height: 600,
+                  child: AiChatWidget(
+                    currentUser: testUser,
+                    aiUser: aiUser,
+                    controller: localController,
+                    onSendMessage: (_) async {},
+                    scrollController: localScrollController,
+                    scrollBehaviorConfig: const ScrollBehaviorConfig(
+                      scrollToFirstResponseMessage: true,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
-      localController.setScrollController(localScrollController);
+        await tester.pumpAndSettle();
+        localController.setScrollController(localScrollController);
 
-      // Create an empty streaming message with isStartOfResponse
-      final streamingMsg = ChatMessage(
-        text: '',
-        user: aiUser,
-        createdAt: DateTime.now(),
-        customProperties: {
-          'isStartOfResponse': true,
-          'isStreaming': true,
-          'id': 'test_stream_msg',
-        },
-      );
-
-      // Add the initial empty message
-      localController.addMessage(streamingMsg);
-      await tester.pumpAndSettle();
-
-      // Update the message with some content
-      localController.updateMessage(
-        streamingMsg.copyWith(
-          text: 'Updated streaming content',
+        // Create an empty streaming message with isStartOfResponse
+        final streamingMsg = ChatMessage(
+          text: '',
+          user: aiUser,
+          createdAt: DateTime.now(),
           customProperties: {
+            'isStartOfResponse': true,
             'isStreaming': true,
             'id': 'test_stream_msg',
-            // Intentionally omit isStartOfResponse to test if it's preserved
           },
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        // Add the initial empty message
+        localController.addMessage(streamingMsg);
+        // Not pumpAndSettle(): the message is still flagged
+        // `isStreaming: true` at this point, which keeps the live
+        // StreamingCaret's repeating animation mounted (`DESIGN.md` §8.9) —
+        // pumpAndSettle() requires zero pending frames and would time out
+        // against it. A bounded pump drains the same debounced auto-scroll
+        // timers this was originally waiting on.
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
 
-      // Get the updated message from the controller
-      final updatedMsg = localController.messages.firstWhere(
-        (msg) => msg.customProperties?['id'] == 'test_stream_msg',
-      );
+        // Update the message with some content
+        localController.updateMessage(
+          streamingMsg.copyWith(
+            text: 'Updated streaming content',
+            customProperties: {
+              'isStreaming': true,
+              'id': 'test_stream_msg',
+              // Intentionally omit isStartOfResponse to test if it's preserved
+            },
+          ),
+        );
 
-      // Verify the property was preserved
-      expect(updatedMsg.customProperties?['isStartOfResponse'], isTrue);
-      expect(updatedMsg.text, equals('Updated streaming content'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
 
-      // Final update to complete streaming
-      localController.updateMessage(
-        streamingMsg.copyWith(
-          text: 'Final streaming content',
-          customProperties: {
-            'isStreaming': false,
-            'id': 'test_stream_msg',
-          },
-        ),
-      );
+        // Get the updated message from the controller
+        final updatedMsg = localController.messages.firstWhere(
+          (msg) => msg.customProperties?['id'] == 'test_stream_msg',
+        );
 
-      await tester.pumpAndSettle();
+        // Verify the property was preserved
+        expect(updatedMsg.customProperties?['isStartOfResponse'], isTrue);
+        expect(updatedMsg.text, equals('Updated streaming content'));
 
-      // Get the final message from the controller
-      final finalMsg = localController.messages.firstWhere(
-        (msg) => msg.customProperties?['id'] == 'test_stream_msg',
-      );
+        // Final update to complete streaming
+        localController.updateMessage(
+          streamingMsg.copyWith(
+            text: 'Final streaming content',
+            customProperties: {'isStreaming': false, 'id': 'test_stream_msg'},
+          ),
+        );
 
-      // Verify property is still preserved after streaming is completed
-      expect(finalMsg.customProperties?['isStartOfResponse'], isTrue);
-      expect(finalMsg.text, equals('Final streaming content'));
+        await tester.pumpAndSettle();
 
-      // Cleanup
-      localController.dispose();
-      localScrollController.dispose();
-    });
+        // Get the final message from the controller
+        final finalMsg = localController.messages.firstWhere(
+          (msg) => msg.customProperties?['id'] == 'test_stream_msg',
+        );
+
+        // Verify property is still preserved after streaming is completed
+        expect(finalMsg.customProperties?['isStartOfResponse'], isTrue);
+        expect(finalMsg.text, equals('Final streaming content'));
+
+        // Cleanup
+        localController.dispose();
+        localScrollController.dispose();
+      },
+    );
 
     // This test was causing timer issues, so we'll skip it for now
     // testWidgets('applies message styling options', (WidgetTester tester) async {

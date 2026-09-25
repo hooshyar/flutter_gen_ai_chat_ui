@@ -13,10 +13,8 @@ import 'package:flutter_gen_ai_chat_ui/src/widgets/input/send_stop_button.dart';
 ///   the text field's height) was capping it at ~38px tall. Fixed by
 ///   flooring that approximated height at 48 in `chat_input.dart` — the
 ///   icon itself is unchanged, only its container gets enough room.
-///   (The default control is now `SendStopButton`, a 44x44 hit area per
-///   `DESIGN.md` §8.5/§8.13 — Apple's HIG floor rather than Material's
-///   48dp. The fixed-height `Container` floor above still applies to the
-///   legacy `IconButton` path, used only when a builder override is set.)
+///   (The default control is now `SendStopButton`, a 48x48 hit area around
+///   its 36px disc per `DESIGN.md` §8.5/§8.13 — the Material/WCAG floor.)
 /// - The scroll-to-bottom button (icon-only by default, `showText: false`)
 ///   sized its tap area directly from `Padding` + icon size, landing at
 ///   ~36-44px. Fixed by bumping that padding to 48 total in
@@ -37,11 +35,12 @@ void main() {
 
   const minTapTarget = Size(48, 48);
   // The default send/stop control's own accessibility floor (`DESIGN.md`
-  // §8.13): 44x44, Apple's HIG minimum rather than Material's 48dp.
-  const minDefaultSendTapTarget = Size(44, 44);
+  // §8.13): 48x48, the Material/WCAG minimum.
+  const minDefaultSendTapTarget = Size(48, 48);
 
-  testWidgets('default send button meets its 44x44 minimum tap target',
-      (tester) async {
+  testWidgets('default send button meets its 48x48 minimum tap target', (
+    tester,
+  ) async {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 
@@ -67,66 +66,69 @@ void main() {
   });
 
   testWidgets(
-      'file upload button meets the 48x48 minimum tap target when enabled',
-      (tester) async {
-    final controller = ChatMessagesController();
-    addTearDown(controller.dispose);
+    'file upload button meets the 48x48 minimum tap target when enabled',
+    (tester) async {
+      final controller = ChatMessagesController();
+      addTearDown(controller.dispose);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Material(
-          child: AiChatWidget(
-            currentUser: testUser,
-            aiUser: aiUser,
-            controller: controller,
-            onSendMessage: (_) async {},
-            fileUploadOptions: FileUploadOptions(
-              enabled: true,
-              onFilesSelected: (_) {},
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Material(
+            child: AiChatWidget(
+              currentUser: testUser,
+              aiUser: aiUser,
+              controller: controller,
+              onSendMessage: (_) async {},
+              fileUploadOptions: FileUploadOptions(
+                enabled: true,
+                onFilesSelected: (_) {},
+              ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.pump();
+      );
+      await tester.pump();
 
-    final uploadButton = find.widgetWithIcon(IconButton, Icons.attach_file);
-    expect(uploadButton, findsOneWidget);
-    final size = tester.getSize(uploadButton);
-    expect(size.width, greaterThanOrEqualTo(minTapTarget.width));
-    expect(size.height, greaterThanOrEqualTo(minTapTarget.height));
-  });
+      final uploadButton = find.widgetWithIcon(IconButton, Icons.attach_file);
+      expect(uploadButton, findsOneWidget);
+      final size = tester.getSize(uploadButton);
+      expect(size.width, greaterThanOrEqualTo(minTapTarget.width));
+      expect(size.height, greaterThanOrEqualTo(minTapTarget.height));
+    },
+  );
 
   testWidgets(
-      'icon-only scroll-to-bottom button meets the 48x48 minimum tap target',
-      (tester) async {
-    final controller = ChatMessagesController();
-    addTearDown(controller.dispose);
+    'icon-only scroll-to-bottom button meets the 48x48 minimum tap target',
+    (tester) async {
+      final controller = ChatMessagesController();
+      addTearDown(controller.dispose);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Material(
-          child: AiChatWidget(
-            currentUser: testUser,
-            aiUser: aiUser,
-            controller: controller,
-            onSendMessage: (_) async {},
-            // showText defaults to false, so this is the icon-only case.
-            scrollToBottomOptions:
-                const ScrollToBottomOptions(alwaysVisible: true),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Material(
+            child: AiChatWidget(
+              currentUser: testUser,
+              aiUser: aiUser,
+              controller: controller,
+              onSendMessage: (_) async {},
+              // showText defaults to false, so this is the icon-only case.
+              scrollToBottomOptions: const ScrollToBottomOptions(
+                alwaysVisible: true,
+              ),
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pump();
+      );
+      await tester.pump();
 
-    final scrollButton = find.ancestor(
-      of: find.byIcon(Icons.arrow_downward_rounded),
-      matching: find.byType(InkWell),
-    );
-    expect(scrollButton, findsOneWidget);
-    final size = tester.getSize(scrollButton);
-    expect(size.width, greaterThanOrEqualTo(minTapTarget.width));
-    expect(size.height, greaterThanOrEqualTo(minTapTarget.height));
-  });
+      final scrollButton = find.ancestor(
+        of: find.byIcon(Icons.arrow_downward_rounded),
+        matching: find.byType(InkWell),
+      );
+      expect(scrollButton, findsOneWidget);
+      final size = tester.getSize(scrollButton);
+      expect(size.width, greaterThanOrEqualTo(minTapTarget.width));
+      expect(size.height, greaterThanOrEqualTo(minTapTarget.height));
+    },
+  );
 }

@@ -12,12 +12,7 @@ extension ColorExtensions on Color {
   ///
   /// If a parameter is not specified, the original value is maintained.
   /// Alpha can be specified as either 0-1.0 or 0-255.
-  Color withValues({
-    int? red,
-    int? green,
-    int? blue,
-    dynamic alpha,
-  }) {
+  Color withValues({int? red, int? green, int? blue, dynamic alpha}) {
     // Handle alpha which could be specified as either 0-1.0 or 0-255
     int? alphaValue;
     if (alpha != null) {
@@ -27,7 +22,8 @@ extension ColorExtensions on Color {
         alphaValue = alpha;
       } else {
         throw ArgumentError(
-            'Alpha must be a double between 0.0 and 1.0, or an int between 0 and 255');
+          'Alpha must be a double between 0.0 and 1.0, or an int between 0 and 255',
+        );
       }
     }
 

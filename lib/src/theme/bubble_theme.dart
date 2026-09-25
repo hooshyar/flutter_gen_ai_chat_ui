@@ -132,11 +132,7 @@ class BubbleTheme {
         fontSize: 16,
         fontWeight: FontWeight.w400,
         shadows: [
-          Shadow(
-            color: Color(0x4000FF88),
-            offset: Offset(0, 0),
-            blurRadius: 8,
-          ),
+          Shadow(color: Color(0x4000FF88), offset: Offset(0, 0), blurRadius: 8),
         ],
       ),
       userMessageTextStyle: TextStyle(
@@ -144,11 +140,7 @@ class BubbleTheme {
         fontSize: 16,
         fontWeight: FontWeight.w500,
         shadows: [
-          Shadow(
-            color: Color(0x40FF0080),
-            offset: Offset(0, 0),
-            blurRadius: 8,
-          ),
+          Shadow(color: Color(0x40FF0080), offset: Offset(0, 0), blurRadius: 8),
         ],
       ),
       messagePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),

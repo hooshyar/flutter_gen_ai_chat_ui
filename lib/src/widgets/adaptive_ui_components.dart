@@ -174,10 +174,7 @@ class ResponsiveChatLayout extends StatelessWidget {
     if (showSidebar && sidebar != null) {
       return Row(
         children: [
-          SizedBox(
-            width: 300,
-            child: sidebar!,
-          ),
+          SizedBox(width: 300, child: sidebar!),
           Expanded(
             child: Column(
               children: [
@@ -198,10 +195,7 @@ class ResponsiveChatLayout extends StatelessWidget {
     if (showSidebar && sidebar != null) {
       return Row(
         children: [
-          SizedBox(
-            width: 350,
-            child: sidebar!,
-          ),
+          SizedBox(width: 350, child: sidebar!),
           Expanded(
             child: Column(
               children: [
@@ -245,10 +239,7 @@ class ResponsiveChatLayout extends StatelessWidget {
 /// Platform-aware UI components
 class PlatformAwareComponents {
   /// Get platform-specific loading indicator
-  static Widget loadingIndicator({
-    Color? color,
-    double? size,
-  }) {
+  static Widget loadingIndicator({Color? color, double? size}) {
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       return SizedBox(
         width: size ?? 20,
@@ -284,9 +275,7 @@ class PlatformAwareComponents {
         foregroundColor: isPrimary
             ? theme.colorScheme.onPrimary
             : theme.colorScheme.onSecondary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       );
     } else if (defaultTargetPlatform == TargetPlatform.android) {
       return ElevatedButton.styleFrom(
@@ -296,9 +285,7 @@ class PlatformAwareComponents {
         foregroundColor: isPrimary
             ? theme.colorScheme.onPrimary
             : theme.colorScheme.onSecondary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       );
     } else {
       // Desktop
@@ -309,9 +296,7 @@ class PlatformAwareComponents {
         foregroundColor: isPrimary
             ? theme.colorScheme.onPrimary
             : theme.colorScheme.onSecondary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       );
     }
   }
@@ -417,11 +402,7 @@ class LayoutBreakpoints {
 }
 
 /// Device type enumeration
-enum DeviceType {
-  mobile,
-  tablet,
-  desktop,
-}
+enum DeviceType { mobile, tablet, desktop }
 
 /// Adaptive grid widget that adjusts column count based on screen size
 class AdaptiveGrid extends StatelessWidget {
@@ -444,8 +425,9 @@ class AdaptiveGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final deviceType =
-            LayoutBreakpoints.getDeviceType(constraints.maxWidth);
+        final deviceType = LayoutBreakpoints.getDeviceType(
+          constraints.maxWidth,
+        );
         final crossAxisCount = _getCrossAxisCount(deviceType);
 
         return Padding(

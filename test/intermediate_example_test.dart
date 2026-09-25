@@ -38,9 +38,7 @@ void main() {
         text: 'Hello! I\'m doing well, thank you.',
         user: aiUser,
         createdAt: DateTime.now(),
-        customProperties: {
-          'id': 'ai_response_123',
-        },
+        customProperties: {'id': 'ai_response_123'},
       );
 
       controller.addMessage(aiMessage);
@@ -71,16 +69,15 @@ void main() {
         text: '',
         user: aiUser,
         createdAt: DateTime.now(),
-        customProperties: {
-          'id': streamingMessageId,
-          'isStreaming': true,
-        },
+        customProperties: {'id': streamingMessageId, 'isStreaming': true},
       );
 
       controller.addMessage(aiMessage);
       expect(controller.messages.length, 2);
       expect(
-          controller.messages[0].text, ''); // Empty initially (newest message)
+        controller.messages[0].text,
+        '',
+      ); // Empty initially (newest message)
 
       // Update with streaming text
       final words = ['Once', 'upon', 'a', 'time'];
@@ -103,15 +100,21 @@ void main() {
 
         // Should still have only 2 messages (user + AI)
         expect(controller.messages.length, 2);
-        expect(controller.messages[1].user.id,
-            'user123'); // User message still there (older)
-        expect(controller.messages[0].text,
-            accumulated); // AI message updated (newer)
+        expect(
+          controller.messages[1].user.id,
+          'user123',
+        ); // User message still there (older)
+        expect(
+          controller.messages[0].text,
+          accumulated,
+        ); // AI message updated (newer)
       }
 
       // Final check
-      expect(controller.messages[0].text,
-          'Once upon a time'); // AI message (newest)
+      expect(
+        controller.messages[0].text,
+        'Once upon a time',
+      ); // AI message (newest)
     });
   });
 }

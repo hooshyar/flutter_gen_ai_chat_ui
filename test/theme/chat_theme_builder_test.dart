@@ -18,18 +18,18 @@ void main() {
     });
 
     test('should create minimal theme', () {
-      final lightTheme = ChatThemeBuilder.minimal(
-        brightness: Brightness.light,
-      ).build();
+      final lightTheme =
+          ChatThemeBuilder.minimal(brightness: Brightness.light).build();
 
-      final darkTheme = ChatThemeBuilder.minimal(
-        brightness: Brightness.dark,
-      ).build();
+      final darkTheme =
+          ChatThemeBuilder.minimal(brightness: Brightness.dark).build();
 
       expect(lightTheme, isA<AdvancedChatTheme>());
       expect(darkTheme, isA<AdvancedChatTheme>());
-      expect(lightTheme.backgroundGradient.first.value,
-          isNot(equals(darkTheme.backgroundGradient.first.value)));
+      expect(
+        lightTheme.backgroundGradient.first.value,
+        isNot(equals(darkTheme.backgroundGradient.first.value)),
+      );
     });
 
     test('should create glassmorphic theme', () {
@@ -54,19 +54,24 @@ void main() {
         secondaryColor: Colors.orange,
       )
           .withBackgroundGradient([Colors.white, Colors.grey.shade100])
-          .withMessageBubbleGradient(
-              [Colors.grey.shade200, Colors.grey.shade100])
+          .withMessageBubbleGradient([
+            Colors.grey.shade200,
+            Colors.grey.shade100,
+          ])
           .withBorderRadius(
-            messageBubbleBorderRadius:
-                const BorderRadius.all(Radius.circular(20)),
+            messageBubbleBorderRadius: const BorderRadius.all(
+              Radius.circular(20),
+            ),
           )
           .build();
 
       expect(theme, isA<AdvancedChatTheme>());
       expect(theme.primaryActionColor, Colors.red);
       expect(theme.backgroundGradient, contains(Colors.white));
-      expect(theme.messageBubbleBorderRadius,
-          const BorderRadius.all(Radius.circular(20)));
+      expect(
+        theme.messageBubbleBorderRadius,
+        const BorderRadius.all(Radius.circular(20)),
+      );
     });
 
     test('should create ChatGPT-style preset', () {
@@ -101,8 +106,10 @@ void main() {
       );
 
       expect(modifiedTheme.primaryActionColor, Colors.red);
-      expect(modifiedTheme.secondaryActionColor,
-          originalTheme.secondaryActionColor);
+      expect(
+        modifiedTheme.secondaryActionColor,
+        originalTheme.secondaryActionColor,
+      );
       expect(modifiedTheme.typography, originalTheme.typography);
     });
   });

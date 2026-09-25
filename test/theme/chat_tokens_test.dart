@@ -37,7 +37,9 @@ void main() {
     test('a color against itself is 1:1', () {
       expect(
         contrastRatio(
-            ChatTokens.light.textPrimary, ChatTokens.light.textPrimary),
+          ChatTokens.light.textPrimary,
+          ChatTokens.light.textPrimary,
+        ),
         closeTo(1, 0.001),
       );
     });
@@ -72,7 +74,9 @@ void main() {
 
       test('borderStrong >= 3.0 vs canvas and surfaceSunken', () {
         expect(
-            contrastRatio(t.borderStrong, t.canvas), greaterThanOrEqualTo(3.0));
+          contrastRatio(t.borderStrong, t.canvas),
+          greaterThanOrEqualTo(3.0),
+        );
         expect(
           contrastRatio(t.borderStrong, t.surfaceSunken),
           greaterThanOrEqualTo(3.0),
@@ -194,8 +198,9 @@ void main() {
       expect(ChatMotion.thinkingSweep, const Duration(milliseconds: 1600));
     });
 
-    testWidgets('of() returns Duration.zero under reduced motion',
-        (tester) async {
+    testWidgets('of() returns Duration.zero under reduced motion', (
+      tester,
+    ) async {
       late BuildContext capturedContext;
       await tester.pumpWidget(
         MediaQuery(
@@ -213,8 +218,9 @@ void main() {
       expect(ChatMotion.of(capturedContext, ChatMotion.base), Duration.zero);
     });
 
-    testWidgets('of() returns the given duration when motion is not reduced',
-        (tester) async {
+    testWidgets('of() returns the given duration when motion is not reduced', (
+      tester,
+    ) async {
       late BuildContext capturedContext;
       await tester.pumpWidget(
         MediaQuery(
@@ -229,16 +235,14 @@ void main() {
       );
 
       expect(ChatMotion.reduced(capturedContext), isFalse);
-      expect(
-        ChatMotion.of(capturedContext, ChatMotion.base),
-        ChatMotion.base,
-      );
+      expect(ChatMotion.of(capturedContext, ChatMotion.base), ChatMotion.base);
     });
   });
 
   group('ChatTokens.of', () {
-    testWidgets('binds accent/onAccent to the host colorScheme',
-        (tester) async {
+    testWidgets('binds accent/onAccent to the host colorScheme', (
+      tester,
+    ) async {
       late BuildContext capturedContext;
       await tester.pumpWidget(
         MaterialApp(
@@ -263,8 +267,9 @@ void main() {
       expect(tokens.canvas, ChatTokens.light.canvas);
     });
 
-    testWidgets('resolves the dark token set under a dark theme',
-        (tester) async {
+    testWidgets('resolves the dark token set under a dark theme', (
+      tester,
+    ) async {
       late BuildContext capturedContext;
       await tester.pumpWidget(
         MaterialApp(
@@ -284,8 +289,9 @@ void main() {
   });
 
   group('CodeBlockView header/copy target', () {
-    testWidgets('header is 44 tall, copy hit target is >= 44x44, radius 12',
-        (tester) async {
+    testWidgets('header is 44 tall, copy hit target is >= 44x44, radius 12', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

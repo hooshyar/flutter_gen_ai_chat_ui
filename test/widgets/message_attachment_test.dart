@@ -14,24 +14,25 @@ void main() {
   );
 
   Future<void> pump(WidgetTester tester, Widget attachment) {
-    return tester.pumpWidget(
-      MaterialApp(home: Scaffold(body: attachment)),
-    );
+    return tester.pumpWidget(MaterialApp(home: Scaffold(body: attachment)));
   }
 
   group('built-in lightbox opt-in', () {
     testWidgets(
-        'tapping does nothing when enableBuiltInLightbox is false and no '
-        'onTap is set (default, unchanged behavior)', (tester) async {
-      await pump(tester, const MessageAttachment(media: image));
-      await tester.tap(find.byType(MessageAttachment));
-      await tester.pumpAndSettle();
+      'tapping does nothing when enableBuiltInLightbox is false and no '
+      'onTap is set (default, unchanged behavior)',
+      (tester) async {
+        await pump(tester, const MessageAttachment(media: image));
+        await tester.tap(find.byType(MessageAttachment));
+        await tester.pumpAndSettle();
 
-      expect(find.byType(AttachmentLightbox), findsNothing);
-    });
+        expect(find.byType(AttachmentLightbox), findsNothing);
+      },
+    );
 
-    testWidgets('tapping opens the built-in lightbox when enabled',
-        (tester) async {
+    testWidgets('tapping opens the built-in lightbox when enabled', (
+      tester,
+    ) async {
       await pump(
         tester,
         const MessageAttachment(media: image, enableBuiltInLightbox: true),
@@ -110,27 +111,31 @@ void main() {
   });
 
   group('upload progress overlay', () {
-    testWidgets('no overlay when uploadProgress is null (default)',
-        (tester) async {
+    testWidgets('no overlay when uploadProgress is null (default)', (
+      tester,
+    ) async {
       await pump(tester, const MessageAttachment(media: image));
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
-    testWidgets('shows a percentage overlay while uploadProgress is below 1.0',
-        (tester) async {
-      const uploading = ChatMedia(
-        url: 'https://example.com/photo.png',
-        type: ChatMediaType.image,
-        uploadProgress: 0.42,
-      );
-      await pump(tester, const MessageAttachment(media: uploading));
+    testWidgets(
+      'shows a percentage overlay while uploadProgress is below 1.0',
+      (tester) async {
+        const uploading = ChatMedia(
+          url: 'https://example.com/photo.png',
+          type: ChatMediaType.image,
+          uploadProgress: 0.42,
+        );
+        await pump(tester, const MessageAttachment(media: uploading));
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.text('42%'), findsOneWidget);
-    });
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(find.text('42%'), findsOneWidget);
+      },
+    );
 
-    testWidgets('the overlay disappears once uploadProgress reaches 1.0',
-        (tester) async {
+    testWidgets('the overlay disappears once uploadProgress reaches 1.0', (
+      tester,
+    ) async {
       const uploading = ChatMedia(
         url: 'https://example.com/photo.png',
         type: ChatMediaType.image,
@@ -152,8 +157,9 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
-    testWidgets('a non-image attachment also renders the progress overlay',
-        (tester) async {
+    testWidgets('a non-image attachment also renders the progress overlay', (
+      tester,
+    ) async {
       const uploadingDoc = ChatMedia(
         url: 'https://example.com/report.pdf',
         type: ChatMediaType.document,
@@ -169,44 +175,45 @@ void main() {
 
   group('end-to-end wiring through AiChatWidget', () {
     testWidgets(
-        'MessageOptions.enableAttachmentLightbox reaches a real chat message',
-        (tester) async {
-      const testUser = ChatUser(id: 'user', name: 'Test User');
-      const aiUser = ChatUser(id: 'ai', name: 'AI Assistant');
-      final controller = ChatMessagesController(
-        initialMessages: [
-          ChatMessage(
-            text: 'here is a photo',
-            user: aiUser,
-            createdAt: DateTime.now(),
-            media: const [image],
-          ),
-        ],
-      );
-      addTearDown(controller.dispose);
+      'MessageOptions.enableAttachmentLightbox reaches a real chat message',
+      (tester) async {
+        const testUser = ChatUser(id: 'user', name: 'Test User');
+        const aiUser = ChatUser(id: 'ai', name: 'AI Assistant');
+        final controller = ChatMessagesController(
+          initialMessages: [
+            ChatMessage(
+              text: 'here is a photo',
+              user: aiUser,
+              createdAt: DateTime.now(),
+              media: const [image],
+            ),
+          ],
+        );
+        addTearDown(controller.dispose);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Material(
-            child: AiChatWidget(
-              currentUser: testUser,
-              aiUser: aiUser,
-              controller: controller,
-              onSendMessage: (_) async {},
-              messageOptions: const MessageOptions(
-                enableImageTaps: true,
-                enableAttachmentLightbox: true,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Material(
+              child: AiChatWidget(
+                currentUser: testUser,
+                aiUser: aiUser,
+                controller: controller,
+                onSendMessage: (_) async {},
+                messageOptions: const MessageOptions(
+                  enableImageTaps: true,
+                  enableAttachmentLightbox: true,
+                ),
               ),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(MessageAttachment));
-      await tester.pumpAndSettle();
+        await tester.tap(find.byType(MessageAttachment));
+        await tester.pumpAndSettle();
 
-      expect(find.byType(AttachmentLightbox), findsOneWidget);
-    });
+        expect(find.byType(AttachmentLightbox), findsOneWidget);
+      },
+    );
   });
 }
