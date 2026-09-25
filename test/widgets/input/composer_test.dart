@@ -36,30 +36,34 @@ void main() {
     );
   }
 
-  testWidgets('default send control shows Icons.arrow_upward_rounded',
-      (tester) async {
+  testWidgets('default send control shows Icons.arrow_upward_rounded', (
+    tester,
+  ) async {
     await tester.pumpWidget(harness());
     await tester.pump();
 
     expect(find.byIcon(Icons.arrow_upward_rounded), findsOneWidget);
   });
 
-  testWidgets('tapping send with empty text does not call onSend',
-      (tester) async {
+  testWidgets('tapping send with empty text does not call onSend', (
+    tester,
+  ) async {
     var sends = 0;
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: AiChatWidget(
-          currentUser: humanUser,
-          aiUser: aiUser,
-          controller: controller,
-          onSendMessage: (_) => sends++,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AiChatWidget(
+            currentUser: humanUser,
+            aiUser: aiUser,
+            controller: controller,
+            onSendMessage: (_) => sends++,
+          ),
         ),
       ),
-    ));
+    );
     await tester.pump();
 
     await tester.tap(find.byType(SendStopButton));
@@ -69,8 +73,9 @@ void main() {
   });
 
   group('generating state', () {
-    testWidgets('shows a control with the "Stop generating" semantics label',
-        (tester) async {
+    testWidgets('shows a control with the "Stop generating" semantics label', (
+      tester,
+    ) async {
       await tester.pumpWidget(harness(isLoading: true, onCancel: () {}));
       await tester.pump();
 
@@ -115,8 +120,9 @@ void main() {
     expect(find.byIcon(Icons.arrow_upward_rounded), findsNothing);
   });
 
-  testWidgets('explicit containerDecoration is rendered untouched',
-      (tester) async {
+  testWidgets('explicit containerDecoration is rendered untouched', (
+    tester,
+  ) async {
     const decoration = BoxDecoration(color: Color(0xFF123456));
 
     await tester.pumpWidget(
@@ -126,12 +132,14 @@ void main() {
     );
     await tester.pump();
 
-    final container = tester.widget<Container>(find
-        .ancestor(
-          of: find.byType(TextField),
-          matching: find.byType(Container),
-        )
-        .first);
+    final container = tester.widget<Container>(
+      find
+          .ancestor(
+            of: find.byType(TextField),
+            matching: find.byType(Container),
+          )
+          .first,
+    );
     expect(container.decoration, decoration);
   });
 
@@ -144,8 +152,9 @@ void main() {
     expect(size.height, greaterThanOrEqualTo(44));
   });
 
-  testWidgets('focusing the composer changes its border to borderStrong',
-      (tester) async {
+  testWidgets('focusing the composer changes its border to borderStrong', (
+    tester,
+  ) async {
     await tester.pumpWidget(harness());
     await tester.pump();
 
@@ -165,26 +174,27 @@ void main() {
     await tester.pumpAndSettle();
 
     final after = composerBefore().decoration as BoxDecoration;
-    expect(
-      (after.border as Border).top.color,
-      ChatTokens.light.borderStrong,
-    );
+    expect((after.border as Border).top.color, ChatTokens.light.borderStrong);
   });
 
-  testWidgets("CustomThemeExtension.chatgpt() input fill shows on the composer",
-      (tester) async {
-    final ext = CustomThemeExtension.chatgpt();
+  testWidgets(
+    "CustomThemeExtension.chatgpt() input fill shows on the composer",
+    (tester) async {
+      final ext = CustomThemeExtension.chatgpt();
 
-    await tester.pumpWidget(harness(theme: ThemeData(extensions: [ext])));
-    await tester.pump();
+      await tester.pumpWidget(harness(theme: ThemeData(extensions: [ext])));
+      await tester.pump();
 
-    final composer = tester.widget<AnimatedContainer>(find
-        .ancestor(
-          of: find.byType(TextField),
-          matching: find.byType(AnimatedContainer),
-        )
-        .first);
-    final decoration = composer.decoration as BoxDecoration;
-    expect(decoration.color, ext.inputBackgroundColor);
-  });
+      final composer = tester.widget<AnimatedContainer>(
+        find
+            .ancestor(
+              of: find.byType(TextField),
+              matching: find.byType(AnimatedContainer),
+            )
+            .first,
+      );
+      final decoration = composer.decoration as BoxDecoration;
+      expect(decoration.color, ext.inputBackgroundColor);
+    },
+  );
 }

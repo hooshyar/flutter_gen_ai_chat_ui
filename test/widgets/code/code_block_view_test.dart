@@ -36,8 +36,9 @@ void main() {
   }
 
   group('CodeBlockView', () {
-    testWidgets('copy button copies raw code and shows transient check icon',
-        (tester) async {
+    testWidgets('copy button copies raw code and shows transient check icon', (
+      tester,
+    ) async {
       String? copied;
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         SystemChannels.platform,
@@ -49,8 +50,10 @@ void main() {
         },
       );
       addTearDown(() {
-        tester.binding.defaultBinaryMessenger
-            .setMockMethodCallHandler(SystemChannels.platform, null);
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        );
       });
 
       await tester.pumpWidget(
@@ -80,8 +83,9 @@ void main() {
       expect(find.byIcon(Icons.check_rounded), findsNothing);
     });
 
-    testWidgets('a 300-char line scrolls horizontally without overflow',
-        (tester) async {
+    testWidgets('a 300-char line scrolls horizontally without overflow', (
+      tester,
+    ) async {
       final longLine = 'final s = "${'x' * 300}";';
       await tester.pumpWidget(
         wrap(CodeBlockView(code: longLine, language: 'dart')),
@@ -117,8 +121,9 @@ void main() {
       expect(Directionality.of(context), TextDirection.ltr);
     });
 
-    testWidgets('code spans use JetBrainsMono and never set backgroundColor',
-        (tester) async {
+    testWidgets('code spans use JetBrainsMono and never set backgroundColor', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         wrap(const CodeBlockView(code: 'final x = "hi";', language: 'dart')),
       );
@@ -133,17 +138,15 @@ void main() {
       }
     });
 
-    testWidgets('baseStyle override keeps family/size but drops background',
-        (tester) async {
+    testWidgets('baseStyle override keeps family/size but drops background', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         wrap(
           const CodeBlockView(
             code: 'final x = 1;',
             language: 'dart',
-            baseStyle: TextStyle(
-              fontSize: 20,
-              backgroundColor: Colors.red,
-            ),
+            baseStyle: TextStyle(fontSize: 20, backgroundColor: Colors.red),
           ),
         ),
       );
@@ -156,8 +159,9 @@ void main() {
       }
     });
 
-    testWidgets('enableSyntaxHighlighting false renders a single-style span',
-        (tester) async {
+    testWidgets('enableSyntaxHighlighting false renders a single-style span', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         wrap(
           const CodeBlockView(
@@ -177,33 +181,36 @@ void main() {
 
   group('CodeBlockMarkdownBuilder', () {
     testWidgets(
-        'pre builder renders one CodeBlockView with parsed language, no span '
-        'backgroundColor despite stylesheet code background', (tester) async {
-      await tester.pumpWidget(
-        wrap(
-          MarkdownBody(
-            data: '```dart\nvoid main() {}\n```',
-            builders: {'pre': CodeBlockMarkdownBuilder()},
-            styleSheet: MarkdownStyleSheet(
-              code: const TextStyle(backgroundColor: Colors.grey),
+      'pre builder renders one CodeBlockView with parsed language, no span '
+      'backgroundColor despite stylesheet code background',
+      (tester) async {
+        await tester.pumpWidget(
+          wrap(
+            MarkdownBody(
+              data: '```dart\nvoid main() {}\n```',
+              builders: {'pre': CodeBlockMarkdownBuilder()},
+              styleSheet: MarkdownStyleSheet(
+                code: const TextStyle(backgroundColor: Colors.grey),
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      final view = find.byType(CodeBlockView);
-      expect(view, findsOneWidget);
-      expect(tester.widget<CodeBlockView>(view).language, 'dart');
+        final view = find.byType(CodeBlockView);
+        expect(view, findsOneWidget);
+        expect(tester.widget<CodeBlockView>(view).language, 'dart');
 
-      final span = codeTextOf(tester, view).textSpan!;
-      for (final s in flatten(span)) {
-        expect(s.style?.backgroundColor, isNull);
-        expect(s.style?.background, isNull);
-      }
-    });
+        final span = codeTextOf(tester, view).textSpan!;
+        for (final s in flatten(span)) {
+          expect(s.style?.backgroundColor, isNull);
+          expect(s.style?.background, isNull);
+        }
+      },
+    );
 
-    testWidgets('unfenced-language block renders with no language label',
-        (tester) async {
+    testWidgets('unfenced-language block renders with no language label', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         wrap(
           MarkdownBody(

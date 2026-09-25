@@ -448,9 +448,10 @@ class _CollapsibleContentState extends State<CollapsibleContent>
                 Expanded(
                   child: Text(
                     widget.title,
-                    style:
-                        widget.titleStyle ??
-                        Theme.of(context).textTheme.titleSmall
+                    style: widget.titleStyle ??
+                        Theme.of(context)
+                            .textTheme
+                            .titleSmall
                             ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -463,8 +464,7 @@ class _CollapsibleContentState extends State<CollapsibleContent>
               padding: const EdgeInsets.only(left: 28, top: 8),
               child: SelectableText(
                 widget.content,
-                style:
-                    widget.contentStyle ??
+                style: widget.contentStyle ??
                     Theme.of(context).textTheme.bodyMedium,
               ),
             ),

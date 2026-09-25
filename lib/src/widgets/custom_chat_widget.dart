@@ -487,8 +487,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
   Widget _buildMessageList() {
     final paginationConfig = widget.messageListOptions.paginationConfig;
-    final lastAiMessageIndex =
-        _lastAiMessageIndex(paginationConfig.reverseOrder);
+    final lastAiMessageIndex = _lastAiMessageIndex(
+      paginationConfig.reverseOrder,
+    );
 
     // Empty-conversation welcome: optionally center it vertically instead of
     // anchoring to the bottom of the (reverse) list, which leaves a large gap
@@ -632,8 +633,12 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           return RepaintBoundary(
             child: KeyedSubtree(
               key: ValueKey(messageId),
-              child:
-                  _buildMessageBubble(message, isUser, index, isLastAiMessage),
+              child: _buildMessageBubble(
+                message,
+                isUser,
+                index,
+                isLastAiMessage,
+              ),
             ),
           );
         }
@@ -690,7 +695,11 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     // Helper function to build the default bubble
     Widget buildDefaultBubble() {
       return _buildDefaultMessageBubble(
-          message, isUser, index, isLastAiMessage);
+        message,
+        isUser,
+        index,
+        isLastAiMessage,
+      );
     }
 
     // Wrapping builder takes precedence: it receives the default bubble so the
@@ -907,10 +916,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       );
     }
 
-    return Align(
-      alignment: AlignmentDirectional.centerEnd,
-      child: bubble,
-    );
+    return Align(alignment: AlignmentDirectional.centerEnd, child: bubble);
   }
 
   /// Document (default) AI message: no container decoration at all — the
@@ -923,8 +929,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     double columnWidth,
     bool isLastAiMessage,
   ) {
-    final showName =
-        widget.messageOptions.resolveShowUserName(AiMessageLayout.document);
+    final showName = widget.messageOptions.resolveShowUserName(
+      AiMessageLayout.document,
+    );
 
     // _buildMessageContent must run before _isCurrentlyStreaming: it is what
     // enrolls this message's id into the reveal-loop bookkeeping that
@@ -984,8 +991,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           );
 
     final maxWidth = bubbleStyle.aiBubbleMaxWidth ?? columnWidth;
-    final showName =
-        widget.messageOptions.resolveShowUserName(AiMessageLayout.bubble);
+    final showName = widget.messageOptions.resolveShowUserName(
+      AiMessageLayout.bubble,
+    );
 
     // _buildMessageContent must run before _isCurrentlyStreaming: it is what
     // enrolls this message's id into the reveal-loop bookkeeping that
@@ -1064,8 +1072,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       padding: margin,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final columnWidth =
-              min(constraints.maxWidth, ChatLayout.readingMaxWidth);
+          final columnWidth = min(
+            constraints.maxWidth,
+            ChatLayout.readingMaxWidth,
+          );
 
           if (isUser) {
             return _buildUserBubble(
@@ -1285,8 +1295,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.broken_image,
-                                  color: tokens.textTertiary),
+                              Icon(
+                                Icons.broken_image,
+                                color: tokens.textTertiary,
+                              ),
                               if (alt != null)
                                 Text(
                                   alt,

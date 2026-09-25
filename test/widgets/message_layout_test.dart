@@ -70,9 +70,7 @@ void main() {
       'no ancestor Container has a border/shadow decoration, no robot '
       'icon, and the AI name is absent',
       (tester) async {
-        await tester.pumpWidget(
-          buildChat(messages: [msg(ai, 'Hello there')]),
-        );
+        await tester.pumpWidget(buildChat(messages: [msg(ai, 'Hello there')]));
         await tester.pump();
 
         final containers = tester.widgetList<Container>(
@@ -110,9 +108,7 @@ void main() {
 
     testWidgets('markdown h1 renders at fontSize 20', (tester) async {
       await tester.pumpWidget(
-        buildChat(
-          messages: [msg(ai, '# Heading', isMarkdown: true)],
-        ),
+        buildChat(messages: [msg(ai, '# Heading', isMarkdown: true)]),
       );
       await tester.pump();
 
@@ -151,16 +147,11 @@ void main() {
 
   group('User bubble alignment and width', () {
     testWidgets('user bubble sits right of center in LTR', (tester) async {
-      await tester.pumpWidget(
-        buildChat(messages: [msg(me, 'hi')], width: 400),
-      );
+      await tester.pumpWidget(buildChat(messages: [msg(me, 'hi')], width: 400));
       await tester.pump();
 
       final container = find
-          .ancestor(
-            of: find.text('hi'),
-            matching: find.byType(Container),
-          )
+          .ancestor(of: find.text('hi'), matching: find.byType(Container))
           .first;
       final center = tester.getCenter(container);
       final screenWidth = tester.getSize(find.byType(CustomChatWidget)).width;
@@ -178,10 +169,7 @@ void main() {
       await tester.pump();
 
       final container = find
-          .ancestor(
-            of: find.text('hi'),
-            matching: find.byType(Container),
-          )
+          .ancestor(of: find.text('hi'), matching: find.byType(Container))
           .first;
       final center = tester.getCenter(container);
       final screenWidth = tester.getSize(find.byType(CustomChatWidget)).width;
@@ -189,34 +177,32 @@ void main() {
     });
 
     testWidgets(
-      'user bubble width is capped at 80% of a 400-wide column '
-      '(<=320) even inside a wide 1200 viewport',
-      (tester) async {
-        tester.view.physicalSize = const Size(1200, 1000);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
+        'user bubble width is capped at 80% of a 400-wide column '
+        '(<=320) even inside a wide 1200 viewport', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(
-          buildChat(
-            messages: [
-              msg(me, 'a rather long message that could overflow the bubble'),
-            ],
-            width: 400,
-          ),
-        );
-        await tester.pump();
+      await tester.pumpWidget(
+        buildChat(
+          messages: [
+            msg(me, 'a rather long message that could overflow the bubble'),
+          ],
+          width: 400,
+        ),
+      );
+      await tester.pump();
 
-        final container = find
-            .ancestor(
-              of: find.textContaining('a rather long message'),
-              matching: find.byType(Container),
-            )
-            .first;
-        final size = tester.getSize(container);
-        expect(size.width, lessThanOrEqualTo(320.0));
-      },
-    );
+      final container = find
+          .ancestor(
+            of: find.textContaining('a rather long message'),
+            matching: find.byType(Container),
+          )
+          .first;
+      final size = tester.getSize(container);
+      expect(size.width, lessThanOrEqualTo(320.0));
+    });
   });
 
   group('Copy action', () {
@@ -241,9 +227,7 @@ void main() {
           );
         });
 
-        await tester.pumpWidget(
-          buildChat(messages: [msg(ai, 'copy me')]),
-        );
+        await tester.pumpWidget(buildChat(messages: [msg(ai, 'copy me')]));
         await tester.pump();
 
         expect(find.byIcon(Icons.content_copy_rounded), findsOneWidget);
@@ -290,10 +274,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 60));
       }
 
-      expect(
-        find.byKey(const ValueKey('chat-streaming-caret')),
-        findsNothing,
-      );
+      expect(find.byKey(const ValueKey('chat-streaming-caret')), findsNothing);
     });
 
     testWidgets(

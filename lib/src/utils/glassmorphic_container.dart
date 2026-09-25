@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../utils/color_extensions.dart';
 
 /// A utility class to create glassmorphic decoration effects.

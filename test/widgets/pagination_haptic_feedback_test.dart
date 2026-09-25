@@ -25,8 +25,10 @@ void main() {
       },
     );
     addTearDown(() {
-      tester.binding.defaultBinaryMessenger
-          .setMockMethodCallHandler(SystemChannels.platform, null);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      );
     });
 
     final controller = ChatMessagesController(
@@ -86,16 +88,21 @@ void main() {
     return hapticCalls;
   }
 
-  testWidgets('haptic feedback fires on load-more when enabled',
-      (tester) async {
-    final calls =
-        await pumpAndTriggerLoadMore(tester, enableHapticFeedback: true);
+  testWidgets('haptic feedback fires on load-more when enabled', (
+    tester,
+  ) async {
+    final calls = await pumpAndTriggerLoadMore(
+      tester,
+      enableHapticFeedback: true,
+    );
     expect(calls, greaterThan(0));
   });
 
   testWidgets('haptic feedback does not fire when disabled', (tester) async {
-    final calls =
-        await pumpAndTriggerLoadMore(tester, enableHapticFeedback: false);
+    final calls = await pumpAndTriggerLoadMore(
+      tester,
+      enableHapticFeedback: false,
+    );
     expect(calls, 0);
   });
 }

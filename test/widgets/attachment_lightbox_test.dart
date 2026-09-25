@@ -28,8 +28,11 @@ void main() {
         home: Builder(
           builder: (context) => Scaffold(
             body: ElevatedButton(
-              onPressed: () => AttachmentLightbox.show(context,
-                  images: images, initialIndex: 1),
+              onPressed: () => AttachmentLightbox.show(
+                context,
+                images: images,
+                initialIndex: 1,
+              ),
               child: const Text('open'),
             ),
           ),
@@ -60,8 +63,9 @@ void main() {
     expect(find.byType(AttachmentLightbox), findsNothing);
   });
 
-  testWidgets('tapping the scrim outside the image dismisses the lightbox',
-      (tester) async {
+  testWidgets('tapping the scrim outside the image dismisses the lightbox', (
+    tester,
+  ) async {
     await pumpOpener(tester);
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
@@ -75,8 +79,9 @@ void main() {
     expect(find.byType(AttachmentLightbox), findsNothing);
   });
 
-  testWidgets('swiping to the next page updates the page indicator',
-      (tester) async {
+  testWidgets('swiping to the next page updates the page indicator', (
+    tester,
+  ) async {
     await pumpOpener(tester);
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
@@ -89,17 +94,16 @@ void main() {
     expect(find.text('three.png'), findsOneWidget);
   });
 
-  testWidgets('a single image does not render a page indicator',
-      (tester) async {
+  testWidgets('a single image does not render a page indicator', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
           builder: (context) => Scaffold(
             body: ElevatedButton(
-              onPressed: () => AttachmentLightbox.show(
-                context,
-                images: [images.first],
-              ),
+              onPressed: () =>
+                  AttachmentLightbox.show(context, images: [images.first]),
               child: const Text('open'),
             ),
           ),

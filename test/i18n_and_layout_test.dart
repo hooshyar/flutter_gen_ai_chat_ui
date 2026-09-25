@@ -31,11 +31,13 @@ void main() {
         ),
       );
 
-      controller.addMessage(ChatMessage(
-        text: 'Hello from AI',
-        user: aiUser,
-        createdAt: DateTime.now(),
-      ));
+      controller.addMessage(
+        ChatMessage(
+          text: 'Hello from AI',
+          user: aiUser,
+          createdAt: DateTime.now(),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byTooltip('نسخ'), findsOneWidget);
@@ -63,11 +65,9 @@ void main() {
         ),
       );
 
-      controller.addMessage(ChatMessage(
-        text: 'Hello',
-        user: aiUser,
-        createdAt: DateTime.now(),
-      ));
+      controller.addMessage(
+        ChatMessage(text: 'Hello', user: aiUser, createdAt: DateTime.now()),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byTooltip('Copy'), findsOneWidget);
@@ -111,11 +111,9 @@ void main() {
 
       // Sending hides the welcome message (the real send path calls this),
       // which reveals the persistent example-questions bar.
-      controller.addMessage(ChatMessage(
-        text: 'مرحبا',
-        user: humanUser,
-        createdAt: DateTime.now(),
-      ));
+      controller.addMessage(
+        ChatMessage(text: 'مرحبا', user: humanUser, createdAt: DateTime.now()),
+      );
       controller.hideWelcomeMessage();
       await tester.pumpAndSettle();
 
@@ -145,11 +143,9 @@ void main() {
         ),
       );
 
-      controller.addMessage(ChatMessage(
-        text: 'hi',
-        user: humanUser,
-        createdAt: DateTime.now(),
-      ));
+      controller.addMessage(
+        ChatMessage(text: 'hi', user: humanUser, createdAt: DateTime.now()),
+      );
       controller.hideWelcomeMessage();
       await tester.pumpAndSettle();
 
@@ -160,51 +156,49 @@ void main() {
   });
 
   group('Welcome centerVertically', () {
-    testWidgets('centers welcome (SingleChildScrollView) when empty + opted in',
-        (tester) async {
-      final controller = ChatMessagesController();
+    testWidgets(
+      'centers welcome (SingleChildScrollView) when empty + opted in',
+      (tester) async {
+        final controller = ChatMessagesController();
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AiChatWidget(
-              currentUser: humanUser,
-              aiUser: aiUser,
-              controller: controller,
-              onSendMessage: (_) {},
-              welcomeMessageConfig: const WelcomeMessageConfig(
-                title: 'Welcome here',
-                centerVertically: true,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AiChatWidget(
+                currentUser: humanUser,
+                aiUser: aiUser,
+                controller: controller,
+                onSendMessage: (_) {},
+                welcomeMessageConfig: const WelcomeMessageConfig(
+                  title: 'Welcome here',
+                  centerVertically: true,
+                ),
+                exampleQuestions: const [ExampleQuestion(question: 'Q1')],
               ),
-              exampleQuestions: const [
-                ExampleQuestion(question: 'Q1'),
-              ],
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Welcome here'), findsOneWidget);
-      // Centered path uses a SingleChildScrollView, not the message ListView.
-      final scroller = find.descendant(
-        of: find.byType(AiChatWidget),
-        matching: find.byType(SingleChildScrollView),
-      );
-      expect(scroller, findsWidgets);
+        expect(find.text('Welcome here'), findsOneWidget);
+        // Centered path uses a SingleChildScrollView, not the message ListView.
+        final scroller = find.descendant(
+          of: find.byType(AiChatWidget),
+          matching: find.byType(SingleChildScrollView),
+        );
+        expect(scroller, findsWidgets);
 
-      // Once a message arrives, normal list layout resumes.
-      controller.addMessage(ChatMessage(
-        text: 'hi',
-        user: humanUser,
-        createdAt: DateTime.now(),
-      ));
-      controller.hideWelcomeMessage();
-      await tester.pumpAndSettle();
-      expect(find.byType(ListView), findsWidgets);
+        // Once a message arrives, normal list layout resumes.
+        controller.addMessage(
+          ChatMessage(text: 'hi', user: humanUser, createdAt: DateTime.now()),
+        );
+        controller.hideWelcomeMessage();
+        await tester.pumpAndSettle();
+        expect(find.byType(ListView), findsWidgets);
 
-      controller.dispose();
-    });
+        controller.dispose();
+      },
+    );
 
     testWidgets('default (false) keeps welcome in the list', (tester) async {
       final controller = ChatMessagesController();
@@ -220,9 +214,7 @@ void main() {
               welcomeMessageConfig: const WelcomeMessageConfig(
                 title: 'Welcome here',
               ),
-              exampleQuestions: const [
-                ExampleQuestion(question: 'Q1'),
-              ],
+              exampleQuestions: const [ExampleQuestion(question: 'Q1')],
             ),
           ),
         ),
@@ -237,8 +229,9 @@ void main() {
   });
 
   group('maxWidth centering', () {
-    testWidgets('content is constrained and centered on wide viewports',
-        (tester) async {
+    testWidgets('content is constrained and centered on wide viewports', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1600, 1000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -279,8 +272,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('renders without overflow on narrow viewport with maxWidth',
-        (tester) async {
+    testWidgets('renders without overflow on narrow viewport with maxWidth', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(360, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);

@@ -177,11 +177,7 @@ class _ChatTypingDotsState extends State<ChatTypingDots>
                   width: dotSize,
                   height: dotSize,
                   decoration: BoxDecoration(
-                    color: Color.lerp(
-                      dimColor,
-                      brightColor,
-                      interval.value,
-                    ),
+                    color: Color.lerp(dimColor, brightColor, interval.value),
                     shape: BoxShape.circle,
                   ),
                 );

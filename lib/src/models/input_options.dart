@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../utils/color_extensions.dart';
 
 /// Controls how the input container's width should be sized
@@ -11,7 +12,7 @@ enum InputContainerWidth {
   wrapContent,
 
   /// Use a specific width provided in inputContainerConstraints
-  custom
+  custom,
 }
 
 /// Input options for customizing the chat input field.
@@ -55,24 +56,33 @@ class InputOptions {
   /// makes RTL auto-detection work without per-widget configuration). Will
   /// be removed in v3.0.0.
   @Deprecated(
-      'Has no effect — the input always follows the ambient Directionality. '
-      'Will be removed in v3.0.0.')
+    'Has no effect — the input always follows the ambient Directionality. '
+    'Will be removed in v3.0.0.',
+  )
   final TextDirection? inputTextDirection;
 
   // Position properties — dead: nothing in AiChatWidget wraps the input in
   // a Stack/Positioned to consume these (it uses a Column, with the input
   // as a regular last child). Kept for source compatibility only.
-  @Deprecated('Has no effect — the input is not laid out in a Stack. '
-      'Will be removed in v3.0.0.')
+  @Deprecated(
+    'Has no effect — the input is not laid out in a Stack. '
+    'Will be removed in v3.0.0.',
+  )
   final double? positionedLeft;
-  @Deprecated('Has no effect — the input is not laid out in a Stack. '
-      'Will be removed in v3.0.0.')
+  @Deprecated(
+    'Has no effect — the input is not laid out in a Stack. '
+    'Will be removed in v3.0.0.',
+  )
   final double? positionedRight;
-  @Deprecated('Has no effect — the input is not laid out in a Stack. '
-      'Will be removed in v3.0.0.')
+  @Deprecated(
+    'Has no effect — the input is not laid out in a Stack. '
+    'Will be removed in v3.0.0.',
+  )
   final double? positionedBottom;
-  @Deprecated('Has no effect — the input is not laid out in a Stack. '
-      'Will be removed in v3.0.0.')
+  @Deprecated(
+    'Has no effect — the input is not laid out in a Stack. '
+    'Will be removed in v3.0.0.',
+  )
   final double? positionedTop;
 
   // Special effects
@@ -138,8 +148,9 @@ class InputOptions {
   /// ambient `Directionality` from `BuildContext` (see [inputTextDirection],
   /// the other field with the same fate). Will be removed in v3.0.0.
   @Deprecated(
-      'Has no effect — the input always follows the ambient Directionality. '
-      'Will be removed in v3.0.0.')
+    'Has no effect — the input always follows the ambient Directionality. '
+    'Will be removed in v3.0.0.',
+  )
   final TextDirection? textDirection;
   final List<TextInputFormatter>? inputFormatters;
   final bool enableSuggestions;

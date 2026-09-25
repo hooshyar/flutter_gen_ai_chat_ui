@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../models/chat/citation.dart';
 
 /// Theme configuration for citation chips
@@ -380,15 +381,17 @@ class CitationsSection extends StatelessWidget {
             spacing: chipSpacing,
             runSpacing: runSpacing,
             children: [
-              ...citations.map((citation) => CitationChip(
-                    citation: citation,
-                    theme: chipTheme,
-                    language: citationsData.language,
-                    compact: compact,
-                    onTap: onCitationTap != null
-                        ? () => onCitationTap!(citation)
-                        : null,
-                  )),
+              ...citations.map(
+                (citation) => CitationChip(
+                  citation: citation,
+                  theme: chipTheme,
+                  language: citationsData.language,
+                  compact: compact,
+                  onTap: onCitationTap != null
+                      ? () => onCitationTap!(citation)
+                      : null,
+                ),
+              ),
               if (hasMore)
                 _buildMoreChip(
                   context,
@@ -472,11 +475,7 @@ class CitationExpandedView extends StatelessWidget {
           // Header with close button
           Row(
             children: [
-              Icon(
-                Icons.gavel,
-                size: 18,
-                color: primaryColor,
-              ),
+              Icon(Icons.gavel, size: 18, color: primaryColor),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -549,17 +548,10 @@ class CitationExpandedView extends StatelessWidget {
                     ),
                   );
                 },
-                icon: Icon(
-                  Icons.copy,
-                  size: 16,
-                  color: primaryColor,
-                ),
+                icon: Icon(Icons.copy, size: 16, color: primaryColor),
                 label: Text(
                   _getCopyLabel(),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: primaryColor,
-                  ),
+                  style: TextStyle(fontSize: 12, color: primaryColor),
                 ),
               ),
             ],

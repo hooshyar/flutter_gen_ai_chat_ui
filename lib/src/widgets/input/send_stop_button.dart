@@ -4,7 +4,7 @@ import '../../theme/chat_tokens.dart';
 
 /// The package's default composer send/stop control (`DESIGN.md` §8.5).
 ///
-/// A single 44x44 hit area around a 36px disc that morphs between three
+/// A single 48x48 hit area around a 36px disc that morphs between three
 /// states as the composer's text and generation status change:
 ///
 /// - **Enabled** (text present, not generating): filled [ChatTokens.ink]
@@ -142,8 +142,10 @@ class _SendStopButtonState extends State<SendStopButton> {
       // other widgets' `decoration.shape == BoxShape.circle` predicates
       // (e.g. the typing-indicator dots' own test helper) when scanning the
       // whole tree for "the circular Container".
-      decoration:
-          BoxDecoration(color: fill, borderRadius: BorderRadius.circular(18)),
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(18),
+      ),
       child: AnimatedSwitcher(
         duration: ChatMotion.of(context, ChatMotion.sendMorph),
         switchInCurve: ChatMotion.enter,
@@ -164,8 +166,8 @@ class _SendStopButtonState extends State<SendStopButton> {
       enabled: onTap != null,
       label: semanticsLabel,
       child: SizedBox(
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapDown: onTap == null ? null : (_) => _setPressed(true),

@@ -16,11 +16,10 @@ void main() {
 
   tearDown(() => controller.dispose());
 
-  testWidgets('"Thinking" is present while loading with no AI text',
-      (tester) async {
-    controller.addMessage(
-      ChatMessage.loading(user: aiUser, id: 'loading-1'),
-    );
+  testWidgets('"Thinking" is present while loading with no AI text', (
+    tester,
+  ) async {
+    controller.addMessage(ChatMessage.loading(user: aiUser, id: 'loading-1'));
 
     await tester.pumpWidget(
       MaterialApp(
@@ -39,11 +38,10 @@ void main() {
     expect(find.text('Thinking'), findsOneWidget);
   });
 
-  testWidgets('reduced motion collapses the thinking sweep to a static frame',
-      (tester) async {
-    controller.addMessage(
-      ChatMessage.loading(user: aiUser, id: 'loading-1'),
-    );
+  testWidgets('reduced motion collapses the thinking sweep to a static frame', (
+    tester,
+  ) async {
+    controller.addMessage(ChatMessage.loading(user: aiUser, id: 'loading-1'));
 
     await tester.pumpWidget(
       MaterialApp(

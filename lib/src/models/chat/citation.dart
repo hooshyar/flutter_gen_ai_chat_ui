@@ -76,20 +76,19 @@ class ChatCitation {
         contentExcerpt: json['content_excerpt']?.toString() ??
             json['matched_content']?.toString(),
         localizedCitations: _parseStringMap(
-            json['localized_citations'] ?? json['citations_all_languages']),
-        localizedTitles:
-            _parseStringMap(json['localized_titles'] ?? json['law_title']),
+          json['localized_citations'] ?? json['citations_all_languages'],
+        ),
+        localizedTitles: _parseStringMap(
+          json['localized_titles'] ?? json['law_title'],
+        ),
         localizedContent: _parseStringMap(
-            json['localized_content'] ?? json['matched_content_all_languages']),
+          json['localized_content'] ?? json['matched_content_all_languages'],
+        ),
         customProperties: json['custom_properties'] as Map<String, dynamic>?,
       );
     } catch (e) {
       debugPrint('Error parsing ChatCitation: $e');
-      return const ChatCitation(
-        id: '',
-        shortCitation: '',
-        fullCitation: '',
-      );
+      return const ChatCitation(id: '', shortCitation: '', fullCitation: '');
     }
   }
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../models/ai_action.dart';
 import '../utils/color_extensions.dart';
 
@@ -205,24 +206,27 @@ class _CopilotTextareaState extends State<CopilotTextarea> {
     final suggestions = <String>[];
 
     if (lastWord.contains('hello')) {
-      suggestions
-          .addAll(['Hello there!', 'Hello, how can I help?', 'Hello world!']);
+      suggestions.addAll([
+        'Hello there!',
+        'Hello, how can I help?',
+        'Hello world!',
+      ]);
     } else if (lastWord.contains('thank')) {
       suggestions.addAll([
         'Thank you very much',
         'Thank you for your time',
-        'Thanks for the help'
+        'Thanks for the help',
       ]);
     } else if (lastWord.contains('please')) {
       suggestions.addAll([
         'Please let me know',
         'Please consider this',
-        'Please help me with'
+        'Please help me with',
       ]);
     } else if (text.endsWith('?')) {
       suggestions.addAll([
         'I would appreciate your response.',
-        'Looking forward to hearing from you.'
+        'Looking forward to hearing from you.',
       ]);
     } else {
       // Generic completion suggestions
@@ -348,8 +352,10 @@ class _CopilotTextareaState extends State<CopilotTextarea> {
 
     try {
       final currentText = _controller.text;
-      final completion =
-          await widget.onAiComplete!(currentText, widget.aiInstructions);
+      final completion = await widget.onAiComplete!(
+        currentText,
+        widget.aiInstructions,
+      );
 
       if (mounted && completion.isNotEmpty) {
         _controller.text = completion;

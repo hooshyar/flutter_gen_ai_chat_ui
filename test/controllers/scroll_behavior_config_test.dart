@@ -8,10 +8,14 @@ void main() {
       const config = ScrollBehaviorConfig();
 
       expect(
-          config.autoScrollBehavior, equals(AutoScrollBehavior.onNewMessage));
+        config.autoScrollBehavior,
+        equals(AutoScrollBehavior.onNewMessage),
+      );
       expect(config.scrollToFirstResponseMessage, isFalse);
-      expect(config.scrollAnimationDuration,
-          equals(const Duration(milliseconds: 300)));
+      expect(
+        config.scrollAnimationDuration,
+        equals(const Duration(milliseconds: 300)),
+      );
       expect(config.scrollAnimationCurve, equals(Curves.easeOut));
     });
 
@@ -25,8 +29,10 @@ void main() {
 
       expect(config.autoScrollBehavior, equals(AutoScrollBehavior.always));
       expect(config.scrollToFirstResponseMessage, isTrue);
-      expect(config.scrollAnimationDuration,
-          equals(const Duration(milliseconds: 500)));
+      expect(
+        config.scrollAnimationDuration,
+        equals(const Duration(milliseconds: 500)),
+      );
       expect(config.scrollAnimationCurve, equals(Curves.bounceOut));
     });
   });
@@ -43,10 +49,14 @@ void main() {
     });
 
     test('default config is applied', () {
-      expect(controller.scrollBehaviorConfig.autoScrollBehavior,
-          equals(AutoScrollBehavior.onNewMessage));
-      expect(controller.scrollBehaviorConfig.scrollToFirstResponseMessage,
-          isFalse);
+      expect(
+        controller.scrollBehaviorConfig.autoScrollBehavior,
+        equals(AutoScrollBehavior.onNewMessage),
+      );
+      expect(
+        controller.scrollBehaviorConfig.scrollToFirstResponseMessage,
+        isFalse,
+      );
     });
 
     test('can update scroll behavior config', () {
@@ -57,10 +67,14 @@ void main() {
 
       controller.scrollBehaviorConfig = newConfig;
 
-      expect(controller.scrollBehaviorConfig.autoScrollBehavior,
-          equals(AutoScrollBehavior.always));
       expect(
-          controller.scrollBehaviorConfig.scrollToFirstResponseMessage, isTrue);
+        controller.scrollBehaviorConfig.autoScrollBehavior,
+        equals(AutoScrollBehavior.always),
+      );
+      expect(
+        controller.scrollBehaviorConfig.scrollToFirstResponseMessage,
+        isTrue,
+      );
     });
 
     test('initializes with custom scroll behavior', () {
@@ -73,10 +87,14 @@ void main() {
         scrollBehaviorConfig: customConfig,
       );
 
-      expect(customController.scrollBehaviorConfig.autoScrollBehavior,
-          equals(AutoScrollBehavior.never));
-      expect(customController.scrollBehaviorConfig.scrollToFirstResponseMessage,
-          isTrue);
+      expect(
+        customController.scrollBehaviorConfig.autoScrollBehavior,
+        equals(AutoScrollBehavior.never),
+      );
+      expect(
+        customController.scrollBehaviorConfig.scrollToFirstResponseMessage,
+        isTrue,
+      );
 
       customController.dispose();
     });
@@ -86,18 +104,20 @@ void main() {
     test('has correct enum values', () {
       expect(AutoScrollBehavior.values.length, equals(4));
       expect(
-          AutoScrollBehavior.values,
-          containsAll([
-            AutoScrollBehavior.always,
-            AutoScrollBehavior.onNewMessage,
-            AutoScrollBehavior.onUserMessageOnly,
-            AutoScrollBehavior.never,
-          ]));
+        AutoScrollBehavior.values,
+        containsAll([
+          AutoScrollBehavior.always,
+          AutoScrollBehavior.onNewMessage,
+          AutoScrollBehavior.onUserMessageOnly,
+          AutoScrollBehavior.never,
+        ]),
+      );
     });
   });
 
-  testWidgets('ChatMessagesController applies scroll behavior configs',
-      (WidgetTester tester) async {
+  testWidgets('ChatMessagesController applies scroll behavior configs', (
+    WidgetTester tester,
+  ) async {
     // Create a controller and a scroll controller
     final controller = ChatMessagesController();
     final scrollController = ScrollController();
@@ -129,8 +149,10 @@ void main() {
     );
 
     // Verify the config was applied correctly
-    expect(controller.scrollBehaviorConfig.autoScrollBehavior,
-        equals(AutoScrollBehavior.never));
+    expect(
+      controller.scrollBehaviorConfig.autoScrollBehavior,
+      equals(AutoScrollBehavior.never),
+    );
 
     // Now change to always scroll config
     controller.scrollBehaviorConfig = const ScrollBehaviorConfig(
@@ -138,8 +160,10 @@ void main() {
     );
 
     // Verify the config was updated
-    expect(controller.scrollBehaviorConfig.autoScrollBehavior,
-        equals(AutoScrollBehavior.always));
+    expect(
+      controller.scrollBehaviorConfig.autoScrollBehavior,
+      equals(AutoScrollBehavior.always),
+    );
 
     // Clean up
     controller.dispose();

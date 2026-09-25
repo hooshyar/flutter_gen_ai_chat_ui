@@ -152,14 +152,18 @@ class ActionController extends ChangeNotifier {
   }
 
   /// Callback for showing confirmation dialogs
-  Future<bool> Function(BuildContext context, AiAction action,
-      Map<String, dynamic> parameters)? onConfirmationRequired;
+  Future<bool> Function(
+    BuildContext context,
+    AiAction action,
+    Map<String, dynamic> parameters,
+  )? onConfirmationRequired;
 
   /// Register a new action
   void registerAction(AiAction action) {
     if (_actions.containsKey(action.name)) {
       dev.log(
-          'Warning: Action "${action.name}" already exists and will be overwritten');
+        'Warning: Action "${action.name}" already exists and will be overwritten',
+      );
     }
 
     _actions[action.name] = action;
@@ -230,49 +234,63 @@ class ActionController extends ChangeNotifier {
           final error =
               'Action requires confirmation but no context or confirmation handler provided';
           return _completeExecution(
-              execution, ActionResult.createFailure(error));
+            execution,
+            ActionResult.createFailure(error),
+          );
         }
 
         execution.status = ActionStatus.waitingForConfirmation;
-        _emitEvent(ActionEvent(
-          type: ActionEventType.waitingForConfirmation,
-          actionName: action.name,
-          parameters: finalParams,
-        ));
+        _emitEvent(
+          ActionEvent(
+            type: ActionEventType.waitingForConfirmation,
+            actionName: action.name,
+            parameters: finalParams,
+          ),
+        );
         notifyListeners();
 
         // Wait for confirmation
-        final confirmed =
-            await onConfirmationRequired!(context, action, finalParams);
+        final confirmed = await onConfirmationRequired!(
+          context,
+          action,
+          finalParams,
+        );
 
-        _emitEvent(ActionEvent(
-          type: ActionEventType.confirmationProvided,
-          actionName: action.name,
-          parameters: finalParams,
-          metadata: {'confirmed': confirmed},
-        ));
+        _emitEvent(
+          ActionEvent(
+            type: ActionEventType.confirmationProvided,
+            actionName: action.name,
+            parameters: finalParams,
+            metadata: {'confirmed': confirmed},
+          ),
+        );
 
         if (!confirmed) {
           return _completeExecution(
-              execution,
-              ActionResult.createFailure('Action cancelled by user'),
-              ActionStatus.cancelled);
+            execution,
+            ActionResult.createFailure('Action cancelled by user'),
+            ActionStatus.cancelled,
+          );
         }
       }
 
       // Start execution
       execution.status = ActionStatus.executing;
-      _emitEvent(ActionEvent(
-        type: ActionEventType.started,
-        actionName: action.name,
-        parameters: finalParams,
-      ));
+      _emitEvent(
+        ActionEvent(
+          type: ActionEventType.started,
+          actionName: action.name,
+          parameters: finalParams,
+        ),
+      );
       // Emit backward-compat mirror event
-      _emitEvent(ActionEvent(
-        type: ActionEventType.executionStarted,
-        actionName: action.name,
-        parameters: finalParams,
-      ));
+      _emitEvent(
+        ActionEvent(
+          type: ActionEventType.executionStarted,
+          actionName: action.name,
+          parameters: finalParams,
+        ),
+      );
       notifyListeners();
 
       // Execute with timeout if specified
@@ -281,7 +299,8 @@ class ActionController extends ChangeNotifier {
         result = await action.handler(finalParams).timeout(
               Duration(milliseconds: action.timeoutMs!),
               onTimeout: () => ActionResult.createFailure(
-                  'Action timed out after ${action.timeoutMs}ms'),
+                'Action timed out after ${action.timeoutMs}ms',
+              ),
             );
       } else {
         result = await action.handler(finalParams);
@@ -293,23 +312,27 @@ class ActionController extends ChangeNotifier {
       final status =
           result.success ? ActionStatus.completed : ActionStatus.failed;
 
-      _emitEvent(ActionEvent(
-        type: eventType,
-        actionName: action.name,
-        parameters: finalParams,
-        result: result.success ? result : null,
-        error: result.success ? null : result.error,
-      ));
+      _emitEvent(
+        ActionEvent(
+          type: eventType,
+          actionName: action.name,
+          parameters: finalParams,
+          result: result.success ? result : null,
+          error: result.success ? null : result.error,
+        ),
+      );
       // Emit backward-compat mirror event
-      _emitEvent(ActionEvent(
-        type: result.success
-            ? ActionEventType.executionCompleted
-            : ActionEventType.executionFailed,
-        actionName: action.name,
-        parameters: finalParams,
-        result: result.success ? result : null,
-        error: result.success ? null : result.error,
-      ));
+      _emitEvent(
+        ActionEvent(
+          type: result.success
+              ? ActionEventType.executionCompleted
+              : ActionEventType.executionFailed,
+          actionName: action.name,
+          parameters: finalParams,
+          result: result.success ? result : null,
+          error: result.success ? null : result.error,
+        ),
+      );
 
       return _completeExecution(execution, result, status);
     } catch (e, stackTrace) {
@@ -319,12 +342,14 @@ class ActionController extends ChangeNotifier {
         stackTrace,
       );
 
-      _emitEvent(ActionEvent(
-        type: ActionEventType.failed,
-        actionName: action.name,
-        parameters: finalParams,
-        error: result.error,
-      ));
+      _emitEvent(
+        ActionEvent(
+          type: ActionEventType.failed,
+          actionName: action.name,
+          parameters: finalParams,
+          error: result.error,
+        ),
+      );
 
       return _completeExecution(execution, result, ActionStatus.failed);
     }
@@ -379,11 +404,13 @@ class ActionController extends ChangeNotifier {
     }
 
     final result = ActionResult.createFailure('Action cancelled by user');
-    _emitEvent(ActionEvent(
-      type: ActionEventType.cancelled,
-      actionName: execution.action.name,
-      parameters: execution.parameters,
-    ));
+    _emitEvent(
+      ActionEvent(
+        type: ActionEventType.cancelled,
+        actionName: execution.action.name,
+        parameters: execution.parameters,
+      ),
+    );
 
     _completeExecution(execution, result, ActionStatus.cancelled);
     return true;
@@ -487,20 +514,22 @@ class ActionController extends ChangeNotifier {
       // Add context as metadata to action execution
       final executionId =
           '${functionName}_${DateTime.now().millisecondsSinceEpoch}';
-      _contextController!.setContext(AiContextData.custom(
-        id: 'action_execution_$executionId',
-        name: 'Action Execution Context',
-        data: {
-          'actionName': functionName,
-          'arguments': arguments,
-          'executionId': executionId,
-          'timestamp': DateTime.now().toIso8601String(),
-        },
-        description: 'Context for action execution: $functionName',
-        categories: ['action', 'execution'],
-        priority: AiContextPriority.normal,
-        expiresAt: DateTime.now().add(const Duration(minutes: 5)),
-      ));
+      _contextController!.setContext(
+        AiContextData.custom(
+          id: 'action_execution_$executionId',
+          name: 'Action Execution Context',
+          data: {
+            'actionName': functionName,
+            'arguments': arguments,
+            'executionId': executionId,
+            'timestamp': DateTime.now().toIso8601String(),
+          },
+          description: 'Context for action execution: $functionName',
+          categories: ['action', 'execution'],
+          priority: AiContextPriority.normal,
+          expiresAt: DateTime.now().add(const Duration(minutes: 5)),
+        ),
+      );
     }
 
     return executeAction(functionName, arguments, context: context);

@@ -32,9 +32,7 @@ class DataTableLite extends StatelessWidget {
           dataRowMinHeight: dataRowMinHeight,
           columns: [
             for (final c in columns)
-              DataColumn(
-                label: Text(c, style: headingStyle),
-              ),
+              DataColumn(label: Text(c, style: headingStyle)),
           ],
           rows: [
             for (final r in rows)

@@ -247,10 +247,7 @@ class _CodeBlockViewState extends State<CodeBlockView> {
       );
     }
 
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: child,
-    );
+    return Directionality(textDirection: TextDirection.ltr, child: child);
   }
 }
 

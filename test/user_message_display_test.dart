@@ -39,11 +39,7 @@ void main() {
         user: user,
         createdAt: DateTime.now(),
       );
-      final aiMsg = ChatMessage(
-        text: '4',
-        user: ai,
-        createdAt: DateTime.now(),
-      );
+      final aiMsg = ChatMessage(text: '4', user: ai, createdAt: DateTime.now());
 
       controller.addMessage(userMsg);
       controller.addMessage(aiMsg);
@@ -67,8 +63,9 @@ void main() {
       expect(stored.customProperties?['isUserMessage'], isTrue);
     });
 
-    testWidgets('user message should display in AiChatWidget',
-        (WidgetTester tester) async {
+    testWidgets('user message should display in AiChatWidget', (
+      WidgetTester tester,
+    ) async {
       const currentUser = ChatUser(id: 'user', name: 'You');
       const aiUser = ChatUser(id: 'ai', name: 'Bot');
 
@@ -81,11 +78,13 @@ void main() {
               aiUser: aiUser,
               onSendMessage: (message) {
                 controller.addMessage(message);
-                controller.addMessage(ChatMessage(
-                  text: 'AI response',
-                  user: aiUser,
-                  createdAt: DateTime.now(),
-                ));
+                controller.addMessage(
+                  ChatMessage(
+                    text: 'AI response',
+                    user: aiUser,
+                    createdAt: DateTime.now(),
+                  ),
+                );
               },
             ),
           ),
@@ -108,10 +107,7 @@ void main() {
         controller.messages.any((m) => m.text == 'Hello from user'),
         isTrue,
       );
-      expect(
-        controller.messages.any((m) => m.text == 'AI response'),
-        isTrue,
-      );
+      expect(controller.messages.any((m) => m.text == 'AI response'), isTrue);
     });
   });
 }

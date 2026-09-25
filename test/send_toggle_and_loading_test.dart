@@ -115,8 +115,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('sendButtonBuilder still works when sendOrMicBuilder is null',
-        (tester) async {
+    testWidgets('sendButtonBuilder still works when sendOrMicBuilder is null', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
@@ -196,11 +197,13 @@ void main() {
         ),
       );
 
-      controller.addMessage(ChatMessage.loading(
-        user: aiUser,
-        id: 'load-render',
-        text: 'Processing...',
-      ));
+      controller.addMessage(
+        ChatMessage.loading(
+          user: aiUser,
+          id: 'load-render',
+          text: 'Processing...',
+        ),
+      );
       // Not pumpAndSettle: the default loading placeholder now has a
       // repeating shimmer (`DESIGN.md` §8.7, [ChatLoadingBars]), which never
       // settles by design.
@@ -212,8 +215,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('loading message replaced by rich widget via updateMessage',
-        (tester) async {
+    testWidgets('loading message replaced by rich widget via updateMessage', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
@@ -233,11 +237,13 @@ void main() {
       );
 
       // Add loading
-      controller.addMessage(ChatMessage.loading(
-        user: aiUser,
-        id: 'morph-1',
-        text: 'Loading weather...',
-      ));
+      controller.addMessage(
+        ChatMessage.loading(
+          user: aiUser,
+          id: 'morph-1',
+          text: 'Loading weather...',
+        ),
+      );
       // Not pumpAndSettle: the default loading placeholder now has a
       // repeating shimmer (`DESIGN.md` §8.7), which never settles by design.
       await tester.pump();
@@ -245,12 +251,14 @@ void main() {
       expect(find.text('Loading weather...'), findsOneWidget);
 
       // Replace with rich widget
-      controller.updateMessage(ChatMessage.rich(
-        user: aiUser,
-        id: 'morph-1',
-        resultKind: 'weather',
-        data: {'city': 'Baghdad'},
-      ));
+      controller.updateMessage(
+        ChatMessage.rich(
+          user: aiUser,
+          id: 'morph-1',
+          resultKind: 'weather',
+          data: {'city': 'Baghdad'},
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Weather: Baghdad'), findsOneWidget);
@@ -259,8 +267,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('loading message replaced by text via setMessages',
-        (tester) async {
+    testWidgets('loading message replaced by text via setMessages', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
@@ -315,13 +324,15 @@ void main() {
       expect(widget, isA<Text>());
     });
 
-    test('falls back to effectiveSendButtonBuilder when sendOrMicBuilder null',
-        () {
-      const options = InputOptions(sendButtonIcon: Icons.send);
+    test(
+      'falls back to effectiveSendButtonBuilder when sendOrMicBuilder null',
+      () {
+        const options = InputOptions(sendButtonIcon: Icons.send);
 
-      final widget = options.effectiveSendWidget(() {});
-      expect(widget, isA<IconButton>());
-    });
+        final widget = options.effectiveSendWidget(() {});
+        expect(widget, isA<IconButton>());
+      },
+    );
 
     test('passes isEmpty correctly', () {
       bool? receivedIsEmpty;
@@ -384,11 +395,13 @@ void main() {
         ),
       );
 
-      controller.addMessage(ChatMessage.loading(
-        user: aiUser,
-        id: 'custom-load-1',
-        loadingKind: 'contract',
-      ));
+      controller.addMessage(
+        ChatMessage.loading(
+          user: aiUser,
+          id: 'custom-load-1',
+          loadingKind: 'contract',
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Generating your contract...'), findsOneWidget);
@@ -396,8 +409,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('falls back to shimmer when loadingKind has no renderer',
-        (tester) async {
+    testWidgets('falls back to shimmer when loadingKind has no renderer', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
@@ -417,12 +431,14 @@ void main() {
       );
 
       // Use an unregistered kind
-      controller.addMessage(ChatMessage.loading(
-        user: aiUser,
-        id: 'custom-load-2',
-        loadingKind: 'unknown_kind',
-        text: 'Processing...',
-      ));
+      controller.addMessage(
+        ChatMessage.loading(
+          user: aiUser,
+          id: 'custom-load-2',
+          loadingKind: 'unknown_kind',
+          text: 'Processing...',
+        ),
+      );
       // Not pumpAndSettle: the default loading placeholder now has a
       // repeating shimmer (`DESIGN.md` §8.7), which never settles by design.
       await tester.pump();
@@ -460,21 +476,25 @@ void main() {
       );
 
       // Show custom loading
-      controller.addMessage(ChatMessage.loading(
-        user: aiUser,
-        id: 'morph-contract',
-        loadingKind: 'contract',
-      ));
+      controller.addMessage(
+        ChatMessage.loading(
+          user: aiUser,
+          id: 'morph-contract',
+          loadingKind: 'contract',
+        ),
+      );
       await tester.pumpAndSettle();
       expect(find.text('Drafting contract...'), findsOneWidget);
 
       // Replace with rich widget
-      controller.updateMessage(ChatMessage.rich(
-        user: aiUser,
-        id: 'morph-contract',
-        resultKind: 'contract_status',
-        data: {'title': 'Employment Agreement'},
-      ));
+      controller.updateMessage(
+        ChatMessage.rich(
+          user: aiUser,
+          id: 'morph-contract',
+          resultKind: 'contract_status',
+          data: {'title': 'Employment Agreement'},
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Contract: Employment Agreement'), findsOneWidget);
@@ -499,11 +519,13 @@ void main() {
         ),
       );
 
-      controller.addMessage(ChatMessage.loading(
-        user: aiUser,
-        id: 'default-shimmer',
-        text: 'Thinking...',
-      ));
+      controller.addMessage(
+        ChatMessage.loading(
+          user: aiUser,
+          id: 'default-shimmer',
+          text: 'Thinking...',
+        ),
+      );
       // Not pumpAndSettle: the default loading placeholder now has a
       // repeating shimmer (`DESIGN.md` §8.7), which never settles by design.
       await tester.pump();

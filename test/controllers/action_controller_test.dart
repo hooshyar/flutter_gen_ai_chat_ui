@@ -54,8 +54,9 @@ void main() {
         final action = _createTestAction();
         controller.registerAction(action);
 
-        final result =
-            await controller.executeAction('test_action', {'param': 'value'});
+        final result = await controller.executeAction('test_action', {
+          'param': 'value',
+        });
 
         expect(result.success, isTrue);
         expect(result.data, equals({'result': 'success', 'param': 'value'}));
@@ -92,8 +93,9 @@ void main() {
         final action = _createActionWithRequiredParams();
         controller.registerAction(action);
 
-        final result = await controller
-            .executeAction('param_action', {'required_param': 'test_value'});
+        final result = await controller.executeAction('param_action', {
+          'required_param': 'test_value',
+        });
 
         expect(result.success, isTrue);
       });
@@ -118,8 +120,9 @@ void main() {
         final action = _createTestAction();
         controller.registerAction(action);
 
-        final result = await controller
-            .handleFunctionCall('test_action', {'param': 'value'});
+        final result = await controller.handleFunctionCall('test_action', {
+          'param': 'value',
+        });
 
         expect(result.success, isTrue);
         expect(result.data, equals({'result': 'success', 'param': 'value'}));
@@ -141,9 +144,11 @@ void main() {
         await Future.delayed(Duration.zero);
 
         final startedEvents = events
-            .where((e) =>
-                e.type == ActionEventType.executionStarted ||
-                e.type == ActionEventType.started)
+            .where(
+              (e) =>
+                  e.type == ActionEventType.executionStarted ||
+                  e.type == ActionEventType.started,
+            )
             .toList();
         expect(startedEvents, isNotEmpty);
         expect(startedEvents.first.actionName, equals('test_action'));
@@ -203,11 +208,13 @@ void main() {
 
       test('should generate actions with context', () {
         final contextController = AiContextController();
-        contextController.setContext(AiContextData.userProfile(
-          id: 'test_user',
-          name: 'Test User',
-          profileData: {'role': 'admin'},
-        ));
+        contextController.setContext(
+          AiContextData.userProfile(
+            id: 'test_user',
+            name: 'Test User',
+            profileData: {'role': 'admin'},
+          ),
+        );
 
         controller.contextController = contextController;
         controller.registerAction(_createTestAction());
@@ -223,11 +230,13 @@ void main() {
 
       test('should enhance prompts with context', () {
         final contextController = AiContextController();
-        contextController.setContext(AiContextData.userProfile(
-          id: 'test_user',
-          name: 'Test User',
-          profileData: {'role': 'admin'},
-        ));
+        contextController.setContext(
+          AiContextData.userProfile(
+            id: 'test_user',
+            name: 'Test User',
+            profileData: {'role': 'admin'},
+          ),
+        );
 
         controller.contextController = contextController;
 
@@ -246,21 +255,24 @@ void main() {
       // fired, the timer was still pending — which surfaces as a leak in
       // widget-test environments. The fix tracks all such timers in
       // _cleanupTimers and cancels them in dispose().
-      test('cleanup timer is cancelled on dispose without pending leaks',
-          () async {
-        final localController = ActionController();
-        localController.registerAction(_createTestAction());
+      test(
+        'cleanup timer is cancelled on dispose without pending leaks',
+        () async {
+          final localController = ActionController();
+          localController.registerAction(_createTestAction());
 
-        // Execute once to schedule the post-completion cleanup Timer.
-        final result = await localController
-            .executeAction('test_action', {'param': 'value'});
-        expect(result.success, isTrue);
+          // Execute once to schedule the post-completion cleanup Timer.
+          final result = await localController.executeAction('test_action', {
+            'param': 'value',
+          });
+          expect(result.success, isTrue);
 
-        // Disposing immediately must not leave the 2-second timer pending.
-        // (Asserted implicitly by the test framework's teardown invariants
-        // and explicitly by the absence of any thrown errors below.)
-        localController.dispose();
-      });
+          // Disposing immediately must not leave the 2-second timer pending.
+          // (Asserted implicitly by the test framework's teardown invariants
+          // and explicitly by the absence of any thrown errors below.)
+          localController.dispose();
+        },
+      );
     });
   });
 }
@@ -278,10 +290,7 @@ AiAction _createTestAction({String name = 'test_action'}) {
       ),
     ],
     handler: (parameters) async {
-      return ActionResult.createSuccess({
-        'result': 'success',
-        ...parameters,
-      });
+      return ActionResult.createSuccess({'result': 'success', ...parameters});
     },
   );
 }

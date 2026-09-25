@@ -266,10 +266,7 @@ class _ChatInputState extends State<ChatInput> {
 
     // Apply custom height to text field if specified
     if (options.inputHeight != null) {
-      textField = SizedBox(
-        height: options.inputHeight!,
-        child: textField,
-      );
+      textField = SizedBox(height: options.inputHeight!, child: textField);
     }
 
     // Hardware Enter handling for desktop, web, and devices with attached
@@ -375,10 +372,7 @@ class _ChatInputState extends State<ChatInput> {
       inputContent = hasPreview
           ? Column(
               mainAxisSize: MainAxisSize.min,
-              children: [
-                options.attachmentPreviewBuilder!(context),
-                inputRow,
-              ],
+              children: [options.attachmentPreviewBuilder!(context), inputRow],
             )
           : inputRow;
     }
@@ -455,8 +449,12 @@ class _ChatInputState extends State<ChatInput> {
       curve: ChatMotion.enter,
       // Use app direction consistently for margin resolution
       padding: options.margin?.resolve(appDirection) ??
-          const EdgeInsetsDirectional.fromSTEB(16, 12, 8, 8)
-              .resolve(appDirection),
+          const EdgeInsetsDirectional.fromSTEB(
+            16,
+            12,
+            8,
+            8,
+          ).resolve(appDirection),
       decoration: BoxDecoration(
         color: composerFill,
         border: Border.all(color: composerBorderColor),

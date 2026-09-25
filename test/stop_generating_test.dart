@@ -6,10 +6,12 @@ void main() {
   final aiUser = ChatUser(id: 'ai', name: 'AI');
   final humanUser = ChatUser(id: 'user', name: 'User');
 
-  Widget harness(ChatMessagesController controller,
-      {required bool isLoading,
-      VoidCallback? onCancel,
-      InputOptions? inputOptions}) {
+  Widget harness(
+    ChatMessagesController controller, {
+    required bool isLoading,
+    VoidCallback? onCancel,
+    InputOptions? inputOptions,
+  }) {
     return MaterialApp(
       home: Scaffold(
         body: AiChatWidget(
@@ -30,8 +32,9 @@ void main() {
     // not an `Icons.stop_rounded` glyph, so it's found by its tooltip /
     // semantics label instead of `find.byIcon`. The default send icon also
     // changed from `Icons.send` to `Icons.arrow_upward_rounded`.
-    testWidgets('shows stop button when generating + onCancelGenerating set',
-        (tester) async {
+    testWidgets('shows stop button when generating + onCancelGenerating set', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
@@ -46,8 +49,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('tapping stop button invokes onCancelGenerating',
-        (tester) async {
+    testWidgets('tapping stop button invokes onCancelGenerating', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
       var cancelled = false;
 
@@ -64,8 +68,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('no stop button when onCancelGenerating is null',
-        (tester) async {
+    testWidgets('no stop button when onCancelGenerating is null', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
@@ -93,8 +98,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('stop button toggles back to send when loading ends',
-        (tester) async {
+    testWidgets('stop button toggles back to send when loading ends', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
@@ -163,8 +169,9 @@ void main() {
   });
 
   group('Per-bubble timestamp style (#29)', () {
-    testWidgets('userTimeTextStyle and aiTimeTextStyle apply independently',
-        (tester) async {
+    testWidgets('userTimeTextStyle and aiTimeTextStyle apply independently', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
       const userColor = Color(0xFFAA0000);
       const aiColor = Color(0xFF00AA00);
@@ -188,16 +195,20 @@ void main() {
         ),
       );
 
-      controller.addMessage(ChatMessage(
-        text: 'hi from user',
-        user: humanUser,
-        createdAt: DateTime.now(),
-      ));
-      controller.addMessage(ChatMessage(
-        text: 'hi from ai',
-        user: aiUser,
-        createdAt: DateTime.now(),
-      ));
+      controller.addMessage(
+        ChatMessage(
+          text: 'hi from user',
+          user: humanUser,
+          createdAt: DateTime.now(),
+        ),
+      );
+      controller.addMessage(
+        ChatMessage(
+          text: 'hi from ai',
+          user: aiUser,
+          createdAt: DateTime.now(),
+        ),
+      );
       await tester.pumpAndSettle();
 
       final colors = tester
@@ -211,8 +222,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('falls back to shared timeTextStyle when per-bubble null',
-        (tester) async {
+    testWidgets('falls back to shared timeTextStyle when per-bubble null', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
       const sharedColor = Color(0xFF0000AA);
 
@@ -234,11 +246,13 @@ void main() {
         ),
       );
 
-      controller.addMessage(ChatMessage(
-        text: 'from user',
-        user: humanUser,
-        createdAt: DateTime.now(),
-      ));
+      controller.addMessage(
+        ChatMessage(
+          text: 'from user',
+          user: humanUser,
+          createdAt: DateTime.now(),
+        ),
+      );
       await tester.pumpAndSettle();
 
       final colors = tester
