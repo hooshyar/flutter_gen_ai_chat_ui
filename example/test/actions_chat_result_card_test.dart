@@ -9,32 +9,18 @@ import 'package:flutter_test/flutter_test.dart';
 /// a card.
 ///
 /// Root cause: `ActionsChatExample` adds the "Calling the ... tool:" text
-/// message and the following `ChatMessage.rich` result card back-to-back,
-/// synchronously, with no explicit id and no explicit `createdAt` for the
-/// card. `ChatMessagesController` used to derive a message's auto id purely
-/// from `user.id` + `createdAt.millisecondsSinceEpoch`; `DateTime.now()`
-/// only has millisecond resolution on web (it's backed by JS `Date.now()`,
-/// unlike the VM's microsecond-resolution clock), so two back-to-back
-/// `DateTime.now()` calls reliably land in the same millisecond there. The
-/// two messages then got the same auto id, and the second `addMessage` call
-/// was silently dropped by the "id already cached" de-dup guard.
+/// message and the following `ChatMessage.rich` result card back to back.
+/// When a message has no explicit id, `ChatMessagesController` builds one
+/// from `user.id` + `createdAt.millisecondsSinceEpoch`, and a second message
+/// that lands on an already-cached id is dropped. Two messages added in the
+/// same millisecond can collide on any platform; on web it is more likely
+/// because `DateTime.now()` only has millisecond resolution.
 ///
-/// This is why the bug only reproduced in a real browser and never
-/// reliably in a plain `flutter test` run: on the Dart VM, two
-/// `DateTime.now()` calls a few statements apart are - empirically -
-/// typically microseconds to a few milliseconds apart and rarely collide.
-///
-/// `ChatMessagesController` now disambiguates a same-millisecond id
-/// collision between two genuinely DIFFERENT messages with a suffix
-/// (instead of silently dropping the second one) while still deduping a
-/// truly identical re-added message onto its existing id - see
-/// `ChatMessagesController._resolveGeneratedMessageId`. The real proof of
-/// that fix is the deterministic, explicit-`createdAt` collision test in
-/// `test/chat_messages_controller_test.dart`; this suite is the
-/// integration-level regression for the concrete example that surfaced the
-/// bug, and now runs on the Dart VM like the rest of the suite. It can
-/// also be run with `flutter test --platform chrome` to exercise the real
-/// web timing directly.
+/// Fix (in the example): the tool-call message and the result card now get
+/// explicit, distinct ids (`tool-call-<n>` / `tool-result-<n>`), so they
+/// never depend on generated ids. The controller behaviour is unchanged and
+/// documented as a known limitation in the README and CHANGELOG. A proper
+/// controller-side fix is tracked in backlog task-035.
 void main() {
   testWidgets('/calculate 42 * 7 renders a result card containing 294',
       (tester) async {

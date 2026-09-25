@@ -125,7 +125,7 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 ```
 
-> **Note:** when you add several messages for the same user back to back without an explicit `id` (e.g. a tool-call message immediately followed by a result card), give each one an explicit id. `ChatMessagesController` builds an id from the user id and `createdAt`'s millisecond timestamp when none is given, and on web `DateTime.now()` only has millisecond resolution — two id-less messages added in the same frame can land on the same generated id and be treated as the same message. Pass `ChatMessage(customProperties: {'id': 'my-id'})` or `ChatMessage.rich(id: 'my-id')` to keep them distinct.
+> **Note:** when you add several messages for the same user back to back without an explicit `id` (e.g. a tool-call message immediately followed by a result card), give each one an explicit id. `ChatMessagesController` builds an id from the user id and `createdAt`'s millisecond timestamp when none is given, so two id-less messages added in the same millisecond can land on the same generated id and be treated as the same message. This can happen on any platform, and it is more likely on web, where `DateTime.now()` only has millisecond resolution. Pass `ChatMessage(customProperties: {'id': 'my-id'})` or `ChatMessage.rich(id: 'my-id')` to keep them distinct.
 
 ## Why this package?
 
