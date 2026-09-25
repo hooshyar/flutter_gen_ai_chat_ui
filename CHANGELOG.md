@@ -9,7 +9,7 @@ No breaking API changes: every public change is additive. **The default look cha
 - **A new message action row** has an icon copy button that swaps to a check instead of showing a SnackBar, plus the timestamp. It is hidden while the message streams. `showCopyButton` now defaults to `true`.
 - **Streaming** shows a live caret and fades new text in (`streamingFadeInEnabled` now defaults to `true`).
 - **New composer:** one rounded field (radius 24) with a focus ring. The send button (`Icons.arrow_upward_rounded`, 48x48 hit area) turns into a stop button while generating. Esc cancels generation. `maxLines` defaults to 8.
-- **Empty state:** the greeting starts at the left of the column, and suggestion tiles have no icons. Also new: a "Thinking" shimmer, loading placeholders, and a scroll-to-bottom button centred on the column (`ScrollToBottomOptions.position`), 12px above the composer (`ScrollToBottomOptions.bottomOffset` default 72 → 6).
+- **Empty state:** the greeting starts at the left of the column, and suggestion tiles have no icons. Also new: a "Thinking" shimmer, loading placeholders, and a scroll-to-bottom button centred on the column (`ScrollToBottomOptions.position`), 12px above the message list's own bottom edge — the composer's visible container when there are no quick replies, or the quick-replies row when there are (`ScrollToBottomOptions.bottomOffset` default 72 → 6).
 - **Syntax highlighting is on by default** for fenced code blocks. Turn it off with `MessageOptions.enableSyntaxHighlighting: false`.
 - **All motion respects the system "reduce motion" setting.**
 
@@ -22,6 +22,7 @@ No breaking API changes: every public change is additive. **The default look cha
 - **Streaming caret and actions.** The caret and the copy/time row now follow whether the stream is really open, for both documented streaming recipes. Before, Copy could appear mid-stream, or the caret could stay after `stopStreamingMessage`. `stopStreamingMessage` also now resets a stored `isStreaming: true` to `false`.
 - **Image and link taps.** Enabling image or link taps no longer leaves a message looking like it is still streaming.
 - **Timestamp style options.** `timeTextStyle` / `userTimeTextStyle` / `aiTimeTextStyle` apply again.
+- **Scroll-to-bottom button covering quick-reply chips.** The button was positioned in the `Stack` around the whole chat surface (list + quick replies), so once the list was scrolled up its hit area could land on top of the quick-reply row and swallow taps meant for a chip. It now sits in a `Stack` around the message list only, so it floats 12px above whatever is directly below the list — the composer's visible container when there are no quick replies, the quick-replies row when there are — and never overlaps either.
 
 ### Fixed (code blocks)
 - **Per-line grey boxes in fenced code blocks.** Inline `code` spans carried a per-line `backgroundColor`; fenced blocks now render through the new `CodeBlockView`, which paints a single rounded background for the whole block, so no span sets a background.

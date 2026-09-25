@@ -547,9 +547,19 @@ class _AiChatWidgetState extends State<AiChatWidget>
                   // the visible shape, so this wrapper no longer needs one.
                   : _isDefaultInputMaterial(widget.inputOptions)
                       ? Padding(
+                          // Top is 0, not a fixed extra gap: `CustomChatWidget`
+                          // already ends exactly at this composer's top edge
+                          // (or at the quick-replies row's bottom, when quick
+                          // replies are showing), and that boundary is what
+                          // `ScrollToBottomOptions.bottomOffset` measures the
+                          // 12px scroll-to-bottom disc gap against
+                          // (`DESIGN.md` §8.10). A nonzero top here would
+                          // silently add slack the button doesn't know about,
+                          // reopening the ~12px-vs-~20px mismatch a prior
+                          // version of this padding caused.
                           padding: EdgeInsetsDirectional.fromSTEB(
                             16,
-                            8,
+                            0,
                             16,
                             12 + MediaQuery.of(context).padding.bottom,
                           ),

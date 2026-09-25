@@ -756,12 +756,14 @@ class ScrollToBottomOptions {
   /// Custom builder for scroll to bottom button
   final Widget Function(ScrollController)? scrollToBottomBuilder;
 
-  /// Distance from the bottom of the chat surface this button floats over
-  /// (`CustomChatWidget`, which ends exactly at the composer's top edge) to
-  /// the button's 48x48 hit area (default is 6, chosen so the painted 36px
-  /// disc, centred within that hit area, lands ~12px above the composer per
-  /// `DESIGN.md` §8.10; not from the viewport/screen bottom despite the
-  /// field's name).
+  /// Distance from the bottom of the MESSAGE LIST (not the whole chat
+  /// surface, and not the viewport/screen bottom despite the field's name)
+  /// this button floats over, to the button's 48x48 hit area. Default is 6,
+  /// chosen so the painted 36px disc, centred within that hit area, lands
+  /// ~12px above whatever sits directly below the list — the composer's own
+  /// visible container (its rounded, bordered `ChatInput` box) when there
+  /// are no quick replies, or the quick-replies row when there are — per
+  /// `DESIGN.md` §8.10.
   final double bottomOffset;
 
   /// Distance from right of the screen (default is 16). Only applied when

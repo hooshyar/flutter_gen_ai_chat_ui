@@ -51,6 +51,21 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Scrolls the message list fully AWAY from the newest message (the
+  /// default `reverseOrder: true` list scrolls up towards `maxScrollExtent`),
+  /// which is what makes the (non-`alwaysVisible`) scroll-to-bottom button
+  /// appear.
+  Future<void> scrollAwayFromBottom(WidgetTester tester) async {
+    final scrollable = tester.state<ScrollableState>(
+      find.descendant(
+        of: find.byType(ListView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    scrollable.position.jumpTo(scrollable.position.maxScrollExtent);
+    await tester.pumpAndSettle();
+  }
+
   for (final size in [const Size(400, 800), const Size(1600, 1000)]) {
     for (final messageCount in [2, 30]) {
       testWidgets(
@@ -104,8 +119,19 @@ void main() {
     }
   }
 
+  /// The painted 36px disc itself (not its 48px hit area, which pads beyond
+  /// the visual edge) — a `DecoratedBox` with a circular shape.
+  Finder discFinder() => find.byWidgetPredicate((widget) {
+        if (widget is! DecoratedBox) return false;
+        final decoration = widget.decoration;
+        return decoration is BoxDecoration &&
+            decoration.shape == BoxShape.circle &&
+            decoration.border != null;
+      });
+
   testWidgets(
-    'the scroll-to-bottom button sits ~12px above the composer when shown',
+    'the scroll-to-bottom button sits ~12px above the composer\'s visible '
+    'container when shown',
     (tester) async {
       final controller = buildController(30);
       addTearDown(controller.dispose);
@@ -130,47 +156,112 @@ void main() {
 
       // Scroll away from the bottom so the (non-alwaysVisible) button shows
       // (`DESIGN.md` §8.10: past ~200px from the bottom).
-      final scrollable = tester.state<ScrollableState>(
-        find.descendant(
-          of: find.byType(ListView),
-          matching: find.byType(Scrollable),
-        ),
-      );
-      scrollable.position.jumpTo(scrollable.position.maxScrollExtent);
-      await tester.pumpAndSettle();
+      await scrollAwayFromBottom(tester);
 
-      // The painted 36px disc itself (not its 48px hit area, which pads
-      // beyond the visual edge) — a DecoratedBox with a circular shape.
-      final discFinder = find.byWidgetPredicate((widget) {
-        if (widget is! DecoratedBox) return false;
-        final decoration = widget.decoration;
-        return decoration is BoxDecoration &&
-            decoration.shape == BoxShape.circle &&
-            decoration.border != null;
-      });
-      // `CustomChatWidget`'s own box ends exactly at the composer's top
-      // edge (`AiChatWidget` places it in an `Expanded` immediately above
-      // the composer) — this is "the composer" from this button's own
-      // component's frame of reference. `find.byType(ChatInput)` sits a
-      // further fixed 8px below that (an unrelated top padding
-      // `AiChatWidget` applies around the composer card itself, present
-      // before and after this fix), so it isn't what `bottomOffset` alone
-      // can be measured against.
-      final composerTopEdgeFinder = find.byType(CustomChatWidget);
-      expect(discFinder, findsOneWidget);
-      expect(composerTopEdgeFinder, findsOneWidget);
+      // The composer's actual VISIBLE container — `ChatInput`'s own rounded,
+      // bordered `AnimatedContainer` — not `CustomChatWidget`'s box, which
+      // (with quick replies showing) no longer ends at the composer at all.
+      final composerFinder = find.byType(ChatInput);
+      expect(discFinder(), findsOneWidget);
+      expect(composerFinder, findsOneWidget);
 
-      final buttonBottom = tester.getBottomLeft(discFinder).dy;
-      final composerTopEdge = tester.getBottomLeft(composerTopEdgeFinder).dy;
-      final gap = composerTopEdge - buttonBottom;
+      final buttonBottom = tester.getBottomLeft(discFinder()).dy;
+      final composerTop = tester.getTopLeft(composerFinder).dy;
+      final gap = composerTop - buttonBottom;
 
       expect(
         gap,
         closeTo(12, 2),
-        reason: 'Scroll-to-bottom button sat ${gap}px above the composer; '
-            'DESIGN.md §8.10 wants 12px (±2), not the ~60px-higher '
-            'regression.',
+        reason: 'Scroll-to-bottom button sat ${gap}px above the composer\'s '
+            'visible container; DESIGN.md §8.10 wants 12px (±2).',
       );
     },
   );
+
+  group('scroll-to-bottom button never covers quick-reply chips', () {
+    for (final size in [const Size(400, 800), const Size(1600, 1000)]) {
+      testWidgets(
+        'at ${size.width.toInt()}x${size.height.toInt()}, hit area does '
+        'not overlap any chip and taps reach the chips',
+        (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.reset);
+
+          final controller = buildController(30);
+          addTearDown(controller.dispose);
+
+          const quickReplies = [
+            'Option one',
+            'Option two',
+            'Option three',
+            'Option four',
+            'Option five',
+          ];
+          final tapped = <String>[];
+
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: AiChatWidget(
+                  currentUser: currentUser,
+                  aiUser: aiUser,
+                  controller: controller,
+                  onSendMessage: (message) {},
+                  quickReplyOptions: QuickReplyOptions(
+                    quickReplies: quickReplies,
+                    onQuickReplyTap: tapped.add,
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          // Scroll the list up, away from the bottom, so the scroll-to-bottom
+          // button is showing at the same time as the quick replies.
+          await scrollAwayFromBottom(tester);
+
+          final disc = discFinder();
+          expect(disc, findsOneWidget);
+          final buttonRect = tester.getRect(disc);
+
+          for (final reply in quickReplies) {
+            final chipFinder = find.widgetWithText(OutlinedButton, reply);
+            expect(
+              chipFinder,
+              findsOneWidget,
+              reason: 'Quick reply chip "$reply" was not found on screen.',
+            );
+            // The quick-reply row scrolls horizontally; make sure this chip
+            // is actually within its scrollable viewport before measuring/
+            // tapping it (the chip's `RenderBox` still reports a rect even
+            // while clipped out of view, which would silently no-op the tap).
+            await tester.ensureVisible(chipFinder);
+            await tester.pumpAndSettle();
+            final chipRect = tester.getRect(chipFinder);
+
+            expect(
+              buttonRect.overlaps(chipRect),
+              isFalse,
+              reason: 'Scroll-to-bottom button hit area $buttonRect '
+                  'overlaps quick-reply chip "$reply" at $chipRect.',
+            );
+
+            await tester.tapAt(chipRect.center);
+            await tester.pumpAndSettle();
+          }
+
+          expect(
+            tapped,
+            equals(quickReplies),
+            reason: 'Tapping the centre of each quick-reply chip should '
+                'fire onQuickReplyTap with that chip\'s value, not be '
+                'swallowed by the scroll-to-bottom button sitting on top '
+                'of it.',
+          );
+        },
+      );
+    }
+  });
 }

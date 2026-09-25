@@ -490,22 +490,31 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    // The scroll-to-bottom button is positioned against the MESSAGE LIST's
+    // own bottom edge (this inner Stack), not the whole widget's — when
+    // quick replies are showing below the list, that row is a sibling
+    // OUTSIDE this Stack, so the button's `bottomOffset` is measured from
+    // (and floats above) the list/quick-replies boundary instead of
+    // reaching past the quick replies and overlapping their chips.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(child: _buildMessageList()),
-            if (widget.quickReplyOptions.quickReplies != null &&
-                widget.quickReplyOptions.quickReplies!.isNotEmpty)
-              Padding(
-                padding: widget.spacingConfig.quickRepliesPadding,
-                child: _centeredReadingColumn(_buildQuickReplies()),
-              ),
-          ],
+        Expanded(
+          child: Stack(
+            children: [
+              _buildMessageList(),
+              if (_showScrollToBottom ||
+                  widget.scrollToBottomOptions.alwaysVisible)
+                _buildScrollToBottomButton(),
+            ],
+          ),
         ),
-        if (_showScrollToBottom || widget.scrollToBottomOptions.alwaysVisible)
-          _buildScrollToBottomButton(),
+        if (widget.quickReplyOptions.quickReplies != null &&
+            widget.quickReplyOptions.quickReplies!.isNotEmpty)
+          Padding(
+            padding: widget.spacingConfig.quickRepliesPadding,
+            child: _centeredReadingColumn(_buildQuickReplies()),
+          ),
       ],
     );
   }
