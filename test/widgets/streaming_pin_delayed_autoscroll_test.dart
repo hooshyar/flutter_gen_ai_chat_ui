@@ -101,9 +101,15 @@ void main() {
 
       // Now let the delayed auto-scroll (300 ms fake time) fire, plus its own
       // animation, plus the end-of-stream/manual-scroll timers.
+      //
+      // Not pumpAndSettle: the stream in this test is never stopped (that's
+      // the point — it's exercising the pin mid-stream), so the live
+      // StreamingCaret's repeating pulse animation would keep it from ever
+      // settling. The explicit 2-second pump above already drains every
+      // bounded timer/animation this scenario cares about.
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump(const Duration(seconds: 2));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 100));
 
       // Before the fix: pin released, list at the bottom (pixels == 0).
       expect(
@@ -129,7 +135,9 @@ void main() {
         await tester.pump();
       }
       await tester.pump(const Duration(seconds: 2));
-      await tester.pumpAndSettle();
+      // Not pumpAndSettle here either — same reason as above: the stream is
+      // still open at this point in the test.
+      await tester.pump(const Duration(milliseconds: 100));
       expect(gap(), lessThan(40));
       expect(controller.isStreamingPinActive, isTrue);
     },

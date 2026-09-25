@@ -800,21 +800,26 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   ///
   /// Deliberately reads the local reveal-loop bookkeeping ([_revealedChars],
   /// the same id computation [_buildMessageContent] uses to enroll entries)
-  /// rather than `controller.currentlyStreamingMessageId`: the controller
-  /// flag stays set on the last AI message until the *next* one arrives
-  /// (`addMessage` never clears it for a message that wasn't started via
-  /// `addStreamingMessage`/`stopStreamingMessage`), which would otherwise
-  /// pin the live caret and hide the action row forever after a message
-  /// finishes revealing.
+  /// first: while the reveal ticker still has backlog to catch up on, the
+  /// message is visibly still animating in regardless of the controller's
+  /// stream bookkeeping.
   ///
   /// Compares the revealed count directly against the current text length
-  /// rather than just checking map membership: the reveal ticker's own
-  /// "finished" bookkeeping is similarly gated on that controller flag
-  /// clearing, so an entry can linger at `revealed == text.length` — that's
-  /// still "done" as far as anything visible is concerned.
+  /// rather than just checking map membership: an entry can linger at
+  /// `revealed == text.length` — that's still "done" as far as anything
+  /// visible is concerned.
+  ///
+  /// Beyond the reveal backlog, defers to
+  /// [ChatMessagesController.isMessageStreaming] — an explicit, contract-
+  /// driven open-stream set (see that method's doc comment for exactly which
+  /// calls open/close an id) that is independent of `enableMarkdownStreaming`
+  /// and of the one-shot reveal/typewriter animation `addMessage` also kicks
+  /// off for every fresh AI message. Only when there is no `widget.controller`
+  /// at all does this fall back to the raw
+  /// `customProperties['isStreaming']` flag on the message itself.
   ///
   /// Must be called after [_buildMessageContent] has run for this message in
-  /// the current build (that call is what performs the enrollment).
+  /// the current build (that call is what performs the reveal enrollment).
   bool _isCurrentlyStreaming(ChatMessage message) {
     final messageId = message.customProperties?['id'] as String? ??
         '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
@@ -823,26 +828,13 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       return true;
     }
 
-    // Also treat the message as streaming when the consumer has flagged it
-    // explicitly (`customProperties['isStreaming'] == true`, the documented
-    // streaming contract — see `ChatMessagesController`'s doc comment: "Flip
-    // isStreaming to false to end the animation"). This is what actually
-    // covers `enableMarkdownStreaming: false` (where [_revealedChars] never
-    // runs at all) and the moment a stream first arrives, before any
-    // characters have been catch-up-revealed yet.
-    //
-    // Deliberately NOT `controller.currentlyStreamingMessageId`: `addMessage`
-    // sets it for *every* fresh AI message — streaming or not, that is what
-    // starts the one-shot reveal/typewriter effect for a plain, complete
-    // message — and only clears it once a *different* AI message arrives.
-    // Trusting it here would pin the live caret forever on an ordinary,
-    // already-fully-delivered message that nobody ever explicitly stops
-    // (verified empirically: it broke the typewriter effect's own most
-    // common call path, plain `addMessage()`, across a large share of the
-    // existing widget-test suite — every one of them hung in
-    // `pumpAndSettle()` against the now-permanently-live caret animation).
-    // A consumer with a genuinely open stream and no natural "done" signal
-    // of their own has the explicit flag above for exactly this purpose.
+    final controller = widget.controller;
+    if (controller != null) {
+      return controller.isMessageStreaming(messageId);
+    }
+
+    // No controller wired up (an unusual, controller-less usage) — fall back
+    // to the raw flag on the message itself.
     return message.customProperties?['isStreaming'] == true;
   }
 

@@ -186,8 +186,37 @@ class ChatMessagesController extends ChangeNotifier {
         'scrollToFirstResponseMessage: ${config?.scrollToFirstResponseMessage ?? false}');
   }
 
-  /// Sets which message is currently being streamed
-  void setStreamingMessage(String? messageId) {
+  /// Ids with an explicitly open stream, per the documented streaming
+  /// contract. This is the source of truth for [isMessageStreaming] — unlike
+  /// [_currentlyStreamingMessageId] (which the one-shot reveal/typewriter
+  /// effect in [addMessage] also sets for a plain, already-complete message),
+  /// an id only ever enters this set via [addStreamingMessage], the public
+  /// [setStreamingMessage], or an explicit `customProperties['isStreaming']
+  /// == true` on [addMessage]/[updateMessage] — and only ever leaves it via
+  /// [stopStreamingMessage] or an explicit `isStreaming == false`. A missing
+  /// `isStreaming` key on an [updateMessage] call never removes it, so a
+  /// stream driven purely by `addStreamingMessage` + bare `updateMessage` +
+  /// `stopStreamingMessage` (no flag on any call) stays open the whole time.
+  final Set<String> _openStreamIds = {};
+
+  /// Whether [id] currently has an explicitly open stream.
+  ///
+  /// See [_openStreamIds] for exactly which calls open/close an id. This is
+  /// the precise, contract-driven signal `CustomChatWidget` uses to decide
+  /// whether to show the live streaming caret and hide the message action
+  /// row, independent of `enableMarkdownStreaming` and of the reveal
+  /// ticker's own backlog bookkeeping.
+  bool isMessageStreaming(String id) => _openStreamIds.contains(id);
+
+  /// Marks [messageId] as the message that should play the one-shot
+  /// reveal/typewriter animation, without affecting [_openStreamIds].
+  ///
+  /// This is the old body of [setStreamingMessage] before it started also
+  /// tracking [_openStreamIds]. [addMessage] calls this (instead of the
+  /// public [setStreamingMessage]) for every fresh AI message — streaming or
+  /// not — purely to kick off the reveal animation; it must never mark an
+  /// ordinary, already-complete message as having an open stream.
+  void _markDeliveredForReveal(String? messageId) {
     if (_currentlyStreamingMessageId != messageId) {
       _currentlyStreamingMessageId = messageId;
       _isCurrentlyStreaming = messageId != null;
@@ -197,15 +226,52 @@ class ChatMessagesController extends ChangeNotifier {
     }
   }
 
-  /// Stops streaming for a specific message (marks it as complete)
+  /// Sets which message is currently being streamed.
+  ///
+  /// Also marks [messageId] as having an explicitly open stream (see
+  /// [isMessageStreaming]) — this is a consumer-facing API for a caller
+  /// driving streaming manually, so it always registers the open stream,
+  /// even when [_currentlyStreamingMessageId] happens not to change.
+  void setStreamingMessage(String? messageId) {
+    if (messageId != null) {
+      _openStreamIds.add(messageId);
+    }
+    _markDeliveredForReveal(messageId);
+  }
+
+  /// Stops streaming for a specific message (marks it as complete).
+  ///
+  /// Unconditional: always clears [messageId] from [_openStreamIds], always
+  /// rewrites a stored message whose `isStreaming` is still `true` to
+  /// `false` (in both [_messages] and [_messageCache]), and always notifies
+  /// listeners — regardless of whether [messageId] happens to be
+  /// [_currentlyStreamingMessageId] right now (a consumer may legitimately
+  /// call this after a newer AI message already replaced it there).
   void stopStreamingMessage(String messageId) {
+    _openStreamIds.remove(messageId);
+
     if (_currentlyStreamingMessageId == messageId) {
       _currentlyStreamingMessageId = null;
       _isCurrentlyStreaming = false;
-      notifyListeners();
-      debugPrint(
-          'ChatMessagesController: Streaming stopped for message: $messageId');
     }
+
+    final index =
+        _messages.indexWhere((msg) => _getMessageId(msg) == messageId);
+    if (index != -1 &&
+        _messages[index].customProperties?['isStreaming'] == true) {
+      final updatedProperties = <String, dynamic>{
+        ...?_messages[index].customProperties,
+        'isStreaming': false,
+      };
+      final updatedMessage =
+          _messages[index].copyWith(customProperties: updatedProperties);
+      _messages[index] = updatedMessage;
+      _messageCache[messageId] = updatedMessage;
+    }
+
+    notifyListeners();
+    debugPrint(
+        'ChatMessagesController: Streaming stopped for message: $messageId');
   }
 
   /// Adds a new message with streaming enabled
@@ -218,6 +284,7 @@ class ChatMessagesController extends ChangeNotifier {
         message.customProperties?['isUserMessage'] as bool? ?? false;
     if (!isFromUser) {
       final messageId = _getMessageId(message);
+      _openStreamIds.add(messageId);
       setStreamingMessage(messageId);
       _armStreamingPin(messageId);
     }
@@ -577,9 +644,19 @@ class ChatMessagesController extends ChangeNotifier {
       }
       _messageCache[messageId] = updatedMessage;
 
-      // If this is an AI message, set it as the currently streaming message
+      // If this is an AI message, mark it for the one-shot reveal/typewriter
+      // animation. Deliberately not the public setStreamingMessage: that also
+      // opens an explicit stream (see _openStreamIds), and an ordinary,
+      // already-complete AI message must not be reported as streaming by
+      // isMessageStreaming.
       if (!isFromUser) {
-        setStreamingMessage(messageId);
+        _markDeliveredForReveal(messageId);
+      }
+
+      // An incoming message explicitly flagged as streaming opens the id in
+      // _openStreamIds, per the documented contract.
+      if (updatedProperties['isStreaming'] == true) {
+        _openStreamIds.add(messageId);
       }
 
       // Streaming pin bookkeeping: a user message starts a new turn (any pin
@@ -1038,6 +1115,20 @@ class ChatMessagesController extends ChangeNotifier {
 
       final isStreaming =
           message.customProperties?['isStreaming'] as bool? ?? false;
+
+      // Open-stream bookkeeping (see _openStreamIds): only an EXPLICIT
+      // isStreaming key moves the id in or out. A missing key (the
+      // addStreamingMessage + bare updateMessage + stopStreamingMessage
+      // recipe) must never close a stream that's still open.
+      final hasIsStreamingKey =
+          message.customProperties?.containsKey('isStreaming') ?? false;
+      if (hasIsStreamingKey) {
+        if (message.customProperties!['isStreaming'] == true) {
+          _openStreamIds.add(messageId);
+        } else if (message.customProperties!['isStreaming'] == false) {
+          _openStreamIds.remove(messageId);
+        }
+      }
 
       // Check if this is a user message
       final isUserMessage =
@@ -1763,6 +1854,7 @@ class ChatMessagesController extends ChangeNotifier {
 
     _messages.clear();
     _messageCache.clear();
+    _openStreamIds.clear();
     super.dispose();
   }
 }
