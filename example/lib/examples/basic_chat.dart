@@ -1,5 +1,7 @@
 // Basic Chat - the proof screen. Only the required arguments, example
 // questions and a welcome title: everything else is the package default.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
@@ -18,21 +20,49 @@ class BasicChatExample extends StatefulWidget {
 class _BasicChatExampleState extends State<BasicChatExample> {
   final _controller = ChatMessagesController();
   final _aiService = ExampleAiService(style: ResponseStyle.plain);
+  StreamSubscription<String>? _streamSub;
 
   static const _currentUser = ChatUser(id: 'user', name: 'You');
   static const _aiUser = ChatUser(id: 'ai', name: 'AI');
 
-  void _onSendMessage(ChatMessage message) async {
+  // Streams the reply word by word (via the mock service's tuned 25-40ms
+  // per-word pacing) instead of popping in the full text at once, so a
+  // short reply still visibly streams rather than feeling like it stalled
+  // then snapped in (DESIGN.md §9 "Basic").
+  void _onSendMessage(ChatMessage message) {
     _controller.addMessage(message);
-    final response = await _aiService.generateResponse(message.text);
-    if (!mounted) return;
-    _controller.addMessage(
-      ChatMessage(text: response, user: _aiUser, createdAt: DateTime.now()),
+    _streamSub?.cancel();
+
+    final messageId = 'ai_${DateTime.now().millisecondsSinceEpoch}';
+    final aiMessage = ChatMessage(
+      text: '',
+      user: _aiUser,
+      createdAt: DateTime.now(),
+      customProperties: {'id': messageId},
+    );
+
+    var receivedFirstChunk = false;
+    _streamSub = _aiService.streamResponse(message.text).listen(
+      (accumulated) {
+        if (!mounted) return;
+        if (receivedFirstChunk) {
+          _controller.updateMessage(aiMessage.copyWith(text: accumulated));
+        } else {
+          receivedFirstChunk = true;
+          _controller
+              .addStreamingMessage(aiMessage.copyWith(text: accumulated));
+        }
+      },
+      onDone: () {
+        if (!mounted) return;
+        _controller.stopStreamingMessage(messageId);
+      },
     );
   }
 
   @override
   void dispose() {
+    _streamSub?.cancel();
     _controller.dispose();
     super.dispose();
   }

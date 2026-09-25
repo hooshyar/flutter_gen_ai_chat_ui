@@ -156,25 +156,34 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
         aiUser: _aiUser,
         controller: _controller,
         onSendMessage: _onSendMessage,
-        // Register rich widget renderers by kind
-        resultRenderers: const {
-          'weather': _buildWeatherCard,
-          'product': _buildProductCard,
-          'order_status': _buildOrderStatusCard,
+        // Register rich widget renderers by kind. Full-width rich results
+        // render outside the normal bubble path, which skips the 24px
+        // sender-change top gap ordinary text replies get — `_cardTopSpacing`
+        // restores it here so a card doesn't sit flush under the preceding
+        // bubble (DESIGN.md §9 "Rich results").
+        resultRenderers: {
+          'weather': (context, data) =>
+              _cardTopSpacing(_buildWeatherCard(context, data)),
+          'product': (context, data) =>
+              _cardTopSpacing(_buildProductCard(context, data)),
+          'order_status': (context, data) =>
+              _cardTopSpacing(_buildOrderStatusCard(context, data)),
         },
         resultLoadingRenderers: {
-          'weather': (context, data) => const Padding(
-                padding: EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    SizedBox(width: 12),
-                    Text('Fetching weather data...'),
-                  ],
+          'weather': (context, data) => _cardTopSpacing(
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(width: 12),
+                      Text('Fetching weather data...'),
+                    ],
+                  ),
                 ),
               ),
         },
@@ -465,6 +474,15 @@ class _RichWidgetsChatExampleState extends State<RichWidgetsChatExample> {
 }
 
 // Helper widgets
+
+/// Full-width rich results (weather/product/order cards) render through
+/// [AiChatWidget.resultRenderers], which bypasses the normal bubble path and
+/// its sender-change top gap. Wrapping every card in this gives it the same
+/// [ChatSpace.s24] gap a text reply gets after a user message.
+Widget _cardTopSpacing(Widget child) {
+  return Padding(
+      padding: const EdgeInsets.only(top: ChatSpace.s24), child: child);
+}
 
 class _WeatherDetail extends StatelessWidget {
   const _WeatherDetail(

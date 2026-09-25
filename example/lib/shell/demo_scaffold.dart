@@ -18,6 +18,7 @@ class DemoScaffold extends StatefulWidget {
     required this.onToggleTheme,
     this.actions = const [],
     this.backgroundColor,
+    this.selectedItemColor,
   });
 
   /// Top-bar title, `label` 16/600.
@@ -41,6 +42,13 @@ class DemoScaffold extends StatefulWidget {
   /// preset background, so the whole surface reads as one canvas instead of
   /// a seam between a themed chat area and the default-toned chrome.
   final Color? backgroundColor;
+
+  /// Tints the sidebar's selected-demo highlight with the active theme
+  /// preset instead of a neutral grey (e.g. the Themes demo's preset
+  /// accent), so the sidebar reflects whichever brand is currently active.
+  /// Falls back to `colors.surfaceSunken` when null. DESIGN.md §9 "Themes
+  /// demo sidebar".
+  final Color? selectedItemColor;
 
   @override
   State<DemoScaffold> createState() => _DemoScaffoldState();
@@ -116,6 +124,7 @@ class _DemoScaffoldState extends State<DemoScaffold> {
                         child: _Sidebar(
                           currentRoute: widget.route,
                           colors: colors,
+                          selectedItemColor: widget.selectedItemColor,
                         ),
                       ),
                       VerticalDivider(width: 1, color: colors.border),
@@ -209,10 +218,15 @@ class _TopBar extends StatelessWidget {
 }
 
 class _Sidebar extends StatelessWidget {
-  const _Sidebar({required this.currentRoute, required this.colors});
+  const _Sidebar({
+    required this.currentRoute,
+    required this.colors,
+    this.selectedItemColor,
+  });
 
   final String currentRoute;
   final AppColors colors;
+  final Color? selectedItemColor;
 
   @override
   Widget build(BuildContext context) {
@@ -236,6 +250,7 @@ class _Sidebar extends StatelessWidget {
               entry: entry,
               isCurrent: entry.route == currentRoute,
               colors: colors,
+              selectedItemColor: selectedItemColor,
             ),
         ],
       ],
@@ -248,16 +263,22 @@ class _SidebarItem extends StatelessWidget {
     required this.entry,
     required this.isCurrent,
     required this.colors,
+    this.selectedItemColor,
   });
 
   final DemoEntry entry;
   final bool isCurrent;
   final AppColors colors;
+  final Color? selectedItemColor;
 
   @override
   Widget build(BuildContext context) {
+    final fill = selectedItemColor == null
+        ? colors.surfaceSunken
+        : selectedItemColor!.withValues(alpha: 0.14);
+
     return Material(
-      color: isCurrent ? colors.surfaceSunken : Colors.transparent,
+      color: isCurrent ? fill : Colors.transparent,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),

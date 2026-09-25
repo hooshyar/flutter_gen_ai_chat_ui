@@ -154,6 +154,7 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
       isDark: isDark,
       onToggleTheme: widget.onToggleTheme,
       backgroundColor: presetBackground,
+      selectedItemColor: presetAccent,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
