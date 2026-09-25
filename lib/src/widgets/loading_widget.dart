@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import '../models/chat/models.dart';
+import '../theme/chat_tokens.dart';
 import '../utils/color_extensions.dart';
 
 /// A highly customizable loading widget that displays a shimmer effect with animated text.
@@ -233,13 +234,17 @@ class _LoadingWidgetState extends State<LoadingWidget> {
 
   @override
   Widget build(final BuildContext context) {
+    final tokens = ChatTokens.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = widget.shimmerBaseColor ??
-        (isDark
-            ? Theme.of(context).colorScheme.surface.withOpacityCompat(0.5)
-            : const Color(0xFFF7F8F8));
-    final highlightColor = widget.shimmerHighlightColor ??
-        (isDark ? Theme.of(context).colorScheme.surface : Colors.white);
+    // Base colour: `textSecondary` at full opacity (WCAG >=4.5 against the
+    // canvas in both themes, `DESIGN.md` §3) — never a near-white/near-
+    // transparent default, which is what made the loading label unreadably
+    // faint on the light canvas. The shimmer band may only brighten toward
+    // `textPrimary`; it never dims below this resting colour, mirroring
+    // `ThinkingIndicator`'s already-correct sweep.
+    final baseColor =
+        widget.shimmerBaseColor ?? tokens.textSecondary.withValues(alpha: 1.0);
+    final highlightColor = widget.shimmerHighlightColor ?? tokens.textPrimary;
 
     // Create constraints for sizing
     final constraints = BoxConstraints(
@@ -288,7 +293,7 @@ class _LoadingWidgetState extends State<LoadingWidget> {
           key: ValueKey<String>(widget.texts[_currentIndex]),
           style: widget.textStyle ??
               TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
+                color: tokens.textSecondary.withValues(alpha: 1.0),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.1,

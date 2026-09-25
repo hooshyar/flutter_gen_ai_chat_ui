@@ -245,6 +245,46 @@ void main() {
         expect(find.byIcon(Icons.check_rounded), findsNothing);
       },
     );
+
+    testWidgets(
+      "the copy icon's start edge lines up with the message text's start "
+      'edge within 2px, in both LTR and RTL',
+      (tester) async {
+        await tester.pumpWidget(buildChat(messages: [msg(ai, 'copy me')]));
+        await tester.pump();
+
+        final textLeft = tester.getTopLeft(find.text('copy me')).dx;
+        final iconLeft =
+            tester.getTopLeft(find.byIcon(Icons.content_copy_rounded)).dx;
+        expect((iconLeft - textLeft).abs(), lessThanOrEqualTo(2));
+
+        await tester.pumpWidget(
+          buildChat(
+            messages: [msg(ai, 'copy me')],
+            textDirection: TextDirection.rtl,
+          ),
+        );
+        await tester.pump();
+
+        final textRight = tester.getTopRight(find.text('copy me')).dx;
+        final iconRight =
+            tester.getTopRight(find.byIcon(Icons.content_copy_rounded)).dx;
+        expect((iconRight - textRight).abs(), lessThanOrEqualTo(2));
+      },
+    );
+
+    testWidgets('the copy control keeps a >=48px tap target', (tester) async {
+      await tester.pumpWidget(buildChat(messages: [msg(ai, 'copy me')]));
+      await tester.pump();
+
+      final iconButton = tester.widget<IconButton>(find.byType(IconButton));
+      final renderBox = tester.renderObject<RenderBox>(
+        find.byType(IconButton),
+      );
+      expect(iconButton.iconSize ?? 24, greaterThan(0));
+      expect(renderBox.size.width, greaterThanOrEqualTo(48));
+      expect(renderBox.size.height, greaterThanOrEqualTo(48));
+    });
   });
 
   group('Streaming caret', () {

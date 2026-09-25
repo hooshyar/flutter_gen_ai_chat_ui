@@ -90,6 +90,22 @@ class _CodeBlockViewState extends State<CodeBlockView> {
     super.dispose();
   }
 
+  /// `widget.code` with exactly one trailing newline removed.
+  ///
+  /// Markdown fences hand us `element.textContent`, which always ends with
+  /// a `\n` from the closing fence line — rendering it as-is adds a whole
+  /// blank trailing line (most visible as dead space below one-line
+  /// blocks). Only a single trailing `\r\n`/`\n` is stripped (not
+  /// `trimRight()`, which would also eat intentional trailing blank lines
+  /// a caller passed on purpose) and the same trimmed string is what gets
+  /// copied, so copy output matches what's on screen.
+  String get _displayCode {
+    final code = widget.code;
+    if (code.endsWith('\r\n')) return code.substring(0, code.length - 2);
+    if (code.endsWith('\n')) return code.substring(0, code.length - 1);
+    return code;
+  }
+
   void _updateCanScrollRight() {
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
@@ -100,8 +116,7 @@ class _CodeBlockViewState extends State<CodeBlockView> {
   }
 
   Future<void> _copy() async {
-    final text = widget.code.replaceAll(RegExp(r'[\r\n]+$'), '');
-    await Clipboard.setData(ClipboardData(text: text));
+    await Clipboard.setData(ClipboardData(text: _displayCode));
     if (!mounted) return;
     setState(() => _copied = true);
     _copiedTimer?.cancel();
@@ -194,7 +209,7 @@ class _CodeBlockViewState extends State<CodeBlockView> {
             const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         child: Text.rich(
           _highlighter.highlight(
-            widget.code,
+            _displayCode,
             language: widget.language,
             theme: theme,
             enabled: widget.enableSyntaxHighlighting,

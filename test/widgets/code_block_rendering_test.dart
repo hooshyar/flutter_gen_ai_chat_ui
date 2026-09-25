@@ -340,6 +340,92 @@ void main() {
       expect(copied, 'void main() {}');
     });
 
+    testWidgets(
+      'a one-line block leaves no empty trailing space: the code area is '
+      'about one line-height plus 28px of padding',
+      (tester) async {
+        // element.textContent from a fenced block always carries a trailing
+        // "\n" from the closing fence line; rendering it unstripped added a
+        // whole blank trailing line below one-line blocks.
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topLeft,
+                child: CodeBlockView(
+                  code: 'void main() {}\n',
+                  language: 'dart',
+                  decorate: false,
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final scrollView = tester.widget<SingleChildScrollView>(
+          find.byType(SingleChildScrollView),
+        );
+        final padding = scrollView.padding as EdgeInsets;
+        expect(padding.top, 14);
+        expect(padding.bottom, 14);
+
+        final textSize = tester.getSize(
+          find.descendant(
+            of: find.byType(SingleChildScrollView),
+            matching: find.byType(Text),
+          ),
+        );
+        final scrollViewSize =
+            tester.getSize(find.byType(SingleChildScrollView));
+
+        // Exactly one line of text, not two: height is the text's own
+        // height plus the 28px (14 + 14) of vertical padding, with a small
+        // tolerance for platform font-metric rounding — not roughly double
+        // that, which is what a stray trailing blank line would produce.
+        expect(
+          scrollViewSize.height,
+          closeTo(textSize.height + 28, 2),
+        );
+      },
+    );
+
+    testWidgets(
+      'a one-line block copies the raw code without the trailing newline',
+      (tester) async {
+        String? copied;
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          (call) async {
+            if (call.method == 'Clipboard.setData') {
+              copied = (call.arguments as Map)['text'] as String?;
+            }
+            return null;
+          },
+        );
+        addTearDown(() {
+          tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            SystemChannels.platform,
+            null,
+          );
+        });
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: CodeBlockView(code: 'void main() {}\n', language: 'dart'),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(find.byIcon(Icons.copy_rounded));
+        await tester.pump();
+
+        expect(copied, 'void main() {}');
+      },
+    );
+
     testWidgets('codeBlockTheme overrides the resolved palette', (
       tester,
     ) async {

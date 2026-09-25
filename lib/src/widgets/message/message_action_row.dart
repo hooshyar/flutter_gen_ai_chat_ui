@@ -95,11 +95,22 @@ class _MessageActionRowState extends State<MessageActionRow> {
         if (widget.showCopyButton)
           Tooltip(
             message: widget.copyButtonLabel ?? 'Copy',
+            // The hit area stays >=48 logical px (a11y minimum tap target),
+            // but it is anchored so the glyph's START edge sits at the row's
+            // start edge instead of being centred in the box: centring an
+            // IconButton's default hit area put the glyph well right of the
+            // message text's start edge (`DESIGN.md` §8.8 — the copy icon
+            // must line up with the text above it). `alignment:
+            // centerStart` with zero padding pins the icon to the box's
+            // start edge; the hit area then simply extends further to the
+            // end (right, in LTR) without moving the glyph. Directional
+            // values keep this correct in RTL.
             child: SizedBox(
-              width: 44,
-              height: 44,
+              width: 48,
+              height: 48,
               child: IconButton(
                 padding: EdgeInsets.zero,
+                alignment: AlignmentDirectional.centerStart,
                 onPressed: _handleCopy,
                 icon: Icon(
                   _justCopied
