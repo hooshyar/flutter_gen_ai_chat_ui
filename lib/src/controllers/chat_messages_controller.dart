@@ -289,17 +289,14 @@ class ChatMessagesController extends ChangeNotifier {
 
   /// Adds a new message with streaming enabled
   void addStreamingMessage(ChatMessage message) {
-    // Add the message first, and use the id it was ACTUALLY stored under -
-    // not a fresh `_getMessageId(message)` recompute, which for an id-less
-    // message would recompute the plain (un-suffixed) base id even when
-    // `_addMessageInternal` disambiguated a same-millisecond collision onto
-    // `baseId_1`, opening the stream on the wrong (earlier) message.
-    final messageId = _addMessageInternal(message);
+    // Add the message first
+    addMessage(message);
 
     // If it's an AI message, keep it streaming
     final isFromUser =
         message.customProperties?['isUserMessage'] as bool? ?? false;
     if (!isFromUser) {
+      final messageId = _getMessageId(message);
       _openStreamIds.add(messageId);
       setStreamingMessage(messageId);
       _armStreamingPin(messageId);
@@ -522,84 +519,6 @@ class ChatMessagesController extends ChangeNotifier {
         '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
   }
 
-  /// `customProperties` keys that [addMessage] itself stamps onto a stored
-  /// message and that therefore must NOT be considered when deciding if an
-  /// incoming, id-less message is a duplicate of an already-stored one (see
-  /// [_isSameMessageContent]). Comparing these would make every message
-  /// "different" from itself the moment it's re-added, since the caller's
-  /// copy never carries them.
-  static const Set<String> _controllerOwnedPropertyKeys = {
-    'id',
-    'isUserMessage',
-    'isStartOfResponse',
-    'isFirstResponseMessage',
-  };
-
-  /// Deep-equality for arbitrary `customProperties` values (nested Maps and
-  /// Lists included - e.g. `ChatMessage.rich`'s `resultData`), since
-  /// `Map`/`List`'s own `==` is identity-based.
-  bool _deepEquals(dynamic a, dynamic b) {
-    if (identical(a, b)) return true;
-    if (a is Map && b is Map) {
-      if (a.length != b.length) return false;
-      for (final key in a.keys) {
-        if (!b.containsKey(key) || !_deepEquals(a[key], b[key])) return false;
-      }
-      return true;
-    }
-    if (a is List && b is List) {
-      if (a.length != b.length) return false;
-      for (var i = 0; i < a.length; i++) {
-        if (!_deepEquals(a[i], b[i])) return false;
-      }
-      return true;
-    }
-    return a == b;
-  }
-
-  /// Whether [incoming] is the same logical message as [existing] - i.e.
-  /// re-adding it should dedupe instead of creating a second entry.
-  ///
-  /// Uses [ChatMessage]'s own `==` (text/user/createdAt/isMarkdown/
-  /// isSending/hasError) plus the caller-supplied `customProperties`,
-  /// ignoring the keys addMessage stamps on every stored message
-  /// ([_controllerOwnedPropertyKeys]) so a message doesn't get treated as
-  /// "different" merely because the stored copy has been through
-  /// [addMessage] once already.
-  bool _isSameMessageContent(ChatMessage existing, ChatMessage incoming) {
-    if (existing != incoming) return false;
-    final existingProps = {...?existing.customProperties}
-      ..removeWhere((key, _) => _controllerOwnedPropertyKeys.contains(key));
-    final incomingProps = {...?incoming.customProperties}
-      ..removeWhere((key, _) => _controllerOwnedPropertyKeys.contains(key));
-    return _deepEquals(existingProps, incomingProps);
-  }
-
-  /// Resolves the id under which an auto-generated (no explicit `id`)
-  /// [message] should be stored, starting from [baseId] (the plain
-  /// `'${user.id}_${createdAt.millisecondsSinceEpoch}'` id) and walking
-  /// `baseId`, `baseId_1`, `baseId_2`, ... .
-  ///
-  /// `DateTime.now()` only has millisecond resolution on web, so two
-  /// distinct id-less messages from the same user can share [baseId]; a
-  /// suffix disambiguates them instead of the second silently colliding
-  /// with (and being dropped in favor of) the first. But if a message
-  /// with the SAME content is already stored under one of these ids -
-  /// e.g. the exact same message added twice - that existing id is
-  /// returned instead, so the normal `_messageCache.containsKey` guard in
-  /// [addMessage] dedupes it as before rather than creating a duplicate.
-  String _resolveGeneratedMessageId(String baseId, ChatMessage message) {
-    var candidate = baseId;
-    var suffix = 0;
-    while (true) {
-      final existing = _messageCache[candidate];
-      if (existing == null) return candidate;
-      if (_isSameMessageContent(existing, message)) return candidate;
-      suffix++;
-      candidate = '${baseId}_$suffix';
-    }
-  }
-
   /// Public method to get a message ID (for testing/debugging)
   String getMessageId(ChatMessage message) {
     return _getMessageId(message);
@@ -634,36 +553,12 @@ class ChatMessagesController extends ChangeNotifier {
 
   /// Adds a new message to the chat.
   void addMessage(ChatMessage message) {
-    _addMessageInternal(message);
-  }
-
-  /// Does the actual work of [addMessage] and returns the id the message
-  /// ended up stored under (whether newly generated, an explicit id, or the
-  /// id of an existing duplicate it deduped into). Split out so callers that
-  /// need the resolved id right after adding - e.g. [addStreamingMessage] -
-  /// don't have to (and can't correctly) recompute it themselves; see the
-  /// `_resolveGeneratedMessageId` doc for why a naive recompute is wrong.
-  String _addMessageInternal(ChatMessage message) {
     // Ensure message has a stable id; if missing, generate and persist it
     var messageId = _getMessageId(message);
     if (message.customProperties == null ||
         message.customProperties!['id'] == null) {
-      // `DateTime.now()` only has millisecond resolution on web (it's backed
-      // by JS `Date.now()`, unlike the VM's microsecond clock), so two
-      // messages from the same user added back-to-back with no `id` of
-      // their own - e.g. a tool-call block immediately followed by a
-      // `ChatMessage.rich` result card in the same synchronous handler -
-      // reliably land in the same millisecond on web and would otherwise
-      // generate the same id. Left alone, the `!_messageCache.containsKey`
-      // guard below would then silently drop the second message instead of
-      // adding it. `_resolveGeneratedMessageId` disambiguates with a
-      // monotonically increasing suffix when the timestamp-only id is
-      // already taken by a DIFFERENT message, while still deduping onto an
-      // existing id when the content is the SAME (re-adding a message must
-      // still collapse to one entry, not two).
-      final baseId =
+      final generatedId =
           '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
-      final generatedId = _resolveGeneratedMessageId(baseId, message);
       message = message.copyWith(
         customProperties: {
           ...?message.customProperties,
@@ -810,7 +705,6 @@ class ChatMessagesController extends ChangeNotifier {
         _debugLog('NOT SCROLLING: Message doesn\'t meet scroll criteria');
       }
     }
-    return messageId;
   }
 
   /// Determines if scrolling should occur based on configuration and message type

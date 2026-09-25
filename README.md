@@ -125,6 +125,8 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 ```
 
+> **Note:** when you add several messages for the same user back to back without an explicit `id` (e.g. a tool-call message immediately followed by a result card), give each one an explicit id. `ChatMessagesController` builds an id from the user id and `createdAt`'s millisecond timestamp when none is given, and on web `DateTime.now()` only has millisecond resolution — two id-less messages added in the same frame can land on the same generated id and be treated as the same message. Pass `ChatMessage(customProperties: {'id': 'my-id'})` or `ChatMessage.rich(id: 'my-id')` to keep them distinct.
+
 ## Why this package?
 
 Three Flutter chat UI packages dominate searches: `flutter_gen_ai_chat_ui`, `flutter_chat_ui`, and `dash_chat_2`. They target different shapes of app. If you have an LLM in the loop, this package was designed for that shape.

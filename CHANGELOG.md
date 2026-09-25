@@ -20,8 +20,10 @@ No breaking API changes: every public change is additive. **The default look cha
 - `ChatMessagesController.isMessageStreaming(id)`: an explicit set of open streams. `addStreamingMessage`, `setStreamingMessage` and `isStreaming: true` open a stream. `stopStreamingMessage` or `isStreaming: false` closes it.
 - `WelcomeMessageConfig.subtitle` / `subtitleStyle`.
 
+### Known limitation
+- **Id-less messages added in the same frame can be treated as the same message, especially on web.** When you add a message without an explicit `id`, the controller builds one from the user id and `createdAt`'s millisecond timestamp. `DateTime.now()` only has millisecond resolution on web, so two id-less messages from the same user added a few statements apart (e.g. a tool-call message immediately followed by a result card) can land on the same generated id and get deduped into one. If you add several messages for the same user in quick succession, give each an explicit `id` (`ChatMessage(customProperties: {'id': ...})` / `ChatMessage.rich(id: ...)`) to keep them distinct. Tracked in `backlog/tasks/task-035`.
+
 ### Fixed
-- **Messages added back to back no longer disappear on web.** When you add a message without an id, the controller builds one from the user id and a millisecond timestamp. On web, two messages added in the same millisecond got the same id, and the second was silently dropped. A DISTINCT message that collides with an existing id now gets a unique suffix and is kept as a separate message. An IDENTICAL message re-added under the same id is still deduped into the existing one, same as before — this change does not add or alter any other deduplication behavior.
 - **Markdown table headers line up with their columns.** They are start-aligned, so this also holds in RTL. Before, headers were centred over left-aligned cells.
 - **`ScrollToBottomOptions.disabled` now actually hides the button.** Before, it only changed the list padding. It now covers both the default button and `scrollToBottomBuilder`.
 - **Debug trace logging only runs in debug builds.** The internal streaming-pin and scroll trace lines no longer reach release or profile consoles.

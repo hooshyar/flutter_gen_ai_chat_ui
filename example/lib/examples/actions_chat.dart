@@ -22,6 +22,13 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
   final _actionController = ActionController();
   bool _isLoading = false;
 
+  // Each tool invocation gets its own counter value so the tool-call text
+  // message and its result card always carry distinct, explicit ids - two
+  // id-less messages added back-to-back can otherwise collide on web, where
+  // `DateTime.now()` only has millisecond resolution (see CHANGELOG "Known
+  // limitation" and backlog/tasks/task-035).
+  int _actionCallCounter = 0;
+
   static const _currentUser = ChatUser(id: 'user', name: 'You');
   static const _aiUser = ChatUser(id: 'ai', name: 'Agent');
 
@@ -180,12 +187,14 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
         if (result.success) {
           final data = result.data as Map<String, dynamic>;
           if (mounted) {
+            final callId = _actionCallCounter++;
             _controller.addMessage(ChatMessage(
               text: 'Calling the calculator tool:\n\n'
                   '${_toolCallBlock('calculate', {'expression': expr})}',
               user: _aiUser,
               createdAt: DateTime.now(),
               isMarkdown: true,
+              customProperties: {'id': 'tool-call-$callId'},
             ));
             _controller.addMessage(ChatMessage.rich(
               user: _aiUser,
@@ -194,6 +203,7 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
                 'label': 'Result',
                 'value': '${data['expression']} = ${data['result']}',
               },
+              id: 'tool-result-$callId',
             ));
           }
           return;
@@ -213,12 +223,14 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
           final d = result.data as Map<String, dynamic>;
           final unit = d['units'] == 'celsius' ? '°C' : '°F';
           if (mounted) {
+            final callId = _actionCallCounter++;
             _controller.addMessage(ChatMessage(
               text: 'Calling the weather tool:\n\n'
                   '${_toolCallBlock('get_weather', {'city': city})}',
               user: _aiUser,
               createdAt: DateTime.now(),
               isMarkdown: true,
+              customProperties: {'id': 'tool-call-$callId'},
             ));
             _controller.addMessage(ChatMessage.rich(
               user: _aiUser,
@@ -228,6 +240,7 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
                 'value': '${d['city']}: ${d['conditions']}, '
                     '${d['temperature']}$unit, humidity ${d['humidity']}%',
               },
+              id: 'tool-result-$callId',
             ));
           }
           return;
