@@ -25,10 +25,12 @@ class ChatSpacingConfig {
     this.messageUsernameBottomPadding = const EdgeInsets.only(bottom: 8.0),
     this.messageFooterTopPadding = const EdgeInsets.only(top: 8.0),
     this.messageMediaSpacing = const EdgeInsets.only(bottom: 8.0),
-    this.messageListPadding = const EdgeInsets.symmetric(
-      horizontal: 16.0,
-      vertical: 8.0,
-    ),
+    // Bottom is 16, not the same 8 as top (`DESIGN.md` §5, "Message list
+    // bottom padding above composer": 16) — with top/bottom symmetric at 8,
+    // the last message's content ended only ~8-18px above the composer's
+    // visible top edge (varying with the last message's own bottom margin),
+    // under the 16px floor DESIGN.md wants there.
+    this.messageListPadding = const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
     this.loadingWidgetMargin = const EdgeInsets.symmetric(
       horizontal: 16.0,
       vertical: 8.0,

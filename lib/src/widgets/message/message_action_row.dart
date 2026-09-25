@@ -95,16 +95,16 @@ class _MessageActionRowState extends State<MessageActionRow> {
         if (widget.showCopyButton)
           Tooltip(
             message: widget.copyButtonLabel ?? 'Copy',
-            // The hit area stays >=48 logical px (a11y minimum tap target),
-            // but it is anchored so the glyph's START edge sits at the row's
-            // start edge instead of being centred in the box: centring an
-            // IconButton's default hit area put the glyph well right of the
-            // message text's start edge (`DESIGN.md` §8.8 — the copy icon
-            // must line up with the text above it). `alignment:
-            // centerStart` with zero padding pins the icon to the box's
-            // start edge; the hit area then simply extends further to the
-            // end (right, in LTR) without moving the glyph. Directional
-            // values keep this correct in RTL.
+            // The hit area stays 48x48 logical px (a11y minimum tap
+            // target), but it is anchored so the glyph's START edge sits at
+            // the row's start edge instead of being centred in the box:
+            // centring an IconButton's default hit area put the glyph well
+            // right of the message text's start edge (`DESIGN.md` §8.8 —
+            // the copy icon must line up with the text above it).
+            // `alignment: centerStart` with zero padding pins the icon to
+            // the box's start edge; the hit area then simply extends
+            // further to the end (right, in LTR) without moving the glyph.
+            // Directional values keep this correct in RTL.
             child: SizedBox(
               width: 48,
               height: 48,
@@ -123,16 +123,49 @@ class _MessageActionRowState extends State<MessageActionRow> {
             ),
           ),
         if (widget.showTimestamp) ...[
-          const SizedBox(width: ChatSpace.s8),
-          Text(
-            widget.timestampText,
-            style: widget.timestampStyle ??
-                TextStyle(
-                  fontSize: 12,
-                  height: 16 / 12,
-                  letterSpacing: 0.1,
-                  color: tokens.textTertiary,
-                ),
+          // The 48px hit area above claims 48px of ROW layout width even
+          // though the glyph itself is only ~16px wide — a Row cannot let a
+          // later sibling occupy an earlier sibling's unused slot; only its
+          // own painted content can move there. `Transform.translate` shifts
+          // the gap+timestamp's PAINTED (and hit-tested — the transform is
+          // applied to hit-test coordinates too, unlike an `OverflowBox`
+          // shrinking the icon's own slot, which silently made the outer
+          // ~32px of the 48px hit area untappable) position left by exactly
+          // the hit area's slack (48 - the 16px glyph), so the timestamp
+          // reads as "icon, ~8px, caption" (`DESIGN.md` §8.8) while the copy
+          // control keeps its full, genuinely tappable 48x48 target. The
+          // shifted timestamp now visually sits inside the tail of the
+          // icon's hit box — `IgnorePointer` keeps it (it has no gesture of
+          // its own) out of hit-testing entirely, so taps there still land
+          // on the `IconButton`/`InkWell` painted underneath instead of the
+          // `RenderParagraph` swallowing them.
+          IgnorePointer(
+            child: Transform.translate(
+              offset: Offset(
+                !widget.showCopyButton
+                    ? 0.0
+                    : Directionality.of(context) == TextDirection.rtl
+                        ? 32.0
+                        : -32.0,
+                0,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(width: ChatSpace.s8),
+                  Text(
+                    widget.timestampText,
+                    style: widget.timestampStyle ??
+                        TextStyle(
+                          fontSize: 12,
+                          height: 16 / 12,
+                          letterSpacing: 0.1,
+                          color: tokens.textTertiary,
+                        ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ],

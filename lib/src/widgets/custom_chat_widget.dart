@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/services.dart';
@@ -27,6 +28,13 @@ import 'message/message_action_row.dart';
 import 'message/streaming_caret.dart';
 import 'message_attachment.dart';
 import 'result/result_renderer_registry.dart';
+
+/// `debugPrint` is not stripped in profile/release builds, so this file's
+/// verbose footer/animation trace lines were reaching a shipped release web
+/// build's console. Gate them to debug builds.
+void _debugLog(String message) {
+  if (kDebugMode) debugPrint(message);
+}
 
 /// Full-featured chat widget with streaming markdown, typing indicators, and pagination.
 class CustomChatWidget extends StatefulWidget {
@@ -503,8 +511,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           child: Stack(
             children: [
               _buildMessageList(),
-              if (_showScrollToBottom ||
-                  widget.scrollToBottomOptions.alwaysVisible)
+              if (!widget.scrollToBottomOptions.disabled &&
+                  (_showScrollToBottom ||
+                      widget.scrollToBottomOptions.alwaysVisible))
                 _buildScrollToBottomButton(),
             ],
           ),
@@ -1830,6 +1839,13 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   }
 
   Widget _buildScrollToBottomButton() {
+    // `ScrollToBottomOptions.disabled` opts out of the button entirely —
+    // the default disc AND a caller-supplied `scrollToBottomBuilder` alike
+    // (a prior version only used `disabled` to widen the message list's own
+    // bottom padding, never to actually skip building the button).
+    if (widget.scrollToBottomOptions.disabled) {
+      return const SizedBox.shrink();
+    }
     if (!_showScrollToBottom && !widget.scrollToBottomOptions.alwaysVisible) {
       return const SizedBox.shrink();
     }
@@ -1978,40 +1994,40 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
     final isCurrentlyStreaming = controllerStreamingId == messageId;
     final isStreaming = isCurrentlyStreaming && widget.streamingEnabled;
 
-    debugPrint('🎬 AnimatedFooter - messageId: $messageId');
-    debugPrint(
+    _debugLog('🎬 AnimatedFooter - messageId: $messageId');
+    _debugLog(
       '🎬 AnimatedFooter - controllerStreamingId: $controllerStreamingId',
     );
-    debugPrint(
+    _debugLog(
       '🎬 AnimatedFooter - isCurrentlyStreaming: $isCurrentlyStreaming',
     );
-    debugPrint(
+    _debugLog(
       '🎬 AnimatedFooter - streamingEnabled: ${widget.streamingEnabled}',
     );
-    debugPrint('🎬 AnimatedFooter - isStreaming: $isStreaming');
-    debugPrint('🎬 AnimatedFooter - _wasStreaming: $_wasStreaming');
+    _debugLog('🎬 AnimatedFooter - isStreaming: $isStreaming');
+    _debugLog('🎬 AnimatedFooter - _wasStreaming: $_wasStreaming');
 
     if (isStreaming) {
       _wasStreaming = true;
       _shouldShow = false;
-      debugPrint('🎬 AnimatedFooter - Currently streaming, hiding footer');
+      _debugLog('🎬 AnimatedFooter - Currently streaming, hiding footer');
     } else {
       // Not streaming - show the footer
       if (_wasStreaming) {
         // Was streaming, now complete - animate in
         _shouldShow = true;
         _animController.forward();
-        debugPrint(
+        _debugLog(
           '🎬 AnimatedFooter - Streaming complete, animating footer in',
         );
       } else {
         // Was never streaming (loaded message) - show immediately
         _shouldShow = true;
         _animController.value = 1.0;
-        debugPrint('🎬 AnimatedFooter - Never streamed, showing immediately');
+        _debugLog('🎬 AnimatedFooter - Never streamed, showing immediately');
       }
     }
-    debugPrint('🎬 AnimatedFooter - _shouldShow: $_shouldShow');
+    _debugLog('🎬 AnimatedFooter - _shouldShow: $_shouldShow');
   }
 
   @override
@@ -2034,11 +2050,11 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
 
   @override
   Widget build(BuildContext context) {
-    debugPrint(
+    _debugLog(
       '🎬 AnimatedFooter.build - _shouldShow: $_shouldShow, isUser: ${widget.isUser}',
     );
     if (!_shouldShow) {
-      debugPrint('🎬 AnimatedFooter.build - Returning SizedBox (not showing)');
+      _debugLog('🎬 AnimatedFooter.build - Returning SizedBox (not showing)');
       return const SizedBox.shrink();
     }
 
@@ -2048,17 +2064,17 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
       widget.isUser,
     );
 
-    debugPrint(
+    _debugLog(
       '🎬 AnimatedFooter.build - footerWidget is null: ${footerWidget == null}',
     );
     if (footerWidget == null) {
-      debugPrint(
+      _debugLog(
         '🎬 AnimatedFooter.build - Returning SizedBox (footer is null)',
       );
       return const SizedBox.shrink();
     }
 
-    debugPrint('🎬 AnimatedFooter.build - Returning animated footer');
+    _debugLog('🎬 AnimatedFooter.build - Returning animated footer');
     return SlideTransition(
       position: _slideAnimation,
       child: FadeTransition(opacity: _fadeAnimation, child: footerWidget),
