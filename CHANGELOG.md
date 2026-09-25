@@ -1,13 +1,34 @@
 ## Unreleased
 
-Zero breaking API changes. One visual default change worth noting: syntax highlighting is now **on by default** for fenced code blocks (disable it via `MessageOptions.enableSyntaxHighlighting: false`).
+No breaking API changes: every public change is additive. **The default look changed a lot**, per the new [DESIGN.md](DESIGN.md). Apps that pass their own `BubbleStyle`, `markdownStyleSheet`, `InputOptions.decoration`/`containerDecoration`, `sendButtonIcon` or a `CustomThemeExtension` preset keep their look. Apps on the defaults get the new design:
+
+### Changed (default visuals)
+- **AI messages read like a document.** They have no card, border, shadow, robot icon or name by default (`MessageOptions.aiMessageLayout`: `document`/`bubble`). The layout falls back to `bubble` automatically when you set an AI bubble colour or decoration. `showUserName` now defaults to `null`, meaning hidden in document layout and shown in bubble layout.
+- **User messages** sit in a quiet neutral bubble (radius 20, tail corner on the last message in a group) at the end of the row. It mirrors in RTL.
+- **Messages sit in a centred 760px reading column.** Consecutive messages from the same sender are grouped (4px gap, 24px between senders).
+- **A new message action row** has an icon copy button that swaps to a check instead of showing a SnackBar, plus the timestamp. It is hidden while the message streams. `showCopyButton` now defaults to `true`.
+- **Streaming** shows a live caret and fades new text in (`streamingFadeInEnabled` now defaults to `true`).
+- **New composer:** one rounded field (radius 24) with a focus ring. The send button (`Icons.arrow_upward_rounded`, 48x48 hit area) turns into a stop button while generating. Esc cancels generation. `maxLines` defaults to 8.
+- **Empty state:** the greeting starts at the left of the column, and suggestion tiles have no icons. Also new: a "Thinking" shimmer, loading placeholders, and a scroll-to-bottom button centred on the column (`ScrollToBottomOptions.position`).
+- **Syntax highlighting is on by default** for fenced code blocks. Turn it off with `MessageOptions.enableSyntaxHighlighting: false`.
+- **All motion respects the system "reduce motion" setting.**
+
+### Added
+- `ChatTokens`, `ChatSpace`, `ChatRadius`, `ChatLayout` and `ChatMotion`: the design tokens the defaults are built from.
+- `ChatMessagesController.isMessageStreaming(id)`: an explicit set of open streams. `addStreamingMessage`, `setStreamingMessage` and `isStreaming: true` open a stream. `stopStreamingMessage` or `isStreaming: false` closes it.
+- `WelcomeMessageConfig.subtitle` / `subtitleStyle`.
 
 ### Fixed
+- **Streaming caret and actions.** The caret and the copy/time row now follow whether the stream is really open, for both documented streaming recipes. Before, Copy could appear mid-stream, or the caret could stay after `stopStreamingMessage`. `stopStreamingMessage` also now resets a stored `isStreaming: true` to `false`.
+- **Image and link taps.** Enabling image or link taps no longer leaves a message looking like it is still streaming.
+- **Timestamp style options.** `timeTextStyle` / `userTimeTextStyle` / `aiTimeTextStyle` apply again.
+
+### Fixed (code blocks)
 - **Per-line grey boxes in fenced code blocks.** Inline `code` spans carried a per-line `backgroundColor`; fenced blocks now render through the new `CodeBlockView`, which paints a single rounded background for the whole block, so no span sets a background.
 - **Legacy `MarkdownContent.enableSyntaxHighlighting` now works.** The field was accepted but never read; `MarkdownContent`'s fenced blocks now route through `CodeBlockView`, and its legacy `codeTheme` map (token-kind names — `comment`, `string`, `number`, `keyword`, `type`, `function`, `annotation` — mapped to `TextStyle`s whose `color` is used) is applied on top of the ambient `CodeBlockTheme`. Unknown keys are ignored.
 
-### Added
-- **Bundled monospace font.** Code blocks and inline `code` use JetBrains Mono (OFL, shipped in `fonts/`) on all platforms including web, with platform mono fallbacks.
+### Added (code blocks)
+- **Bundled monospace font.** Code blocks and inline `code` use JetBrains Mono (OFL, shipped in `fonts/`) on all platforms including web, with platform mono fallbacks. Programming ligatures are turned off, so `=>` and `<=` show as typed.
 - **Built-in lightweight syntax highlighting (on by default).** A pure-Dart regex tokenizer — no extra dependency — covering Dart, JavaScript/TypeScript, Python, Java, Kotlin, Swift, Go, Rust, C/C++/C#, JSON, YAML, Bash, SQL, and HTML/XML, with a generic fallback for other language tags. Light and dark palettes via the new `CodeBlockTheme` (`CodeBlockTheme.of(brightness)`).
 - **Per-block copy button + language label header, horizontal scroll for long lines, and LTR code inside RTL chats** via the new `CodeBlockView` widget and `CodeBlockMarkdownBuilder` for `pre` elements.
 - **New `MessageOptions` fields:** `enableSyntaxHighlighting` (default `true`), `codeBlockTheme` (`CodeBlockTheme?`, defaults to ambient brightness palette), and `showCodeBlockCopyButton` (default `true`).
