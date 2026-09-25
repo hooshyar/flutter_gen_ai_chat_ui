@@ -73,6 +73,14 @@ class CodeBlockTheme {
           ? CodeBlockTheme.dark()
           : CodeBlockTheme.light();
 
+  /// Disables contextual alternates and ligatures, e.g. rendering `=>` as a
+  /// single "⇒" glyph or `<=` as "≤" — wrong for code people copy/paste,
+  /// where every character must round-trip literally.
+  static const List<FontFeature> noLigatures = [
+    FontFeature.disable('calt'),
+    FontFeature.disable('liga'),
+  ];
+
   static const TextStyle _baseLight = TextStyle(
     fontFamily: monoFontFamily,
     package: 'flutter_gen_ai_chat_ui',
@@ -80,6 +88,7 @@ class CodeBlockTheme {
     fontSize: 13.5,
     height: 1.48,
     color: Color(0xFF24292F),
+    fontFeatures: noLigatures,
   );
 
   static const TextStyle _baseDark = TextStyle(
@@ -89,6 +98,7 @@ class CodeBlockTheme {
     fontSize: 13.5,
     height: 1.48,
     color: Color(0xFFE6EDF3),
+    fontFeatures: noLigatures,
   );
 
   final Color backgroundColor;

@@ -93,6 +93,7 @@ MarkdownStyleSheet chatMarkdownStyle(
       fontSize: (base.fontSize ?? 16) * 0.9,
       color: base.color,
       backgroundColor: tokens.inlineCodeBg,
+      fontFeatures: CodeBlockTheme.noLigatures,
     ),
     // Fenced code blocks: the visual chrome (background, border, radius)
     // comes entirely from CodeBlockView / CodeBlockMarkdownBuilder now, so

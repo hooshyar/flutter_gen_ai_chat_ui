@@ -138,9 +138,21 @@ void main() {
   /// Drains every wall-clock Timer the controller's auto-scroll paths may
   /// have scheduled, so the assertion below sees the *settled* position and
   /// teardown never trips "Timer still pending".
+  ///
+  /// Not `pumpAndSettle()`: most callers here exercise `streamAnswer`
+  /// without a following `finishAnswer`, i.e. the message is *intentionally*
+  /// still mid-stream (`customProperties['isStreaming']` stays true) when
+  /// this runs — exactly the state the live `StreamingCaret` (`DESIGN.md`
+  /// §8.9/§8.13) is supposed to keep pulsing for. `pumpAndSettle()` requires
+  /// zero pending frames and times out against that still-repeating
+  /// animation; a bounded pump sequence settles every one-shot
+  /// timer/animation these scroll-position assertions actually care about
+  /// without demanding the repeating caret ever go quiet.
   Future<void> settle(WidgetTester tester) async {
     await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
   }
 
   double gapToViewportTop(WidgetTester tester, String messageId) {
@@ -265,7 +277,13 @@ void main() {
       await settle(tester);
 
       expect(gapToViewportTop(tester, 'resp1').abs(), lessThan(40));
-      expect(position(tester).pixels, closeTo(pixelsBefore, 1.0));
+      // Tolerance widened from a strict 1.0px: ending the stream also
+      // removes the live StreamingCaret row (`DESIGN.md` §8.9) from the
+      // just-finished message, which shrinks its rendered height by that
+      // row's own size — a real, expected content-height change, not a
+      // pin/scroll regression. What this assertion actually guards is the
+      // pin: no LARGE jump to the bottom/top at end of stream.
+      expect(position(tester).pixels, closeTo(pixelsBefore, 40.0));
     });
 
     testWidgets(
@@ -284,7 +302,13 @@ void main() {
         await finishAnswer(tester, controller);
         await settle(tester);
 
-        expect(position(tester).pixels, closeTo(pixelsBefore, 1.0));
+        // Tolerance widened from a strict 1.0px: ending the stream also
+        // removes the live StreamingCaret row (`DESIGN.md` §8.9) from the
+        // just-finished message, which shrinks its rendered height by that
+        // row's own size — a real, expected content-height change, not a
+        // pin/scroll regression. What this assertion actually guards is the
+        // pin: no LARGE jump to the bottom/top at end of stream.
+        expect(position(tester).pixels, closeTo(pixelsBefore, 40.0));
         expect(gapToViewportTop(tester, 'resp1').abs(), lessThan(40));
       },
     );
@@ -465,7 +489,13 @@ void main() {
         final pixelsBefore = position(tester).pixels;
         controller.stopStreamingMessage('stream1');
         await settle(tester);
-        expect(position(tester).pixels, closeTo(pixelsBefore, 1.0));
+        // Tolerance widened from a strict 1.0px: ending the stream also
+        // removes the live StreamingCaret row (`DESIGN.md` §8.9) from the
+        // just-finished message, which shrinks its rendered height by that
+        // row's own size — a real, expected content-height change, not a
+        // pin/scroll regression. What this assertion actually guards is the
+        // pin: no LARGE jump to the bottom/top at end of stream.
+        expect(position(tester).pixels, closeTo(pixelsBefore, 40.0));
       },
     );
   });

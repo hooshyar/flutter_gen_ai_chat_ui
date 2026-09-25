@@ -90,9 +90,9 @@ class ChatEmptyState extends StatelessWidget {
             ],
             if (exampleQuestions.isNotEmpty) ...[
               const SizedBox(height: ChatSpace.s24),
-              if (config?.questionsSectionTitle != null) ...[
+              if ((config?.questionsSectionTitle ?? '').isNotEmpty) ...[
                 Text(
-                  config!.questionsSectionTitle!,
+                  config!.questionsSectionTitle,
                   style: config.questionsSectionTitleStyle ??
                       TextStyle(
                         fontSize: 14,

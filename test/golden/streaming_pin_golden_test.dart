@@ -81,7 +81,15 @@ void main() {
       await tester.pump();
     }
     await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
+    // Not pumpAndSettle(): this golden deliberately captures the answer
+    // mid-stream (still flagged `isStreaming: true`), which keeps the live
+    // StreamingCaret's repeating animation mounted (`DESIGN.md` §8.9) —
+    // pumpAndSettle() requires zero pending frames and would time out
+    // against it. A bounded pump settles every one-shot scroll
+    // animation/timer this was actually waiting on.
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
   }
 
   testWidgets(

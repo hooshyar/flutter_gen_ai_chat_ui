@@ -266,6 +266,29 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     return text.substring(0, text.lastIndexOf('```'));
   }
 
+  /// Matches a trailing markdown block-marker line with no content typed
+  /// after it yet: a bare list bullet (`-`, `*`, `+`, `1.`), a bare heading
+  /// (`#`..`######`), or a bare blockquote (`>`).
+  static final RegExp _danglingMarkerLine = RegExp(
+    r'(^|\n)[ \t]*(?:[-*+]|\d+\.|#{1,6}|>)[ \t]*$',
+  );
+
+  /// Holds back a trailing bare list/heading/blockquote marker that has no
+  /// text after it yet, so the reveal never flashes an empty bullet point or
+  /// heading before its content streams in.
+  ///
+  /// Cuts right after the leading newline (when there is one) rather than
+  /// before it, so the held value only ever extends as more text arrives —
+  /// never shrinks by a trailing newline once the marker itself appears —
+  /// matching the same prefix-extension contract [_withholdIncompleteFence]
+  /// relies on.
+  String _withholdDanglingMarker(String text) {
+    final match = _danglingMarkerLine.firstMatch(text);
+    if (match == null) return text;
+    final cut = match.group(1) == '\n' ? match.start + 1 : match.start;
+    return text.substring(0, cut);
+  }
+
   /// Check if welcome message should be shown
   bool _shouldShowWelcomeMessage() {
     return widget.controller?.showWelcomeMessage == true &&
@@ -455,7 +478,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                 widget.quickReplyOptions.quickReplies!.isNotEmpty)
               Padding(
                 padding: widget.spacingConfig.quickRepliesPadding,
-                child: _buildQuickReplies(),
+                child: _centeredReadingColumn(_buildQuickReplies()),
               ),
           ],
         ),
@@ -508,7 +531,8 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             padding: widget.spacingConfig.messageListPadding,
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Center(child: _buildWelcomeMessage()),
+              child:
+                  Center(child: _centeredReadingColumn(_buildWelcomeMessage())),
             ),
           );
         },
@@ -553,7 +577,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         if (paginationConfig.reverseOrder) {
           // Handle typing indicator at the bottom position (index 0)
           if (widget.typingUsers?.isNotEmpty == true && index == 0) {
-            return _buildTypingIndicator();
+            return _centeredReadingColumn(_buildTypingIndicator());
           }
 
           // Shift message index up by 1 if there's a typing indicator
@@ -583,7 +607,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                       (widget.typingUsers?.isNotEmpty == true ? 0 : 0) +
                       (loadingWidget != null ? 1 : 0) +
                       (noMoreMessagesWidget != null ? 1 : 0)) {
-            return _buildWelcomeMessage();
+            return _centeredReadingColumn(_buildWelcomeMessage());
           }
         } else {
           // In chronological mode (oldest at bottom)
@@ -599,7 +623,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           // Typing indicator at the end
           if (index == widget.messages.length &&
               widget.typingUsers?.isNotEmpty == true) {
-            return _buildTypingIndicator();
+            return _centeredReadingColumn(_buildTypingIndicator());
           }
 
           // Handle welcome message in chronological mode - after pagination but before messages
@@ -608,7 +632,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
               (loadingWidget != null || noMoreMessagesWidget != null) ? 1 : 0;
 
           if (_shouldShowWelcomeMessage() && index == paginationOffset) {
-            return _buildWelcomeMessage();
+            return _centeredReadingColumn(_buildWelcomeMessage());
           }
 
           // Adjust index for header items
@@ -672,6 +696,37 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     );
   }
 
+  /// Centres [child] in the 760px reading column (`DESIGN.md` §5, "Reading
+  /// column max width") within whatever full-width space its parent gives
+  /// it — a bare `ConstrainedBox(maxWidth: 760)` placed inside a tight-width
+  /// slot (a `ListView` item, a `Row`) gets stretched back to that slot's
+  /// full width instead of actually capping, so this always tops it with an
+  /// `Align` first.
+  ///
+  /// The column itself is sized to exactly `min(available width, 760)` —
+  /// not merely capped — via [SizedBox] rather than [ConstrainedBox], so a
+  /// short AI message still starts flush at the same column edge as a long
+  /// one, and the user bubble's own end-alignment lands on that same column
+  /// edge, instead of both drifting to hug whatever narrow content happens
+  /// to be in that particular message.
+  ///
+  /// Used for every message row, the empty state, quick replies and the
+  /// scroll-to-bottom button so they all line up with the composer (max
+  /// width 800, also centred) regardless of viewport width.
+  static Widget _centeredReadingColumn(Widget child) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth.isFinite
+              ? min(constraints.maxWidth, ChatLayout.readingMaxWidth)
+              : ChatLayout.readingMaxWidth;
+          return SizedBox(width: width, child: child);
+        },
+      ),
+    );
+  }
+
   Widget _buildMessageBubble(
     ChatMessage message,
     bool isUser,
@@ -689,16 +744,20 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         message.customProperties?['isLoading'] == true;
 
     if (isRichMessage && !isUser) {
-      return _buildFullWidthContent(message);
+      return _centeredReadingColumn(_buildFullWidthContent(message));
     }
 
-    // Helper function to build the default bubble
+    // Helper function to build the default bubble, centred in the 760px
+    // reading column (`DESIGN.md` §5) so it lines up with the composer
+    // regardless of how wide the surrounding list/viewport is.
     Widget buildDefaultBubble() {
-      return _buildDefaultMessageBubble(
-        message,
-        isUser,
-        index,
-        isLastAiMessage,
+      return _centeredReadingColumn(
+        _buildDefaultMessageBubble(
+          message,
+          isUser,
+          index,
+          isLastAiMessage,
+        ),
       );
     }
 
@@ -760,7 +819,31 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     final messageId = message.customProperties?['id'] as String? ??
         '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
     final revealed = _revealedChars[messageId];
-    return revealed != null && revealed < message.text.length;
+    if (revealed != null && revealed < message.text.length) {
+      return true;
+    }
+
+    // Also treat the message as streaming when the consumer has flagged it
+    // explicitly (`customProperties['isStreaming'] == true`, the documented
+    // streaming contract — see `ChatMessagesController`'s doc comment: "Flip
+    // isStreaming to false to end the animation"). This is what actually
+    // covers `enableMarkdownStreaming: false` (where [_revealedChars] never
+    // runs at all) and the moment a stream first arrives, before any
+    // characters have been catch-up-revealed yet.
+    //
+    // Deliberately NOT `controller.currentlyStreamingMessageId`: `addMessage`
+    // sets it for *every* fresh AI message — streaming or not, that is what
+    // starts the one-shot reveal/typewriter effect for a plain, complete
+    // message — and only clears it once a *different* AI message arrives.
+    // Trusting it here would pin the live caret forever on an ordinary,
+    // already-fully-delivered message that nobody ever explicitly stops
+    // (verified empirically: it broke the typewriter effect's own most
+    // common call path, plain `addMessage()`, across a large share of the
+    // existing widget-test suite — every one of them hung in
+    // `pumpAndSettle()` against the now-permanently-live caret animation).
+    // A consumer with a genuinely open stream and no natural "done" signal
+    // of their own has the explicit flag above for exactly this purpose.
+    return message.customProperties?['isStreaming'] == true;
   }
 
   /// Shared AI name row (avatar/icon + name) used by both the document
@@ -1323,7 +1406,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           // with the incoming data (see the reveal-loop section above).
           textWidget = Markdown(
             data: _withholdIncompleteFence(
-              _revealedTextFor(messageId, message.text),
+              _withholdDanglingMarker(
+                _revealedTextFor(messageId, message.text),
+              ),
             ),
             selectable: false,
             shrinkWrap: true,

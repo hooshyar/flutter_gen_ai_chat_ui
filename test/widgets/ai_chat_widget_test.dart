@@ -492,7 +492,14 @@ Despite these challenges, quantum computing promises revolutionary advancements 
 
         // Add the initial empty message
         localController.addMessage(streamingMsg);
-        await tester.pumpAndSettle();
+        // Not pumpAndSettle(): the message is still flagged
+        // `isStreaming: true` at this point, which keeps the live
+        // StreamingCaret's repeating animation mounted (`DESIGN.md` §8.9) —
+        // pumpAndSettle() requires zero pending frames and would time out
+        // against it. A bounded pump drains the same debounced auto-scroll
+        // timers this was originally waiting on.
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
 
         // Update the message with some content
         localController.updateMessage(
@@ -506,7 +513,8 @@ Despite these challenges, quantum computing promises revolutionary advancements 
           ),
         );
 
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
 
         // Get the updated message from the controller
         final updatedMsg = localController.messages.firstWhere(
