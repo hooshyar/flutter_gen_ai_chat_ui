@@ -15,10 +15,22 @@ const double _heroBreakpoint = 1024;
 /// Width at which the demo index lays out two groups per row.
 const double _groupsTwoColumnBreakpoint = 840;
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.onToggleTheme});
 
   final VoidCallback onToggleTheme;
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  // Keeping this key stable across rebuilds (rather than creating one per
+  // build) lets LivePreview's State survive the Row/Column swap at the 1024
+  // breakpoint: Flutter relocates the existing element instead of
+  // destroying and recreating it, so the scripted exchange never replays on
+  // resize (DESIGN.md §9).
+  final _livePreviewKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -49,14 +61,20 @@ class HomeScreen extends StatelessWidget {
                         alignment: AlignmentDirectional.centerEnd,
                         child: _ThemeToggle(
                           isDark: isDark,
-                          onToggle: onToggleTheme,
+                          onToggle: widget.onToggleTheme,
                         ),
                       ),
                       const SizedBox(height: 8),
                       if (isWide)
-                        _WideHero(colors: colors)
+                        _WideHero(
+                          colors: colors,
+                          livePreviewKey: _livePreviewKey,
+                        )
                       else
-                        _StackedHero(colors: colors),
+                        _StackedHero(
+                          colors: colors,
+                          livePreviewKey: _livePreviewKey,
+                        ),
                       const SizedBox(height: 48),
                       _DemoIndex(
                         colors: colors,
@@ -98,9 +116,10 @@ class _ThemeToggle extends StatelessWidget {
 // -- Hero --
 
 class _WideHero extends StatelessWidget {
-  const _WideHero({required this.colors});
+  const _WideHero({required this.colors, required this.livePreviewKey});
 
   final AppColors colors;
+  final Key livePreviewKey;
 
   @override
   Widget build(BuildContext context) {
@@ -116,9 +135,9 @@ class _WideHero extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 32),
-          const Expanded(
+          Expanded(
             flex: 7,
-            child: LivePreview(height: 560),
+            child: LivePreview(key: livePreviewKey, height: 560),
           ),
         ],
       ),
@@ -127,9 +146,10 @@ class _WideHero extends StatelessWidget {
 }
 
 class _StackedHero extends StatelessWidget {
-  const _StackedHero({required this.colors});
+  const _StackedHero({required this.colors, required this.livePreviewKey});
 
   final AppColors colors;
+  final Key livePreviewKey;
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +158,7 @@ class _StackedHero extends StatelessWidget {
       children: [
         _HeroPitch(colors: colors, headlineSize: 32),
         const SizedBox(height: 24),
-        const LivePreview(height: 440),
+        LivePreview(key: livePreviewKey, height: 440),
       ],
     );
   }

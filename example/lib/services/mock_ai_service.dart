@@ -27,9 +27,11 @@ class ExampleAiService {
   final ResponseStyle style;
   final _random = Random();
 
-  /// Generate a response with a simulated delay.
+  /// Generate a response with a simulated "thinking" delay before the text
+  /// is available. Kept short so a non-streaming demo (e.g. Basic) doesn't
+  /// feel like it stalled before the reply even starts.
   Future<String> generateResponse(String query) async {
-    await Future.delayed(Duration(milliseconds: 250 + _random.nextInt(350)));
+    await Future.delayed(Duration(milliseconds: 150 + _random.nextInt(150)));
 
     switch (style) {
       case ResponseStyle.plain:
@@ -319,7 +321,9 @@ class ExampleAiService {
         "backend would generate a reply.";
   }
 
-  /// Stream a response word by word.
+  /// Stream a response word by word, 25-40ms per word so even a short
+  /// sentence still visibly streams without feeling sluggish (DESIGN.md §9
+  /// "Basic").
   Stream<String> streamResponse(String query) async* {
     final response = await generateResponse(query);
     final words = response.split(' ');
@@ -328,7 +332,7 @@ class ExampleAiService {
     for (final word in words) {
       accumulated += (accumulated.isEmpty ? '' : ' ') + word;
       yield accumulated;
-      await Future.delayed(Duration(milliseconds: 12 + _random.nextInt(26)));
+      await Future.delayed(Duration(milliseconds: 25 + _random.nextInt(16)));
     }
   }
 }

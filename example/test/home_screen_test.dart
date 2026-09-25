@@ -91,6 +91,30 @@ void main() {
     expect(find.text('Streaming demo'), findsOneWidget);
   });
 
+  testWidgets(
+      'live preview keeps its finished state across the 1024 breakpoint '
+      'resize instead of replaying', (tester) async {
+    setSurfaceSize(tester, const Size(1280, 800));
+
+    await tester.pumpWidget(buildHome());
+    await settleLivePreview(tester);
+
+    // The scripted exchange has finished: the question appears once and
+    // there is no stop button (which only shows while a reply streams).
+    expect(find.text('Write a debounce helper in Dart'), findsOneWidget);
+    expect(find.byIcon(Icons.stop_rounded), findsNothing);
+
+    // Cross the split-hero breakpoint downward - the Row/Column swap would
+    // recreate LivePreview's State (and replay the script) without a
+    // GlobalKey preserving it across the rebuild.
+    setSurfaceSize(tester, const Size(390, 844));
+    await tester.pumpAndSettle(const Duration(seconds: 10));
+
+    expect(find.text('Write a debounce helper in Dart'), findsOneWidget);
+    expect(find.byIcon(Icons.stop_rounded), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('renders without exceptions in light and dark', (tester) async {
     setSurfaceSize(tester, const Size(1280, 900));
 

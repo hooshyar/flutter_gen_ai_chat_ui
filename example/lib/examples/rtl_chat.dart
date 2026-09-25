@@ -240,20 +240,16 @@ class _RtlChatExampleState extends State<RtlChatExample> {
               // LTR inside the RTL bubble.
               ExampleQuestion(question: 'أرني مثالاً على كود Dart'),
             ],
-            messageOptions: MessageOptions(
+            // No `timeFormat` here: setting one, combined with `showTime`,
+            // also opts the user bubble into a timestamp (an explicit
+            // formatter is read as "yes, render this somewhere") - the
+            // English demos never show a user timestamp, so this stays on
+            // the package's default AI-only formatting to match them.
+            messageOptions: const MessageOptions(
               showCopyButton: true,
               copyButtonLabel: 'نسخ',
               copiedToClipboardText: 'تم نسخ الرسالة',
               showTime: true,
-              // Localized relative timestamp instead of the default
-              // "Just now".
-              timeFormat: (dt) {
-                final mins = DateTime.now().difference(dt).inMinutes;
-                if (mins < 1) return 'الآن';
-                if (mins < 60) return 'قبل $mins دقيقة';
-                final hrs = mins ~/ 60;
-                return 'قبل $hrs ساعة';
-              },
             ),
           ),
         ),
