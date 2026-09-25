@@ -179,13 +179,27 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
             .executeAction('calculate', {'expression': expr});
         if (result.success) {
           final data = result.data as Map<String, dynamic>;
-          response = 'Calling the calculator tool:\n\n'
-              '${_toolCallBlock('calculate', {'expression': expr})}\n\n'
-              '**Result:** `${data['expression']}` = **${data['result']}**';
-        } else {
-          response =
-              'Could not calculate that. Try something like "calculate 5 + 3".';
+          if (mounted) {
+            _controller.addMessage(ChatMessage(
+              text: 'Calling the calculator tool:\n\n'
+                  '${_toolCallBlock('calculate', {'expression': expr})}',
+              user: _aiUser,
+              createdAt: DateTime.now(),
+              isMarkdown: true,
+            ));
+            _controller.addMessage(ChatMessage.rich(
+              user: _aiUser,
+              resultKind: 'action_result',
+              data: {
+                'label': 'Result',
+                'value': '${data['expression']} = ${data['result']}',
+              },
+            ));
+          }
+          return;
         }
+        response =
+            'Could not calculate that. Try something like "calculate 5 + 3".';
       } else if (lower.startsWith('/weather') || lower.contains('weather')) {
         var city = raw
             .replaceFirst(
@@ -197,15 +211,28 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
         });
         if (result.success) {
           final d = result.data as Map<String, dynamic>;
-          response = 'Calling the weather tool:\n\n'
-              '${_toolCallBlock('get_weather', {'city': city})}\n\n'
-              '**Weather in ${d['city']}**\n\n'
-              '- ${d['conditions']}\n'
-              '- Temperature: ${d['temperature']}${d['units'] == 'celsius' ? '°C' : '°F'}\n'
-              '- Humidity: ${d['humidity']}%';
-        } else {
-          response = 'Could not get weather. Try "/weather London".';
+          final unit = d['units'] == 'celsius' ? '°C' : '°F';
+          if (mounted) {
+            _controller.addMessage(ChatMessage(
+              text: 'Calling the weather tool:\n\n'
+                  '${_toolCallBlock('get_weather', {'city': city})}',
+              user: _aiUser,
+              createdAt: DateTime.now(),
+              isMarkdown: true,
+            ));
+            _controller.addMessage(ChatMessage.rich(
+              user: _aiUser,
+              resultKind: 'action_result',
+              data: {
+                'label': 'Result',
+                'value': '${d['city']}: ${d['conditions']}, '
+                    '${d['temperature']}$unit, humidity ${d['humidity']}%',
+              },
+            ));
+          }
+          return;
         }
+        response = 'Could not get weather. Try "/weather London".';
       } else if (lower.startsWith('/color') || lower.contains('color')) {
         var mood = raw
             .replaceFirst(
@@ -284,6 +311,14 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
           controller: _controller,
           onSendMessage: _onSendMessage,
           enableMarkdownStreaming: true,
+          // Tool results render as a compact card after the ```json call
+          // block, not another line of markdown - the full-width rich-result
+          // path skips the normal bubble's sender-change top gap, so
+          // `_cardTopSpacing` restores it (DESIGN.md §9 "Actions").
+          resultRenderers: {
+            'action_result': (context, data) =>
+                _cardTopSpacing(_ResultCard(data: data)),
+          },
           loadingConfig: LoadingConfig(
             isLoading: _isLoading,
             loadingIndicator: const LoadingWidget(
@@ -300,6 +335,61 @@ class _ActionsChatExampleState extends State<ActionsChatExample> {
             ExampleQuestion(question: '/color energetic'),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Full-width rich results (the tool-result card) render through
+/// [AiChatWidget.resultRenderers], which bypasses the normal bubble path and
+/// its sender-change top gap. Wrapping the card in this gives it the same
+/// [ChatSpace.s24] gap a text reply gets after the preceding message
+/// (DESIGN.md §9 "Rich results", mirrored here for tool results).
+Widget _cardTopSpacing(Widget child) {
+  return Padding(
+      padding: const EdgeInsets.only(top: ChatSpace.s24), child: child);
+}
+
+/// Compact tool-result card shown after the `_toolCallBlock` JSON fence: a
+/// "Result" label plus the value, tokens from [AppColors] (radius 12, 1px
+/// outline, no shadow). DESIGN.md §9 "Actions": "Tool calls rendered as
+/// code, then a result card."
+class _ResultCard extends StatelessWidget {
+  const _ResultCard({required this.data});
+
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            data['label'] as String? ?? 'Result',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: colors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            data['value'] as String? ?? '',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: colors.textPrimary,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -190,6 +190,16 @@ class _LivePreviewState extends State<LivePreview> {
         scrollBehaviorConfig: const ScrollBehaviorConfig(
           pinDuringStreaming: StreamingPinAnchor.userMessage,
         ),
+        // The framed hero panel is short (per [height]) and never needs a
+        // scroll-to-bottom affordance - at phone widths the floating button
+        // otherwise covers the code block. `disabled` on
+        // `ScrollToBottomOptions` is declared but not actually consulted by
+        // `_buildScrollToBottomButton` (it only affects list bottom
+        // padding), so it doesn't hide the button on its own - a custom
+        // builder that renders nothing does. DESIGN.md §9.
+        scrollToBottomOptions: ScrollToBottomOptions(
+          scrollToBottomBuilder: (_) => const SizedBox.shrink(),
+        ),
         loadingConfig: LoadingConfig(isLoading: _isLoading),
         onCancelGenerating: () {
           _streamSub?.cancel();

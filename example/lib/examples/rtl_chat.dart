@@ -186,17 +186,19 @@ class _RtlChatExampleState extends State<RtlChatExample> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseTheme = Theme.of(context);
 
-    return DemoScaffold(
-      title: 'RTL',
-      route: '/rtl',
-      isDark: isDark,
-      onToggleTheme: widget.onToggleTheme,
-      // The demo scaffold's own chrome (back, title, toggles) stays LTR; only
-      // the chat surface below flips, as a real app would drive it from the
-      // active locale rather than the whole shell.
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Theme(
+    // The home page promises a "mirrored layout" for this demo, so the whole
+    // scaffold - sidebar, top bar, back arrow, trailing actions - mirrors to
+    // RTL, not just the chat surface. A real app would normally drive this
+    // from the active locale at the MaterialApp root rather than per-screen;
+    // wrapping the scaffold here keeps the example self-contained.
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: DemoScaffold(
+        title: 'RTL',
+        route: '/rtl',
+        isDark: isDark,
+        onToggleTheme: widget.onToggleTheme,
+        body: Theme(
           data: baseTheme.copyWith(
             textTheme: GoogleFonts.vazirmatnTextTheme(baseTheme.textTheme),
           ),
