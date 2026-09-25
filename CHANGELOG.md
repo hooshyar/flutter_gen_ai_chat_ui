@@ -9,7 +9,7 @@ No breaking API changes: every public change is additive. **The default look cha
 - **A new message action row** has an icon copy button that swaps to a check instead of showing a SnackBar, plus the timestamp. It is hidden while the message streams. `showCopyButton` now defaults to `true`.
 - **Streaming** shows a live caret and fades new text in (`streamingFadeInEnabled` now defaults to `true`).
 - **New composer:** one rounded field (radius 24) with a focus ring. The send button (`Icons.arrow_upward_rounded`, 48x48 hit area) turns into a stop button while generating. Esc cancels generation. `maxLines` defaults to 8.
-- **Empty state:** the greeting starts at the left of the column, and suggestion tiles have no icons. Also new: a "Thinking" shimmer, loading placeholders, and a scroll-to-bottom button centred on the column (`ScrollToBottomOptions.position`).
+- **Empty state:** the greeting starts at the left of the column, and suggestion tiles have no icons. Also new: a "Thinking" shimmer, loading placeholders, and a scroll-to-bottom button centred on the column (`ScrollToBottomOptions.position`), 12px above the composer (`ScrollToBottomOptions.bottomOffset` default 72 → 6).
 - **Syntax highlighting is on by default** for fenced code blocks. Turn it off with `MessageOptions.enableSyntaxHighlighting: false`.
 - **All motion respects the system "reduce motion" setting.**
 
