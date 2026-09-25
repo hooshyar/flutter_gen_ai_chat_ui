@@ -180,6 +180,13 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
                 ],
                 selected: {_selected},
                 onSelectionChanged: (s) => setState(() => _selected = s.first),
+                // The four labels aren't the same length, and the default
+                // selected-segment checkmark only adds its width to
+                // whichever one is currently selected - switching presets
+                // shifted the whole control's width. No checkmark needed
+                // here; the fill/text color change already signals the
+                // active preset.
+                showSelectedIcon: false,
                 // Tint the selected segment with the active preset's accent
                 // instead of the app's default blue, so the control itself
                 // reflects the brand it's driving.

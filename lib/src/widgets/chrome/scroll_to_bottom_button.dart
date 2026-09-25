@@ -40,7 +40,11 @@ class ScrollToBottomButton extends StatelessWidget {
   /// visual disc, per `DESIGN.md` §8.13 ("hit targets 44x44 minimum"; this
   /// package rounds up to Material's 48x48 rather than the bare minimum,
   /// matching the rest of the package's icon-only controls).
-  static const double _hitAreaSize = 48;
+  ///
+  /// Public so the message list can reserve enough bottom padding for the
+  /// button's full footprint (this plus [ScrollToBottomOptions.bottomOffset])
+  /// and never render the last message underneath it.
+  static const double hitAreaSize = 48;
 
   /// The painted disc diameter (`DESIGN.md` §8.10).
   static const double _discSize = 36;
@@ -119,8 +123,8 @@ class ScrollToBottomButton extends StatelessWidget {
             customBorder: const CircleBorder(),
             onTap: onPressed,
             child: SizedBox(
-              width: _hitAreaSize,
-              height: _hitAreaSize,
+              width: hitAreaSize,
+              height: hitAreaSize,
               child: Center(child: visualDisc),
             ),
           ),

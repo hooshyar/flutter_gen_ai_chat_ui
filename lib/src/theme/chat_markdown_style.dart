@@ -99,10 +99,17 @@ MarkdownStyleSheet chatMarkdownStyle(
     // comes entirely from CodeBlockView / CodeBlockMarkdownBuilder now, so
     // the stylesheet must not add its own padding on top of theirs.
     codeblockPadding: EdgeInsets.zero,
-    codeblockDecoration: BoxDecoration(
-      color: cbt.backgroundColor,
-      border: Border.all(color: cbt.borderColor),
-      borderRadius: const BorderRadius.all(Radius.circular(ChatRadius.md)),
-    ),
+    // Left fully transparent on purpose (DESIGN.md §4 code-block spacing
+    // fix): flutter_markdown_plus always wraps a custom `pre` builder's
+    // return value in `Container(decoration: codeblockDecoration)` with no
+    // way to add space *outside* that container. Painting the actual
+    // background/border/radius here would double up with
+    // CodeBlockMarkdownBuilder's own `CodeBlockView(decorate: true)`, and
+    // — worse — would extend the visible box across the bottom margin
+    // `CodeBlockMarkdownBuilder` adds inside this same wrapper, making the
+    // margin read as padding instead of empty space. CodeBlockView paints
+    // its own identical decoration instead; this stays as an invisible
+    // sizing box.
+    codeblockDecoration: const BoxDecoration(),
   );
 }

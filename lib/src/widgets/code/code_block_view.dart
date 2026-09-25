@@ -337,15 +337,34 @@ class _Header extends StatelessWidget {
 /// blocks as [CodeBlockView].
 ///
 /// Register it as `builders: {'pre': CodeBlockMarkdownBuilder(...)}` on
-/// `MarkdownBody`/`MarkdownWidget`. flutter_markdown_plus still wraps the
-/// returned widget in `MarkdownStyleSheet.codeblockDecoration`, so the view
-/// is built with `decorate: false` to avoid a double background.
+/// `MarkdownBody`/`MarkdownWidget`. flutter_markdown_plus always wraps the
+/// returned widget in a `Container(decoration: styleSheet.codeblockDecoration)`
+/// with no public hook to add space *outside* that container (its
+/// `codeblockPadding`/`paddingBuilders` only apply inside it, or — for
+/// `paddingBuilders` — only to the `hr` tag in this version).
+///
+/// [ownsDecoration] controls how that's reconciled with `DESIGN.md` §4's
+/// code-block vertical rhythm:
+/// - `true` (the package's own default path — see `chatMarkdownStyle`,
+///   which sets `codeblockDecoration` to a fully transparent
+///   `BoxDecoration()` for exactly this): this builder paints the
+///   background/border/radius itself via `CodeBlockView(decorate: true)`
+///   *inside* a bottom [Padding], so the added space stays empty instead
+///   of inheriting the code block's chrome — see the field's doc comment
+///   for why a symmetric top margin isn't added the same way.
+/// - `false` (a caller supplied their own
+///   `MessageOptions.markdownStyleSheet` with a real `codeblockDecoration`
+///   — `code_block_rendering_test.dart`'s "user markdownStyleSheet
+///   codeblockDecoration still wraps the block"): this builder must not
+///   also paint a decoration, or the block would show doubled-up
+///   chrome — same as this class's behavior before the spacing fix.
 class CodeBlockMarkdownBuilder extends MarkdownElementBuilder {
   CodeBlockMarkdownBuilder({
     this.theme,
     this.enableSyntaxHighlighting = true,
     this.showCopyButton = true,
     this.baseStyle,
+    this.ownsDecoration = true,
   });
 
   /// Visual theme forwarded to [CodeBlockView.theme].
@@ -359,6 +378,11 @@ class CodeBlockMarkdownBuilder extends MarkdownElementBuilder {
 
   /// Forwarded to [CodeBlockView.baseStyle].
   final TextStyle? baseStyle;
+
+  /// See the class doc comment. Set to `false` when the ambient
+  /// `MarkdownStyleSheet.codeblockDecoration` is a caller-supplied,
+  /// non-transparent value that already paints the block's chrome.
+  final bool ownsDecoration;
 
   String? _language;
 
@@ -383,14 +407,24 @@ class CodeBlockMarkdownBuilder extends MarkdownElementBuilder {
   ) {
     final language = _language;
     _language = null;
-    return CodeBlockView(
+    final view = CodeBlockView(
       code: element.textContent,
       language: language,
       theme: theme,
       enableSyntaxHighlighting: enableSyntaxHighlighting,
       showCopyButton: showCopyButton,
       baseStyle: baseStyle,
-      decorate: false,
+      decorate: ownsDecoration,
+    );
+    if (!ownsDecoration) return view;
+    // Bottom-only: the ambient block spacing plus this already lines up
+    // the gap *above* a code block (e.g. a heading's own bottom padding
+    // plus block spacing) with `DESIGN.md` §4's ~12-16px paragraph rhythm,
+    // so adding a symmetric top margin here would double up on top of
+    // that instead of matching it — see the class doc comment.
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(bottom: ChatSpace.s8),
+      child: view,
     );
   }
 

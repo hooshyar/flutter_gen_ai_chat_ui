@@ -289,6 +289,28 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     return text.substring(0, cut);
   }
 
+  /// Whether [_withholdIncompleteFence] is currently hiding a trailing,
+  /// still-open code fence from [messageId]'s revealed content.
+  ///
+  /// A fenced code block renders as nothing at all — not even a partial
+  /// line — until its closing ``` arrives (see [_withholdIncompleteFence]'s
+  /// doc comment), which can take a second or more for a long block. If the
+  /// live [StreamingCaret] kept rendering in its usual spot ("below the
+  /// last block") through that whole window, it sits alone and static
+  /// directly under whatever preceded the fence — typically a heading, e.g.
+  /// "## Future Example" — for the entire time the block is being
+  /// generated. In a screenshot that reads exactly like an orphaned bullet
+  /// under the heading, even though no markdown list/heading marker is
+  /// actually dangling (`_withholdDanglingMarker` already handles those).
+  /// [_buildAiFooter] uses this to hide the caret for that window instead,
+  /// rather than leaving a motionless dot that looks like stray markup.
+  bool _isFenceCurrentlyWithheld(String messageId, String fullText) {
+    final revealed = _revealedTextFor(messageId, fullText);
+    final afterDangling = _withholdDanglingMarker(revealed);
+    final afterFence = _withholdIncompleteFence(afterDangling);
+    return afterFence.length < afterDangling.length;
+  }
+
   /// Check if welcome message should be shown
   bool _shouldShowWelcomeMessage() {
     return widget.controller?.showWelcomeMessage == true &&
@@ -508,6 +530,25 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     return null;
   }
 
+  /// [ChatSpacingConfig.messageListPadding] with the bottom inset widened,
+  /// when needed, to clear the floating [ScrollToBottomButton]'s full
+  /// footprint (`bottomOffset` + its hit area) so the button never renders
+  /// on top of the last message when scrolled to the end (`DESIGN.md`
+  /// §8.10 positions the button relative to the composer, independent of
+  /// how much content the list itself reserves at its own bottom edge —
+  /// without this, a small [ChatSpacingConfig.messageListPadding] lets the
+  /// last message's own layout extend into the button's reserved zone).
+  /// A caller-configured padding that's already >= that footprint is left
+  /// untouched. No-op when the button is disabled.
+  EdgeInsets get _effectiveMessageListPadding {
+    final base = widget.spacingConfig.messageListPadding;
+    if (widget.scrollToBottomOptions.disabled) return base;
+    final minBottom = widget.scrollToBottomOptions.bottomOffset +
+        ScrollToBottomButton.hitAreaSize;
+    if (base.bottom >= minBottom) return base;
+    return EdgeInsets.fromLTRB(base.left, base.top, base.right, minBottom);
+  }
+
   Widget _buildMessageList() {
     final paginationConfig = widget.messageListOptions.paginationConfig;
     final lastAiMessageIndex = _lastAiMessageIndex(
@@ -528,7 +569,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             controller: _scrollController,
             physics: widget.messageListOptions.scrollPhysics ??
                 const BouncingScrollPhysics(),
-            padding: widget.spacingConfig.messageListPadding,
+            padding: _effectiveMessageListPadding,
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child:
@@ -562,7 +603,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       keyboardDismissBehavior:
           widget.messageListOptions.keyboardDismissBehavior ??
               ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: widget.spacingConfig.messageListPadding,
+      padding: _effectiveMessageListPadding,
       itemCount: widget.messages.length +
           (widget.typingUsers?.isNotEmpty == true ? 1 : 0) +
           (loadingWidget != null ? 1 : 0) +
@@ -878,13 +919,19 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   }
 
   /// The action row + optional live caret shared by both AI layouts.
+  ///
+  /// [showLiveCaret] additionally gates the caret beyond [isStreaming]:
+  /// callers pass `false` while a fenced code block is being withheld (see
+  /// [_isFenceCurrentlyWithheld]) so the caret doesn't sit alone, static,
+  /// under a heading for the whole time the block is generating.
   List<Widget> _buildAiFooter(
     ChatMessage message,
     bool isLastAiMessage,
-    bool isStreaming,
-  ) {
+    bool isStreaming, {
+    bool showLiveCaret = true,
+  }) {
     return [
-      if (isStreaming)
+      if (isStreaming && showLiveCaret)
         const Padding(
           padding: EdgeInsetsDirectional.only(top: 4),
           child: Align(
@@ -1013,6 +1060,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     // _isCurrentlyStreaming reads.
     final content = _buildMessageContent(message, context);
     final isStreaming = _isCurrentlyStreaming(message);
+    final messageId = message.customProperties?['id'] as String? ??
+        '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
+    final showLiveCaret =
+        !isStreaming || !_isFenceCurrentlyWithheld(messageId, message.text);
 
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: columnWidth),
@@ -1022,7 +1073,12 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         children: [
           if (showName) _buildAiNameRow(message, tokens, bubbleStyle),
           content,
-          ..._buildAiFooter(message, isLastAiMessage, isStreaming),
+          ..._buildAiFooter(
+            message,
+            isLastAiMessage,
+            isStreaming,
+            showLiveCaret: showLiveCaret,
+          ),
         ],
       ),
     );
@@ -1075,6 +1131,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     // _isCurrentlyStreaming reads.
     final content = _buildMessageContent(message, context);
     final isStreaming = _isCurrentlyStreaming(message);
+    final messageId = message.customProperties?['id'] as String? ??
+        '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
+    final showLiveCaret =
+        !isStreaming || !_isFenceCurrentlyWithheld(messageId, message.text);
 
     return Align(
       alignment: AlignmentDirectional.centerStart,
@@ -1090,7 +1150,12 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             children: [
               if (showName) _buildAiNameRow(message, tokens, bubbleStyle),
               content,
-              ..._buildAiFooter(message, isLastAiMessage, isStreaming),
+              ..._buildAiFooter(
+                message,
+                isLastAiMessage,
+                isStreaming,
+                showLiveCaret: showLiveCaret,
+              ),
             ],
           ),
         ),
@@ -1320,6 +1385,12 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
               widget.messageOptions.enableSyntaxHighlighting,
           showCopyButton: widget.messageOptions.showCodeBlockCopyButton,
           baseStyle: effectiveStyleSheet.code,
+          // Only the package's own default stylesheet (chatMarkdownStyle)
+          // leaves codeblockDecoration transparent for this to safely
+          // paint over — a caller-supplied markdownStyleSheet keeps its
+          // own real codeblockDecoration, so CodeBlockView must not also
+          // decorate (see CodeBlockMarkdownBuilder's doc comment).
+          ownsDecoration: widget.messageOptions.markdownStyleSheet == null,
         ),
       };
 
