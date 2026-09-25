@@ -13,12 +13,16 @@ No breaking API changes: every public change is additive. **The default look cha
 - **Syntax highlighting is on by default** for fenced code blocks. Turn it off with `MessageOptions.enableSyntaxHighlighting: false`.
 - **All motion respects the system "reduce motion" setting.**
 
+- **More breathing room above the composer.** `ChatSpacingConfig` default `messageListPadding` bottom is now 16 (was 8).
+
 ### Added
 - `ChatTokens`, `ChatSpace`, `ChatRadius`, `ChatLayout` and `ChatMotion`: the design tokens the defaults are built from.
 - `ChatMessagesController.isMessageStreaming(id)`: an explicit set of open streams. `addStreamingMessage`, `setStreamingMessage` and `isStreaming: true` open a stream. `stopStreamingMessage` or `isStreaming: false` closes it.
 - `WelcomeMessageConfig.subtitle` / `subtitleStyle`.
 
 ### Fixed
+- **`ScrollToBottomOptions.disabled` now actually hides the button.** Before, it only changed the list padding. It now covers both the default button and `scrollToBottomBuilder`.
+- **Debug trace logging only runs in debug builds.** The internal streaming-pin and scroll trace lines no longer reach release or profile consoles.
 - **Streaming caret and actions.** The caret and the copy/time row now follow whether the stream is really open, for both documented streaming recipes. Before, Copy could appear mid-stream, or the caret could stay after `stopStreamingMessage`. `stopStreamingMessage` also now resets a stored `isStreaming: true` to `false`.
 - **Image and link taps.** Enabling image or link taps no longer leaves a message looking like it is still streaming.
 - **Timestamp style options.** `timeTextStyle` / `userTimeTextStyle` / `aiTimeTextStyle` apply again.
