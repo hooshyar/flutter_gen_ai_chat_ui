@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/services.dart';
@@ -14,11 +15,26 @@ import '../models/example_question.dart';
 import '../models/file_upload_options.dart';
 import '../models/input_options.dart';
 import '../models/welcome_message_config.dart';
+import '../theme/chat_markdown_style.dart';
+import '../theme/chat_tokens.dart';
+import '../theme/code_block_theme.dart';
 import '../theme/custom_theme_extension.dart';
-import '../utils/color_extensions.dart';
+import 'chrome/chat_empty_state.dart';
+import 'chrome/scroll_to_bottom_button.dart';
+import 'chrome/thinking_indicator.dart';
+import 'code/code_block_view.dart';
 import 'math_markdown.dart';
+import 'message/message_action_row.dart';
+import 'message/streaming_caret.dart';
 import 'message_attachment.dart';
 import 'result/result_renderer_registry.dart';
+
+/// `debugPrint` is not stripped in profile/release builds, so this file's
+/// verbose footer/animation trace lines were reaching a shipped release web
+/// build's console. Gate them to debug builds.
+void _debugLog(String message) {
+  if (kDebugMode) debugPrint(message);
+}
 
 /// Full-featured chat widget with streaming markdown, typing indicators, and pagination.
 class CustomChatWidget extends StatefulWidget {
@@ -210,8 +226,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           final backlog = target - revealed;
           final step = backlog <= _revealMinCharsPerTick
               ? backlog
-              : max(_revealMinCharsPerTick,
-                  (backlog * _revealCatchUpFactor).ceil());
+              : max(
+                  _revealMinCharsPerTick,
+                  (backlog * _revealCatchUpFactor).ceil(),
+                );
           _revealedChars[id] = revealed + step;
           changed = true;
         } else if (widget.controller?.currentlyStreamingMessageId != id) {
@@ -254,6 +272,51 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     final fenceCount = '```'.allMatches(text).length;
     if (fenceCount.isEven) return text;
     return text.substring(0, text.lastIndexOf('```'));
+  }
+
+  /// Matches a trailing markdown block-marker line with no content typed
+  /// after it yet: a bare list bullet (`-`, `*`, `+`, `1.`), a bare heading
+  /// (`#`..`######`), or a bare blockquote (`>`).
+  static final RegExp _danglingMarkerLine = RegExp(
+    r'(^|\n)[ \t]*(?:[-*+]|\d+\.|#{1,6}|>)[ \t]*$',
+  );
+
+  /// Holds back a trailing bare list/heading/blockquote marker that has no
+  /// text after it yet, so the reveal never flashes an empty bullet point or
+  /// heading before its content streams in.
+  ///
+  /// Cuts right after the leading newline (when there is one) rather than
+  /// before it, so the held value only ever extends as more text arrives —
+  /// never shrinks by a trailing newline once the marker itself appears —
+  /// matching the same prefix-extension contract [_withholdIncompleteFence]
+  /// relies on.
+  String _withholdDanglingMarker(String text) {
+    final match = _danglingMarkerLine.firstMatch(text);
+    if (match == null) return text;
+    final cut = match.group(1) == '\n' ? match.start + 1 : match.start;
+    return text.substring(0, cut);
+  }
+
+  /// Whether [_withholdIncompleteFence] is currently hiding a trailing,
+  /// still-open code fence from [messageId]'s revealed content.
+  ///
+  /// A fenced code block renders as nothing at all — not even a partial
+  /// line — until its closing ``` arrives (see [_withholdIncompleteFence]'s
+  /// doc comment), which can take a second or more for a long block. If the
+  /// live [StreamingCaret] kept rendering in its usual spot ("below the
+  /// last block") through that whole window, it sits alone and static
+  /// directly under whatever preceded the fence — typically a heading, e.g.
+  /// "## Future Example" — for the entire time the block is being
+  /// generated. In a screenshot that reads exactly like an orphaned bullet
+  /// under the heading, even though no markdown list/heading marker is
+  /// actually dangling (`_withholdDanglingMarker` already handles those).
+  /// [_buildAiFooter] uses this to hide the caret for that window instead,
+  /// rather than leaving a motionless dot that looks like stray markup.
+  bool _isFenceCurrentlyWithheld(String messageId, String fullText) {
+    final revealed = _revealedTextFor(messageId, fullText);
+    final afterDangling = _withholdDanglingMarker(revealed);
+    final afterFence = _withholdIncompleteFence(afterDangling);
+    return afterFence.length < afterDangling.length;
   }
 
   /// Check if welcome message should be shown
@@ -365,50 +428,53 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     // Debounce scroll events to avoid excessive rebuilds
     _scrollDebounce?.cancel();
     _scrollDebounce = Timer(
-        widget.messageListOptions.paginationConfig.loadMoreDebounceTime, () {
-      if (!mounted) return;
+      widget.messageListOptions.paginationConfig.loadMoreDebounceTime,
+      () {
+        if (!mounted) return;
 
-      final position = _scrollController.position.pixels;
-      final maxScroll = _scrollController.position.maxScrollExtent;
+        final position = _scrollController.position.pixels;
+        final maxScroll = _scrollController.position.maxScrollExtent;
 
-      // Update scroll to bottom button visibility
-      final shouldShow = widget.messageListOptions.paginationConfig.reverseOrder
-          ? position >
-              100 // In reverse mode, scroll from bottom means we've scrolled up
-          : (maxScroll - position) >
-              100; // In normal mode, we need to check distance from bottom
+        // Update scroll to bottom button visibility
+        final shouldShow = widget
+                .messageListOptions.paginationConfig.reverseOrder
+            ? position >
+                100 // In reverse mode, scroll from bottom means we've scrolled up
+            : (maxScroll - position) >
+                100; // In normal mode, we need to check distance from bottom
 
-      if (shouldShow != _showScrollToBottom) {
-        setState(() => _showScrollToBottom = shouldShow);
-      }
-
-      // Check if we should load more messages
-      final paginationConfig = widget.messageListOptions.paginationConfig;
-      if (!paginationConfig.enabled || !paginationConfig.autoLoadOnScroll) {
-        return;
-      }
-
-      // Determine if we are near the edge for loading more messages
-      bool shouldLoadMore;
-      if (paginationConfig.reverseOrder) {
-        // In reverse mode: Check if we're near the top
-        shouldLoadMore = _scrollController.position.pixels <
-            paginationConfig.distanceToTriggerLoadPixels;
-      } else {
-        // Normal mode: Check if we're near the bottom
-        shouldLoadMore = (maxScroll - _scrollController.position.pixels) <
-            paginationConfig.distanceToTriggerLoadPixels;
-      }
-
-      if (shouldLoadMore &&
-          !widget.messageListOptions.isLoadingMore &&
-          widget.messageListOptions.hasMoreMessages) {
-        if (paginationConfig.enableHapticFeedback) {
-          HapticFeedback.lightImpact();
+        if (shouldShow != _showScrollToBottom) {
+          setState(() => _showScrollToBottom = shouldShow);
         }
-        widget.messageListOptions.onLoadMore?.call();
-      }
-    });
+
+        // Check if we should load more messages
+        final paginationConfig = widget.messageListOptions.paginationConfig;
+        if (!paginationConfig.enabled || !paginationConfig.autoLoadOnScroll) {
+          return;
+        }
+
+        // Determine if we are near the edge for loading more messages
+        bool shouldLoadMore;
+        if (paginationConfig.reverseOrder) {
+          // In reverse mode: Check if we're near the top
+          shouldLoadMore = _scrollController.position.pixels <
+              paginationConfig.distanceToTriggerLoadPixels;
+        } else {
+          // Normal mode: Check if we're near the bottom
+          shouldLoadMore = (maxScroll - _scrollController.position.pixels) <
+              paginationConfig.distanceToTriggerLoadPixels;
+        }
+
+        if (shouldLoadMore &&
+            !widget.messageListOptions.isLoadingMore &&
+            widget.messageListOptions.hasMoreMessages) {
+          if (paginationConfig.enableHapticFeedback) {
+            HapticFeedback.lightImpact();
+          }
+          widget.messageListOptions.onLoadMore?.call();
+        }
+      },
+    );
   }
 
   @override
@@ -432,30 +498,93 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    // The scroll-to-bottom button is positioned against the MESSAGE LIST's
+    // own bottom edge (this inner Stack), not the whole widget's — when
+    // quick replies are showing below the list, that row is a sibling
+    // OUTSIDE this Stack, so the button's `bottomOffset` is measured from
+    // (and floats above) the list/quick-replies boundary instead of
+    // reaching past the quick replies and overlapping their chips.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: _buildMessageList(),
-            ),
-            if (widget.quickReplyOptions.quickReplies != null &&
-                widget.quickReplyOptions.quickReplies!.isNotEmpty)
-              Padding(
-                padding: widget.spacingConfig.quickRepliesPadding,
-                child: _buildQuickReplies(),
-              ),
-          ],
+        Expanded(
+          child: Stack(
+            children: [
+              _buildMessageList(),
+              if (!widget.scrollToBottomOptions.disabled &&
+                  (_showScrollToBottom ||
+                      widget.scrollToBottomOptions.alwaysVisible))
+                _buildScrollToBottomButton(),
+            ],
+          ),
         ),
-        if (_showScrollToBottom || widget.scrollToBottomOptions.alwaysVisible)
-          _buildScrollToBottomButton(),
+        if (widget.quickReplyOptions.quickReplies != null &&
+            widget.quickReplyOptions.quickReplies!.isNotEmpty)
+          Padding(
+            padding: widget.spacingConfig.quickRepliesPadding,
+            child: _centeredReadingColumn(_buildQuickReplies()),
+          ),
       ],
     );
   }
 
+  /// Index of the chronologically-latest AI (non-current-user) message in
+  /// [CustomChatWidget.messages], or `null` when there isn't one. Its action
+  /// row (see [MessageActionRow]) stays visible regardless of hover state so
+  /// the primary action is never hidden behind an undiscovered hover.
+  int? _lastAiMessageIndex(bool reverseOrder) {
+    final messages = widget.messages;
+    if (messages.isEmpty) return null;
+    if (reverseOrder) {
+      // Index 0 is the newest message in reverse order.
+      for (var i = 0; i < messages.length; i++) {
+        if (messages[i].user.id != widget.currentUser.id) return i;
+      }
+    } else {
+      for (var i = messages.length - 1; i >= 0; i--) {
+        if (messages[i].user.id != widget.currentUser.id) return i;
+      }
+    }
+    return null;
+  }
+
+  /// [ChatSpacingConfig.messageListPadding] with the bottom inset widened,
+  /// when needed, to clear the floating [ScrollToBottomButton]'s full
+  /// footprint (`bottomOffset` + its hit area) so the button never renders
+  /// on top of the last message when scrolled to the end (`DESIGN.md`
+  /// §8.10 positions the button relative to the composer, independent of
+  /// how much content the list itself reserves at its own bottom edge —
+  /// without this, a small [ChatSpacingConfig.messageListPadding] lets the
+  /// last message's own layout extend into the button's reserved zone).
+  /// A caller-configured padding that's already >= that footprint is left
+  /// untouched.
+  ///
+  /// Only widened when the button can actually be showing AT max scroll —
+  /// i.e. [ScrollToBottomOptions.alwaysVisible] — since that's the only
+  /// case where the button and the last message can occupy the same
+  /// on-screen space at once. The normal (non-`alwaysVisible`) button hides
+  /// itself once scrolled within ~100px of the bottom (`_handleScroll`), so
+  /// by the time a user is actually AT the bottom the button isn't showing
+  /// and there is nothing to clear — reserving its 120px footprint there
+  /// unconditionally (as a prior version of this getter did) permanently
+  /// doubled the resting gap between the last message and the composer
+  /// (~85px -> ~197px) for every default chat, even though the button is
+  /// invisible at that scroll position. No-op when the button is disabled.
+  EdgeInsets get _effectiveMessageListPadding {
+    final base = widget.spacingConfig.messageListPadding;
+    if (widget.scrollToBottomOptions.disabled) return base;
+    if (!widget.scrollToBottomOptions.alwaysVisible) return base;
+    final minBottom = widget.scrollToBottomOptions.bottomOffset +
+        ScrollToBottomButton.hitAreaSize;
+    if (base.bottom >= minBottom) return base;
+    return EdgeInsets.fromLTRB(base.left, base.top, base.right, minBottom);
+  }
+
   Widget _buildMessageList() {
     final paginationConfig = widget.messageListOptions.paginationConfig;
+    final lastAiMessageIndex = _lastAiMessageIndex(
+      paginationConfig.reverseOrder,
+    );
 
     // Empty-conversation welcome: optionally center it vertically instead of
     // anchoring to the bottom of the (reverse) list, which leaves a large gap
@@ -471,10 +600,11 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             controller: _scrollController,
             physics: widget.messageListOptions.scrollPhysics ??
                 const BouncingScrollPhysics(),
-            padding: widget.spacingConfig.messageListPadding,
+            padding: _effectiveMessageListPadding,
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Center(child: _buildWelcomeMessage()),
+              child:
+                  Center(child: _centeredReadingColumn(_buildWelcomeMessage())),
             ),
           );
         },
@@ -504,7 +634,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       keyboardDismissBehavior:
           widget.messageListOptions.keyboardDismissBehavior ??
               ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: widget.spacingConfig.messageListPadding,
+      padding: _effectiveMessageListPadding,
       itemCount: widget.messages.length +
           (widget.typingUsers?.isNotEmpty == true ? 1 : 0) +
           (loadingWidget != null ? 1 : 0) +
@@ -519,7 +649,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         if (paginationConfig.reverseOrder) {
           // Handle typing indicator at the bottom position (index 0)
           if (widget.typingUsers?.isNotEmpty == true && index == 0) {
-            return _buildTypingIndicator();
+            return _centeredReadingColumn(_buildTypingIndicator());
           }
 
           // Shift message index up by 1 if there's a typing indicator
@@ -549,7 +679,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                       (widget.typingUsers?.isNotEmpty == true ? 0 : 0) +
                       (loadingWidget != null ? 1 : 0) +
                       (noMoreMessagesWidget != null ? 1 : 0)) {
-            return _buildWelcomeMessage();
+            return _centeredReadingColumn(_buildWelcomeMessage());
           }
         } else {
           // In chronological mode (oldest at bottom)
@@ -565,7 +695,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           // Typing indicator at the end
           if (index == widget.messages.length &&
               widget.typingUsers?.isNotEmpty == true) {
-            return _buildTypingIndicator();
+            return _centeredReadingColumn(_buildTypingIndicator());
           }
 
           // Handle welcome message in chronological mode - after pagination but before messages
@@ -574,7 +704,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
               (loadingWidget != null || noMoreMessagesWidget != null) ? 1 : 0;
 
           if (_shouldShowWelcomeMessage() && index == paginationOffset) {
-            return _buildWelcomeMessage();
+            return _centeredReadingColumn(_buildWelcomeMessage());
           }
 
           // Adjust index for header items
@@ -593,12 +723,18 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           final messageId = widget.controller?.getMessageId(message) ??
               (message.customProperties?['id'] as String? ??
                   '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}');
+          final isLastAiMessage = !isUser && index == lastAiMessageIndex;
 
           // return _buildMessageBubble(message, isUser);
           return RepaintBoundary(
             child: KeyedSubtree(
               key: ValueKey(messageId),
-              child: _buildMessageBubble(message, isUser),
+              child: _buildMessageBubble(
+                message,
+                isUser,
+                index,
+                isLastAiMessage,
+              ),
             ),
           );
         }
@@ -632,7 +768,43 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage message, bool isUser) {
+  /// Centres [child] in the 760px reading column (`DESIGN.md` §5, "Reading
+  /// column max width") within whatever full-width space its parent gives
+  /// it — a bare `ConstrainedBox(maxWidth: 760)` placed inside a tight-width
+  /// slot (a `ListView` item, a `Row`) gets stretched back to that slot's
+  /// full width instead of actually capping, so this always tops it with an
+  /// `Align` first.
+  ///
+  /// The column itself is sized to exactly `min(available width, 760)` —
+  /// not merely capped — via [SizedBox] rather than [ConstrainedBox], so a
+  /// short AI message still starts flush at the same column edge as a long
+  /// one, and the user bubble's own end-alignment lands on that same column
+  /// edge, instead of both drifting to hug whatever narrow content happens
+  /// to be in that particular message.
+  ///
+  /// Used for every message row, the empty state, quick replies and the
+  /// scroll-to-bottom button so they all line up with the composer (max
+  /// width 800, also centred) regardless of viewport width.
+  static Widget _centeredReadingColumn(Widget child) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth.isFinite
+              ? min(constraints.maxWidth, ChatLayout.readingMaxWidth)
+              : ChatLayout.readingMaxWidth;
+          return SizedBox(width: width, child: child);
+        },
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(
+    ChatMessage message,
+    bool isUser,
+    int index,
+    bool isLastAiMessage,
+  ) {
     // Check for custom message builder from the message itself
     if (message.customBuilder != null) {
       return message.customBuilder!(context, message);
@@ -644,12 +816,21 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         message.customProperties?['isLoading'] == true;
 
     if (isRichMessage && !isUser) {
-      return _buildFullWidthContent(message);
+      return _centeredReadingColumn(_buildFullWidthContent(message));
     }
 
-    // Helper function to build the default bubble
+    // Helper function to build the default bubble, centred in the 760px
+    // reading column (`DESIGN.md` §5) so it lines up with the composer
+    // regardless of how wide the surrounding list/viewport is.
     Widget buildDefaultBubble() {
-      return _buildDefaultMessageBubble(message, isUser);
+      return _centeredReadingColumn(
+        _buildDefaultMessageBubble(
+          message,
+          isUser,
+          index,
+          isLastAiMessage,
+        ),
+      );
     }
 
     // Wrapping builder takes precedence: it receives the default bubble so the
@@ -686,379 +867,419 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     return _buildMessageContent(message, context);
   }
 
+  /// Whether [message]'s text is still being progressively revealed on
+  /// screen right now.
+  ///
+  /// Deliberately reads the local reveal-loop bookkeeping ([_revealedChars],
+  /// the same id computation [_buildMessageContent] uses to enroll entries)
+  /// first: while the reveal ticker still has backlog to catch up on, the
+  /// message is visibly still animating in regardless of the controller's
+  /// stream bookkeeping.
+  ///
+  /// Compares the revealed count directly against the current text length
+  /// rather than just checking map membership: an entry can linger at
+  /// `revealed == text.length` — that's still "done" as far as anything
+  /// visible is concerned.
+  ///
+  /// Beyond the reveal backlog, defers to
+  /// [ChatMessagesController.isMessageStreaming] — an explicit, contract-
+  /// driven open-stream set (see that method's doc comment for exactly which
+  /// calls open/close an id) that is independent of `enableMarkdownStreaming`
+  /// and of the one-shot reveal/typewriter animation `addMessage` also kicks
+  /// off for every fresh AI message. Only when there is no `widget.controller`
+  /// at all does this fall back to the raw
+  /// `customProperties['isStreaming']` flag on the message itself.
+  ///
+  /// Must be called after [_buildMessageContent] has run for this message in
+  /// the current build (that call is what performs the reveal enrollment).
+  bool _isCurrentlyStreaming(ChatMessage message) {
+    final messageId = message.customProperties?['id'] as String? ??
+        '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
+    final revealed = _revealedChars[messageId];
+    if (revealed != null && revealed < message.text.length) {
+      return true;
+    }
+
+    final controller = widget.controller;
+    if (controller != null) {
+      return controller.isMessageStreaming(messageId);
+    }
+
+    // No controller wired up (an unusual, controller-less usage) — fall back
+    // to the raw flag on the message itself.
+    return message.customProperties?['isStreaming'] == true;
+  }
+
+  /// Shared AI name row (avatar/icon + name) used by both the document
+  /// layout (only when [MessageOptions.showUserName] is explicitly true) and
+  /// the bubble layout (shown by default). Never falls back to a default
+  /// robot icon — only [BubbleStyle.aiAvatarWidgetBuilder] or
+  /// [MessageOptions.aiNameIcon], when supplied, render anything before the
+  /// name (`DESIGN.md` anti-pattern #2).
+  Widget _buildAiNameRow(
+    ChatMessage message,
+    ChatTokens tokens,
+    BubbleStyle bubbleStyle,
+  ) {
+    return Padding(
+      padding: widget.spacingConfig.messageUsernameBottomPadding,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (bubbleStyle.aiAvatarWidgetBuilder != null) ...[
+            bubbleStyle.aiAvatarWidgetBuilder!(message.user),
+            const SizedBox(width: 6),
+          ] else if (widget.messageOptions.aiNameIcon != null) ...[
+            widget.messageOptions.aiNameIcon!,
+            const SizedBox(width: 6),
+          ],
+          Text(
+            message.user.name,
+            style: widget.messageOptions.userNameStyle ??
+                TextStyle(
+                  fontSize: 12,
+                  height: 16 / 12,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.1,
+                  color: bubbleStyle.aiNameColor ?? tokens.textSecondary,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The action row + optional live caret shared by both AI layouts.
+  ///
+  /// [showLiveCaret] additionally gates the caret beyond [isStreaming]:
+  /// callers pass `false` while a fenced code block is being withheld (see
+  /// [_isFenceCurrentlyWithheld]) so the caret doesn't sit alone, static,
+  /// under a heading for the whole time the block is generating.
+  List<Widget> _buildAiFooter(
+    ChatMessage message,
+    bool isLastAiMessage,
+    bool isStreaming, {
+    bool showLiveCaret = true,
+  }) {
+    return [
+      if (isStreaming && showLiveCaret)
+        const Padding(
+          padding: EdgeInsetsDirectional.only(top: 4),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: StreamingCaret(key: ValueKey('chat-streaming-caret')),
+          ),
+        ),
+      const SizedBox(height: ChatSpace.s8),
+      MessageActionRow(
+        text: message.text,
+        timestampText: widget.messageOptions.timeFormat != null
+            ? widget.messageOptions.timeFormat!(message.createdAt)
+            : _defaultTimestampFormat(message.createdAt),
+        onCopy: widget.messageOptions.onCopy,
+        alwaysVisible: isLastAiMessage,
+        isStreaming: isStreaming,
+        showCopyButton: widget.messageOptions.showCopyButton ?? true,
+        copyButtonLabel: widget.messageOptions.copyButtonLabel,
+        showTimestamp: widget.messageOptions.showTime,
+        timestampStyle: widget.messageOptions.aiTimeTextStyle ??
+            widget.messageOptions.timeTextStyle,
+      ),
+    ];
+  }
+
+  /// User message: a filled, borderless, shadowless bubble aligned to the
+  /// end edge (`DESIGN.md` §8.1). [columnWidth] is the already-measured
+  /// (via [LayoutBuilder], never `MediaQuery.size`) reading-column width;
+  /// the bubble itself caps at 80% of that, or 560, whichever is smaller.
+  Widget _buildUserBubble(
+    ChatMessage message,
+    ChatTokens tokens,
+    CustomThemeExtension? themeExt,
+    BubbleStyle bubbleStyle,
+    double columnWidth,
+    bool sameSenderAsNext,
+  ) {
+    final maxWidth = min(
+      columnWidth * ChatLayout.userBubbleMaxFraction,
+      ChatLayout.userBubbleMaxWidth,
+    );
+    final fill = bubbleStyle.userBubbleColor ??
+        themeExt?.userBubbleColor ??
+        tokens.userBubble;
+    // The tail (6) corner only appears on the last bubble of a consecutive
+    // group; mid-group bubbles keep the full 20 radius on all corners.
+    final trailingBottom =
+        sameSenderAsNext ? ChatRadius.bubble : ChatRadius.tail;
+
+    final bubble = ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: Container(
+        padding: widget.messageOptions.padding ??
+            const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        decoration: BoxDecoration(
+          color: fill,
+          borderRadius: BorderRadiusDirectional.only(
+            topStart: const Radius.circular(ChatRadius.bubble),
+            topEnd: const Radius.circular(ChatRadius.bubble),
+            bottomStart: const Radius.circular(ChatRadius.bubble),
+            bottomEnd: Radius.circular(trailingBottom),
+          ),
+        ),
+        child: _buildMessageContent(message, context),
+      ),
+    );
+
+    // DESIGN.md §8.1: the user bubble itself never shows a timestamp — by
+    // default time is exposed only via tooltip/long-press semantics, not an
+    // inline Text. But an explicit `MessageOptions.timeFormat` is a genuine
+    // opt-in signal (nobody sets a custom formatter without wanting it
+    // rendered somewhere), so honor it here, under the bubble, using
+    // `userTimeTextStyle` (falling back to the shared `timeTextStyle`) —
+    // mirroring how the AI side's action row resolves its own style.
+    if (widget.messageOptions.showTime &&
+        widget.messageOptions.timeFormat != null) {
+      final timestampText = widget.messageOptions.timeFormat!(
+        message.createdAt,
+      );
+      final timestampStyle = widget.messageOptions.userTimeTextStyle ??
+          widget.messageOptions.timeTextStyle ??
+          TextStyle(
+            fontSize: 12,
+            height: 16 / 12,
+            letterSpacing: 0.1,
+            color: tokens.textTertiary,
+          );
+      return Align(
+        alignment: AlignmentDirectional.centerEnd,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            bubble,
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                top: ChatSpace.s4,
+                end: 4,
+              ),
+              child: Text(timestampText, style: timestampStyle),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Align(alignment: AlignmentDirectional.centerEnd, child: bubble);
+  }
+
+  /// Document (default) AI message: no container decoration at all — the
+  /// text starts at the reading column's start edge and spans up to its
+  /// full width (`DESIGN.md` §8.1, anti-pattern #1).
+  Widget _buildAiDocumentLayout(
+    ChatMessage message,
+    ChatTokens tokens,
+    BubbleStyle bubbleStyle,
+    double columnWidth,
+    bool isLastAiMessage,
+  ) {
+    final showName = widget.messageOptions.resolveShowUserName(
+      AiMessageLayout.document,
+    );
+
+    // _buildMessageContent must run before _isCurrentlyStreaming: it is what
+    // enrolls this message's id into the reveal-loop bookkeeping that
+    // _isCurrentlyStreaming reads.
+    final content = _buildMessageContent(message, context);
+    final isStreaming = _isCurrentlyStreaming(message);
+    final messageId = message.customProperties?['id'] as String? ??
+        '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
+    final showLiveCaret =
+        !isStreaming || !_isFenceCurrentlyWithheld(messageId, message.text);
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: columnWidth),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (showName) _buildAiNameRow(message, tokens, bubbleStyle),
+          content,
+          ..._buildAiFooter(
+            message,
+            isLastAiMessage,
+            isStreaming,
+            showLiveCaret: showLiveCaret,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Bubble (opt-in / legacy-compatible) AI message: today's bordered/filled
+  /// card, restyled with tokens (`DESIGN.md` §8.1).
+  Widget _buildAiBubbleLayout(
+    ChatMessage message,
+    ChatTokens tokens,
+    CustomThemeExtension? themeExt,
+    BubbleStyle bubbleStyle,
+    BoxDecoration? effectiveDecoration,
+    double columnWidth,
+    bool isDark,
+    bool isLastAiMessage,
+  ) {
+    final fill = bubbleStyle.aiBubbleColor ??
+        themeExt?.messageBubbleColor ??
+        (isDark ? tokens.surfaceSunken : tokens.surface);
+
+    final decoration = effectiveDecoration != null
+        ? effectiveDecoration.copyWith(color: fill)
+        : BoxDecoration(
+            color: fill,
+            border: Border.all(color: tokens.border, width: 1),
+            borderRadius: BorderRadiusDirectional.only(
+              topStart: Radius.circular(
+                bubbleStyle.aiBubbleTopLeftRadius ?? ChatRadius.tail,
+              ),
+              topEnd: Radius.circular(
+                bubbleStyle.aiBubbleTopRightRadius ?? ChatRadius.bubble,
+              ),
+              bottomStart: Radius.circular(
+                bubbleStyle.bottomLeftRadius ?? ChatRadius.bubble,
+              ),
+              bottomEnd: Radius.circular(
+                bubbleStyle.bottomRightRadius ?? ChatRadius.bubble,
+              ),
+            ),
+          );
+
+    final maxWidth = bubbleStyle.aiBubbleMaxWidth ?? columnWidth;
+    final showName = widget.messageOptions.resolveShowUserName(
+      AiMessageLayout.bubble,
+    );
+
+    // _buildMessageContent must run before _isCurrentlyStreaming: it is what
+    // enrolls this message's id into the reveal-loop bookkeeping that
+    // _isCurrentlyStreaming reads.
+    final content = _buildMessageContent(message, context);
+    final isStreaming = _isCurrentlyStreaming(message);
+    final messageId = message.customProperties?['id'] as String? ??
+        '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
+    final showLiveCaret =
+        !isStreaming || !_isFenceCurrentlyWithheld(messageId, message.text);
+
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: Container(
+          padding: widget.messageOptions.padding ??
+              widget.spacingConfig.messageBubbleInnerPadding,
+          decoration: decoration,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (showName) _buildAiNameRow(message, tokens, bubbleStyle),
+              content,
+              ..._buildAiFooter(
+                message,
+                isLastAiMessage,
+                isStreaming,
+                showLiveCaret: showLiveCaret,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Builds the default message bubble with all standard styling and features.
   ///
   /// This method contains the original bubble building logic and is used as
   /// the fallback when no custom bubble builder is provided, or as the default
   /// bubble passed to custom bubble builders.
-  Widget _buildDefaultMessageBubble(ChatMessage message, bool isUser) {
-    Size measureText(
-      String text, {
-      double maxWidth = double.infinity,
-      TextStyle? style,
-    }) {
-      final textPainter = TextPainter(
-        text: TextSpan(text: text, style: style),
-        maxLines: 1,
-        textDirection: TextDirection.ltr,
-      )..layout(minWidth: 0, maxWidth: maxWidth);
-
-      final size = textPainter.size;
-      // TextPainter holds native resources; dispose it now that we've read the
-      // measurement. This runs on the per-bubble build hot path.
-      textPainter.dispose();
-      return size;
-    }
-
-    final textSize = measureText(message.text,
-        style: const TextStyle(
-          fontSize: 15,
-          height: 1.5,
-          letterSpacing: 0.2,
-        ));
-
-    ///need to add this to check username size
-    final usernameTextSize = measureText(message.user.name,
-        style: const TextStyle(
-          fontSize: 15,
-          height: 1.5,
-          letterSpacing: 0.2,
-        ));
-
-    ///need to add this to check time stamp size
-    final timeTextSize = measureText(
-        widget.messageOptions.timeFormat != null
-            ? widget.messageOptions.timeFormat!(message.createdAt)
-            : _defaultTimestampFormat(message.createdAt),
-        style: const TextStyle(
-          fontSize: 15,
-          height: 1.5,
-          letterSpacing: 0.2,
-        ));
-
-    // Get effective decoration from MessageOptions
-    final effectiveDecoration = widget.messageOptions.effectiveDecoration;
+  ///
+  /// [index] is this message's position in [CustomChatWidget.messages]; it
+  /// drives the consecutive-same-sender grouping rhythm (`DESIGN.md` §5,
+  /// §8.1): 4px between same-sender neighbours, 24px on a sender change,
+  /// computed against the chronologically-adjacent message (which — per
+  /// `PaginationConfig.reverseOrder` — may be at `index + 1` rather than
+  /// `index - 1`).
+  Widget _buildDefaultMessageBubble(
+    ChatMessage message,
+    bool isUser,
+    int index,
+    bool isLastAiMessage,
+  ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = theme.primaryColor;
+    final tokens = ChatTokens.of(context);
     // A `CustomThemeExtension` (see the brand presets, e.g. `.chatgpt()`)
     // set on `ThemeData.extensions` supplies bubble/text colors as a
     // fallback layer below any explicit `BubbleStyle`/`MessageOptions`
-    // value and above the hardcoded defaults below. Null (the common case
-    // — nobody has opted into a custom theme) falls straight through to
+    // value and above the token defaults below. Null (the common case —
+    // nobody has opted into a custom theme) falls straight through to
     // those defaults, so this is purely additive.
     final themeExt = theme.extension<CustomThemeExtension>();
-
-    // Get bubble style configuration
     final bubbleStyle =
         widget.messageOptions.bubbleStyle ?? BubbleStyle.defaultStyle;
+    final effectiveDecoration = widget.messageOptions.effectiveDecoration;
 
-    // Premium design colors for a sophisticated look
-    final defaultUserBubbleColor = themeExt?.userBubbleColor ??
-        (isDark
-            ? primaryColor.withOpacityCompat(0.18)
-            : primaryColor.withOpacityCompat(0.06));
-    final defaultAiBubbleColor = themeExt?.messageBubbleColor ??
-        (isDark ? const Color(0xFF2D2D2D) : Colors.white);
+    final paginationConfig = widget.messageListOptions.paginationConfig;
+    final prevIndex = paginationConfig.reverseOrder ? index + 1 : index - 1;
+    final nextIndex = paginationConfig.reverseOrder ? index - 1 : index + 1;
+    final sameSenderAsPrev = prevIndex >= 0 &&
+        prevIndex < widget.messages.length &&
+        widget.messages[prevIndex].user.id == message.user.id;
+    final sameSenderAsNext = nextIndex >= 0 &&
+        nextIndex < widget.messages.length &&
+        widget.messages[nextIndex].user.id == message.user.id;
+    final topGap = sameSenderAsPrev ? ChatSpace.s4 : ChatSpace.s24;
+    final margin =
+        widget.messageOptions.containerMargin ?? EdgeInsets.only(top: topGap);
 
-    // Refined corner radius values for modern messaging apps
-    final topLeftRadius = isUser
-        ? bubbleStyle.userBubbleTopLeftRadius ?? 22
-        : bubbleStyle.aiBubbleTopLeftRadius ?? 2;
-    final topRightRadius = isUser
-        ? bubbleStyle.userBubbleTopRightRadius ?? 2
-        : bubbleStyle.aiBubbleTopRightRadius ?? 22;
-    final bottomLeftRadius = bubbleStyle.bottomLeftRadius ?? 22;
-    final bottomRightRadius = bubbleStyle.bottomRightRadius ?? 22;
-
-    final defaultMargin = widget.spacingConfig.messageBubbleMargin(isUser);
-
-    final defaultMaxWidth = MediaQuery.of(context).size.width * 0.75;
-    // Use different widths for user vs AI messages
-    final maxWidth = isUser
-        ? bubbleStyle.userBubbleMaxWidth ??
-            (textSize.width < defaultMaxWidth
-                ? (115 +
-                        max(textSize.width,
-                            max(usernameTextSize.width, timeTextSize.width)))
-                    .toDouble()
-                : defaultMaxWidth)
-        : bubbleStyle.aiBubbleMaxWidth ??
-            MediaQuery.of(context).size.width * 0.88;
-    // final maxWidth = isUser
-    //     ? bubbleStyle.userBubbleMaxWidth ??
-    //         MediaQuery.of(context).size.width * 0.75
-    //     : bubbleStyle.aiBubbleMaxWidth ??
-    //         MediaQuery.of(context).size.width * 0.88;
-
-    final minWidth = isUser
-        ? bubbleStyle.userBubbleMinWidth ?? 0.0
-        : bubbleStyle.aiBubbleMinWidth ?? 0.0;
-
-    // Use custom colors if provided, otherwise use premium defaults
-    final userBubbleColor =
-        bubbleStyle.userBubbleColor ?? defaultUserBubbleColor;
-    final aiBubbleColor = bubbleStyle.aiBubbleColor ?? defaultAiBubbleColor;
-
-    // Enhanced text colors with precise opacity for readability
-    final _ = isDark
-        ? Colors.white.withOpacityCompat(0.96)
-        : Colors.black.withOpacityCompat(0.86);
-
-    // Premium AI message container border
-    final aiBorder = !isUser
-        ? Border.all(
-            color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-            width: 1,
-          )
-        : null;
-
-    // Premium shadow for depth and elevation
-    final boxShadow = bubbleStyle.enableShadow
-        ? [
-            BoxShadow(
-              color: Colors.black.withOpacityCompat(isUser ? 0.04 : 0.06),
-              blurRadius: isUser ? 4 : 8,
-              offset: Offset(0, isUser ? 1 : 2),
-              spreadRadius: isUser ? 0 : 1,
-            ),
-          ]
-        : null;
-
-    // Create a custom decoration that prioritizes bubbleStyle colors
-    BoxDecoration createBubbleDecoration() {
-      if (effectiveDecoration != null) {
-        // Start with the effective decoration
-        final decorator = BoxDecoration(
-          color: isUser ? userBubbleColor : aiBubbleColor,
-          borderRadius: effectiveDecoration.borderRadius ??
-              BorderRadius.only(
-                topLeft: Radius.circular(topLeftRadius),
-                topRight: Radius.circular(topRightRadius),
-                bottomLeft: Radius.circular(bottomLeftRadius),
-                bottomRight: Radius.circular(bottomRightRadius),
-              ),
-          gradient: effectiveDecoration.gradient,
-          image: effectiveDecoration.image,
-          boxShadow: effectiveDecoration.boxShadow ?? boxShadow,
-          border: effectiveDecoration.border ?? aiBorder,
-          backgroundBlendMode: effectiveDecoration.backgroundBlendMode,
-          shape: effectiveDecoration.shape,
-        );
-
-        return decorator;
-      } else {
-        // Use bubble style settings for decoration
-        return BoxDecoration(
-          color: isUser ? userBubbleColor : aiBubbleColor,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(topLeftRadius),
-            topRight: Radius.circular(topRightRadius),
-            bottomLeft: Radius.circular(bottomLeftRadius),
-            bottomRight: Radius.circular(bottomRightRadius),
-          ),
-          boxShadow: boxShadow,
-          border: aiBorder,
-        );
-      }
-    }
-
-    // Enhanced bubble implementation with premium styling
     return Padding(
-      padding: widget.spacingConfig.messageBubbleOuterPadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Align(
-            alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: maxWidth,
-                minWidth: minWidth,
-              ),
-              child: Container(
-                margin: widget.messageOptions.containerMargin ?? defaultMargin,
-                decoration: createBubbleDecoration(),
-                child: Padding(
-                  padding: widget.messageOptions.padding ??
-                      widget.spacingConfig.messageBubbleInnerPadding,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Display user name if needed
-                      if (widget.messageOptions.showUserName ?? true)
-                        Padding(
-                          padding:
-                              widget.spacingConfig.messageUsernameBottomPadding,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Avatar or fallback icon next to name
-                              if (isUser &&
-                                  bubbleStyle.userAvatarWidgetBuilder != null)
-                                bubbleStyle
-                                    .userAvatarWidgetBuilder!(message.user)
-                              else if (!isUser &&
-                                  bubbleStyle.aiAvatarWidgetBuilder != null)
-                                bubbleStyle.aiAvatarWidgetBuilder!(message.user)
-                              else if (!isUser)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: widget.messageOptions.aiNameIcon ??
-                                      Icon(
-                                        Icons.smart_toy_outlined,
-                                        size: 14,
-                                        color: bubbleStyle.aiNameColor ??
-                                            primaryColor,
-                                      ),
-                                ),
-                              Text(
-                                message.user.name,
-                                style: widget.messageOptions.userNameStyle ??
-                                    TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                      letterSpacing: 0.1,
-                                      color: isUser
-                                          ? (bubbleStyle.userNameColor ??
-                                              Colors.blue[700])
-                                          : (bubbleStyle.aiNameColor ??
-                                              primaryColor),
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
+      padding: margin,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final columnWidth = min(
+            constraints.maxWidth,
+            ChatLayout.readingMaxWidth,
+          );
 
-                      // Handle markdown or plain text with premium styling
-                      _buildMessageContent(message, context),
+          if (isUser) {
+            return _buildUserBubble(
+              message,
+              tokens,
+              themeExt,
+              bubbleStyle,
+              columnWidth,
+              sameSenderAsNext,
+            );
+          }
 
-                      // Custom footer content (e.g., citations)
-                      // Waits for streaming to complete before appearing
-                      if (widget.messageOptions.footerBuilder != null)
-                        _AnimatedFooter(
-                          message: message,
-                          isUser: isUser,
-                          footerBuilder: widget.messageOptions.footerBuilder!,
-                          controller: widget.controller,
-                          streamingEnabled: widget.streamingEnabled,
-                        ),
-
-                      // Footer with timestamp and action buttons
-                      Padding(
-                        padding: EdgeInsets.only(
-                            top: widget.messageOptions.showTime
-                                ? widget
-                                    .spacingConfig.messageFooterTopPadding.top
-                                : 0),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            // Show timestamp with refined styling
-                            if (widget.messageOptions.showTime)
-                              Text(
-                                widget.messageOptions.timeFormat != null
-                                    ? widget.messageOptions
-                                        .timeFormat!(message.createdAt)
-                                    : _defaultTimestampFormat(
-                                        message.createdAt),
-                                style: (isUser
-                                        ? widget
-                                            .messageOptions.userTimeTextStyle
-                                        : widget
-                                            .messageOptions.aiTimeTextStyle) ??
-                                    widget.messageOptions.timeTextStyle ??
-                                    TextStyle(
-                                      fontSize: 11,
-                                      letterSpacing: 0.1,
-                                      color: isDark
-                                          ? Colors.grey[500]
-                                          : Colors.grey[600],
-                                    ),
-                              ),
-
-                            // Show premium copy button for AI messages
-                            if (!isUser &&
-                                (widget.messageOptions.showCopyButton ?? false))
-                              Material(
-                                color: Colors.transparent,
-                                borderRadius: BorderRadius.circular(16),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(16),
-                                  onTap: () {
-                                    Clipboard.setData(
-                                        ClipboardData(text: message.text));
-                                    // Show premium feedback if provided
-                                    if (widget.messageOptions.onCopy != null) {
-                                      widget
-                                          .messageOptions.onCopy!(message.text);
-                                    } else {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            widget.messageOptions
-                                                    .copiedToClipboardText ??
-                                                'Message copied to clipboard',
-                                          ),
-                                          duration: const Duration(seconds: 2),
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                          backgroundColor: isDark
-                                              ? Colors.grey[800]
-                                              : Colors.grey[900],
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.copy_outlined,
-                                          size: 14,
-                                          color: bubbleStyle.copyIconColor ??
-                                              primaryColor,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          widget.messageOptions
-                                                  .copyButtonLabel ??
-                                              'Copy',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            letterSpacing: 0.1,
-                                            color: bubbleStyle.copyIconColor ??
-                                                primaryColor,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+          final layout = widget.messageOptions.resolveAiMessageLayout(themeExt);
+          if (layout == AiMessageLayout.bubble) {
+            return _buildAiBubbleLayout(
+              message,
+              tokens,
+              themeExt,
+              bubbleStyle,
+              effectiveDecoration,
+              columnWidth,
+              isDark,
+              isLastAiMessage,
+            );
+          }
+          return _buildAiDocumentLayout(
+            message,
+            tokens,
+            bubbleStyle,
+            columnWidth,
+            isLastAiMessage,
+          );
+        },
       ),
     );
   }
@@ -1093,14 +1314,16 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       final resultData =
           message.customProperties?['resultData'] as Map<String, dynamic>? ??
               {};
-      final renderedWidget =
-          registry?.buildResult(context, resultKind, resultData);
+      final renderedWidget = registry?.buildResult(
+        context,
+        resultKind,
+        resultData,
+      );
       if (renderedWidget != null) return renderedWidget;
     }
 
-    // Get the theme's brightness
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeExt = Theme.of(context).extension<CustomThemeExtension>();
+    final tokens = ChatTokens.of(context);
     final isCurrentUser = message.user.id == widget.currentUser.id;
 
     // Check if this message should show streaming animation
@@ -1116,6 +1339,17 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     if (widget.streamingEnabled &&
         isCurrentlyStreaming &&
         !_streamRevealDoneIds.contains(messageId)) {
+      // Record the target length up front regardless of which render path
+      // below actually consumes the revealed prefix (only the plain
+      // "isRevealing" Markdown/plain-text branch calls [_revealedTextFor],
+      // which is what previously updated this map). Interactive-markdown
+      // messages (onTapLink/onImageTap/enableImageTaps set) render the full
+      // text immediately and never called it, so the ticker's target stayed
+      // stuck at 0 and `revealed` (also 0) never caught up — the reveal
+      // entry, and therefore [_isCurrentlyStreaming], stayed "true" forever,
+      // pinning the live caret's repeating animation and never letting a
+      // test's `pumpAndSettle()` settle.
+      _latestStreamText[messageId] = message.text;
       _revealedChars.putIfAbsent(messageId, () => 0);
       _ensureRevealTicker();
     }
@@ -1137,10 +1371,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       color: isCurrentUser
           ? widget.messageOptions.userTextColor ??
               themeExt?.messageTextColor ??
-              (isDark ? Colors.white : Colors.black)
+              tokens.textPrimary
           : widget.messageOptions.aiTextColor ??
               themeExt?.messageTextColor ??
-              (isDark ? Colors.white : Colors.black),
+              tokens.textPrimary,
       fontSize: widget.messageOptions.textStyle?.fontSize,
       fontWeight: widget.messageOptions.textStyle?.fontWeight,
       fontFamily: widget.messageOptions.textStyle?.fontFamily,
@@ -1152,30 +1386,14 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // Handle markdown and non-markdown text
     if (message.isMarkdown) {
+      // Fenced-code palette: an explicit MessageOptions.codeBlockTheme wins,
+      // otherwise resolve from ambient brightness (DESIGN.md §3/§8.3).
+      final cbt = widget.messageOptions.codeBlockTheme ??
+          CodeBlockTheme.of(Theme.of(context).brightness);
+
       // First, allow a custom markdown builder override
       final effectiveStyleSheet = widget.messageOptions.markdownStyleSheet ??
-          MarkdownStyleSheet(
-            p: textStyle,
-            // Inline `code` — subtle tinted chip.
-            code: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: (textStyle.fontSize ?? 14) * 0.92,
-              color: textStyle.color,
-              backgroundColor: (isDark ? Colors.white : Colors.black)
-                  .withOpacityCompat(isDark ? 0.10 : 0.06),
-            ),
-            // Fenced code blocks — a padded, rounded, bordered card that reads
-            // as a distinct block rather than flat inline text.
-            codeblockPadding: const EdgeInsets.all(14),
-            codeblockDecoration: BoxDecoration(
-              color: isDark ? const Color(0xFF15151F) : const Color(0xFFF4F4F8),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: (isDark ? Colors.white : Colors.black)
-                    .withOpacityCompat(0.08),
-              ),
-            ),
-          );
+          chatMarkdownStyle(context, textStyle, cbt);
 
       final customMarkdown = widget.messageOptions.markdownBuilder?.call(
         context,
@@ -1186,6 +1404,34 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       if (customMarkdown != null) {
         return customMarkdown;
       }
+
+      // One `pre` builder per message, shared by every markdown render path
+      // below: fenced blocks render as a CodeBlockView instead of per-line
+      // inline-code chips. CodeBlockView drops baseStyle.backgroundColor when
+      // merging, so the inline-code chip tint cannot bleed into block text.
+      final codeBlockBuilders = <String, MarkdownElementBuilder>{
+        'pre': CodeBlockMarkdownBuilder(
+          theme: widget.messageOptions.codeBlockTheme,
+          enableSyntaxHighlighting:
+              widget.messageOptions.enableSyntaxHighlighting,
+          showCopyButton: widget.messageOptions.showCodeBlockCopyButton,
+          baseStyle: effectiveStyleSheet.code,
+          // Only the package's own default stylesheet (chatMarkdownStyle)
+          // leaves codeblockDecoration transparent for this to safely
+          // paint over — a caller-supplied markdownStyleSheet keeps its
+          // own real codeblockDecoration, so CodeBlockView must not also
+          // decorate (see CodeBlockMarkdownBuilder's doc comment).
+          ownsDecoration: widget.messageOptions.markdownStyleSheet == null,
+          // A caller-supplied stylesheet's codeblockPadding would otherwise
+          // be silently ignored — flutter_markdown_plus only applies it on
+          // its own `pre` path, which this custom builder bypasses (see
+          // CodeBlockMarkdownBuilder.padding's doc comment). The package's
+          // own default stylesheet already sets codeblockPadding to zero
+          // (CodeBlockView paints its own default padding instead), so this
+          // only ever forwards an explicit caller value.
+          padding: widget.messageOptions.markdownStyleSheet?.codeblockPadding,
+        ),
+      };
 
       final needsInteractiveMarkdown =
           widget.messageOptions.onTapLink != null ||
@@ -1210,6 +1456,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             }
           },
           styleSheet: effectiveStyleSheet,
+          builders: codeBlockBuilders,
           imageBuilder: widget.messageOptions.enableImageTaps
               ? null
               : (uri, title, alt) {
@@ -1227,7 +1474,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                         return Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
+                            color: tokens.surfaceSunken,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Column(
@@ -1235,13 +1482,13 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                             children: [
                               Icon(
                                 Icons.broken_image,
-                                color: Colors.grey[600],
+                                color: tokens.textTertiary,
                               ),
                               if (alt != null)
                                 Text(
                                   alt,
                                   style: TextStyle(
-                                    color: Colors.grey[600],
+                                    color: tokens.textTertiary,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -1261,16 +1508,22 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           // with the incoming data (see the reveal-loop section above).
           textWidget = Markdown(
             data: _withholdIncompleteFence(
-                _revealedTextFor(messageId, message.text)),
+              _withholdDanglingMarker(
+                _revealedTextFor(messageId, message.text),
+              ),
+            ),
             selectable: false,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             styleSheet: effectiveStyleSheet,
+            builders: codeBlockBuilders,
             padding: EdgeInsets.zero,
           );
         } else if (shouldAnimate) {
           // One-shot animation for complete messages delivered via
-          // addMessage() with streamingWordByWord enabled.
+          // addMessage() with streamingWordByWord enabled. gpt_markdown calls
+          // codeBuilder for open fences too (closed == false); CodeBlockView
+          // renders them without throwing.
           textWidget = StreamingText(
             text: message.text,
             style: textStyle,
@@ -1281,6 +1534,15 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             fadeInCurve: widget.streamingFadeInCurve,
             wordByWord: widget.streamingWordByWord,
             showCursor: false,
+            codeBuilder: (context, name, code, closed) => CodeBlockView(
+              code: code,
+              language: name.trim().isEmpty ? null : name.trim(),
+              theme: widget.messageOptions.codeBlockTheme,
+              enableSyntaxHighlighting:
+                  widget.messageOptions.enableSyntaxHighlighting,
+              showCopyButton: widget.messageOptions.showCodeBlockCopyButton,
+              baseStyle: effectiveStyleSheet.code,
+            ),
           );
         } else if (widget.enableMathRendering) {
           // Math-aware markdown rendering (supports $...$ and $$...$$)
@@ -1289,6 +1551,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             styleSheet: effectiveStyleSheet,
             onTapLink: widget.messageOptions.onTapLink,
             textStyle: textStyle,
+            builders: codeBlockBuilders,
           );
         } else {
           // Static markdown rendering when streaming is disabled
@@ -1298,6 +1561,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             styleSheet: effectiveStyleSheet,
+            builders: codeBlockBuilders,
             padding: EdgeInsets.zero,
           );
         }
@@ -1337,10 +1601,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         );
       } else {
         // Static plain text for completed messages
-        textWidget = Text(
-          message.text,
-          style: textStyle,
-        );
+        textWidget = Text(message.text, style: textStyle);
       }
     }
 
@@ -1408,13 +1669,15 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         .trim();
 
     // RTL Unicode ranges: Arabic, Hebrew, Persian/Kurdish extensions
-    final rtlRegex = RegExp(r'[\u0600-\u06FF' // Arabic
-        r'\u0750-\u077F' // Arabic Supplement
-        r'\u08A0-\u08FF' // Arabic Extended-A
-        r'\uFB50-\uFDFF' // Arabic Presentation Forms-A
-        r'\uFE70-\uFEFF' // Arabic Presentation Forms-B
-        r'\u0590-\u05FF' // Hebrew
-        r']');
+    final rtlRegex = RegExp(
+      r'[؀-ۿ' // Arabic
+      r'ݐ-ݿ' // Arabic Supplement
+      r'ࢠ-ࣿ' // Arabic Extended-A
+      r'ﭐ-﷿' // Arabic Presentation Forms-A
+      r'ﹰ-﻿' // Arabic Presentation Forms-B
+      r'֐-׿' // Hebrew
+      r']',
+    );
 
     // Check first 100 characters for RTL
     final sample =
@@ -1447,13 +1710,14 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   }
 
   Widget _buildQuickReplies() {
+    final tokens = ChatTokens.of(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: widget.quickReplyOptions.quickReplies!.map((quickReply) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: ElevatedButton(
+            child: OutlinedButton(
               onPressed: () {
                 widget.quickReplyOptions.onQuickReplyTap?.call(quickReply);
                 widget.onSend(
@@ -1464,12 +1728,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
                   ),
                 );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[200],
-                foregroundColor: Colors.black87,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: tokens.textPrimary,
+                side: BorderSide(color: tokens.border),
+                shape: const StadiumBorder(),
               ),
               child: Text(quickReply),
             ),
@@ -1494,37 +1756,15 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       );
     }
 
-    // Default typing indicator dots
+    // Default typing indicator: three bouncing dots, no background pill
+    // (`DESIGN.md` §8.7).
     return Padding(
       padding: widget.spacingConfig.typingIndicatorMargin,
       child: Row(
         children: [
-          Container(
-            padding: widget.spacingConfig.typingIndicatorPadding,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                _DotIndicator(
-                  color: widget.typingIndicatorColor,
-                  size: widget.typingIndicatorSize,
-                ),
-                const SizedBox(width: 4),
-                _DotIndicator(
-                  delay: 0.2,
-                  color: widget.typingIndicatorColor,
-                  size: widget.typingIndicatorSize,
-                ),
-                const SizedBox(width: 4),
-                _DotIndicator(
-                  delay: 0.4,
-                  color: widget.typingIndicatorColor,
-                  size: widget.typingIndicatorSize,
-                ),
-              ],
-            ),
+          ChatTypingDots(
+            color: widget.typingIndicatorColor,
+            size: widget.typingIndicatorSize,
           ),
         ],
       ),
@@ -1532,24 +1772,26 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   }
 
   Widget _buildDefaultLoadingIndicator() {
+    // Pagination "loading more" state: a bare spinner (`DESIGN.md` §8.7).
+    // `PaginationConfig.loadingText` stays rendered underneath, tokenized —
+    // it is a documented, load-bearing knob (see
+    // pagination_config_dead_parameter_test.dart), not decoration.
+    final tokens = ChatTokens.of(context);
+    final loadingText = widget.messageListOptions.paginationConfig.loadingText;
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Center(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 3),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.messageListOptions.paginationConfig.loadingText,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
+            const ChatPaginationSpinner(),
+            if (loadingText.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                loadingText,
+                style: TextStyle(fontSize: 12, color: tokens.textTertiary),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -1557,115 +1799,74 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   }
 
   Widget _buildNoMoreMessagesIndicator() {
+    final tokens = ChatTokens.of(context);
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Center(
         child: Text(
           widget.messageListOptions.paginationConfig.noMoreMessagesText,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontStyle: FontStyle.italic,
-            color: Colors.grey,
+            color: tokens.textTertiary,
           ),
         ),
       ),
     );
   }
 
+  void _handleScrollToBottomTap() {
+    // The reader asked for the bottom: end any streaming pin first so it
+    // does not pull the list straight back up.
+    widget.controller?.releaseStreamingPin();
+    if (_scrollController.hasClients) {
+      final paginationConfig = widget.messageListOptions.paginationConfig;
+      final reduced = ChatMotion.reduced(context);
+      final target = paginationConfig.reverseOrder
+          ? 0.0
+          : _scrollController.position.maxScrollExtent;
+      if (reduced) {
+        _scrollController.jumpTo(target);
+      } else {
+        _scrollController.animateTo(
+          target,
+          duration: ChatMotion.slow,
+          curve: ChatMotion.enter,
+        );
+      }
+    }
+    widget.scrollToBottomOptions.onScrollToBottomPress?.call();
+  }
+
   Widget _buildScrollToBottomButton() {
+    // `ScrollToBottomOptions.disabled` opts out of the button entirely —
+    // the default disc AND a caller-supplied `scrollToBottomBuilder` alike
+    // (a prior version only used `disabled` to widen the message list's own
+    // bottom padding, never to actually skip building the button).
+    if (widget.scrollToBottomOptions.disabled) {
+      return const SizedBox.shrink();
+    }
     if (!_showScrollToBottom && !widget.scrollToBottomOptions.alwaysVisible) {
       return const SizedBox.shrink();
     }
 
-    return widget.scrollToBottomOptions.scrollToBottomBuilder
-            ?.call(_scrollController) ??
-        Positioned(
-          bottom: widget.scrollToBottomOptions.bottomOffset,
-          right: widget.scrollToBottomOptions.rightOffset,
-          child: AnimatedOpacity(
-            opacity: _showScrollToBottom ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 200),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[800]
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacityCompat(0.08),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(24),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: () {
-                    // The reader asked for the bottom: end any streaming pin
-                    // first so it does not pull the list straight back up.
-                    widget.controller?.releaseStreamingPin();
-                    if (_scrollController.hasClients) {
-                      final paginationConfig =
-                          widget.messageListOptions.paginationConfig;
-                      if (paginationConfig.reverseOrder) {
-                        // In reverse mode, scroll to top (0)
-                        _scrollController.animateTo(
-                          0,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
-                      } else {
-                        // In chronological mode, scroll to bottom (maxScrollExtent)
-                        _scrollController.animateTo(
-                          _scrollController.position.maxScrollExtent,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
-                      }
-                    }
-                    widget.scrollToBottomOptions.onScrollToBottomPress?.call();
-                  },
-                  child: Padding(
-                    // 14 on all sides brings the icon-only (default
-                    // showText: false) tap target up to the 48x48
-                    // Material/WCAG minimum (20 icon + 14 + 14 = 48); with
-                    // text shown the row is already wider than 48.
-                    padding: const EdgeInsets.all(14),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.keyboard_arrow_down,
-                          size: 20,
-                          color: Theme.of(context)
-                                  .extension<CustomThemeExtension>()
-                                  ?.backToBottomButtonColor ??
-                              Theme.of(context).primaryColor,
-                        ),
-                        if (widget.scrollToBottomOptions.showText) ...[
-                          const SizedBox(width: 4),
-                          Text(
-                            widget.scrollToBottomOptions.buttonText,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
+    final custom = widget.scrollToBottomOptions.scrollToBottomBuilder?.call(
+      _scrollController,
+    );
+    if (custom != null) return custom;
+
+    final controller = widget.controller;
+    final showNewContentDot = controller != null &&
+        controller.currentlyStreamingMessageId != null &&
+        !controller.isStreamingPinActive;
+
+    return ScrollToBottomButton(
+      visible:
+          _showScrollToBottom || widget.scrollToBottomOptions.alwaysVisible,
+      onPressed: _handleScrollToBottomTap,
+      options: widget.scrollToBottomOptions,
+      showNewContentDot: showNewContentDot,
+    );
   }
 
   /// Build the welcome message widget
@@ -1678,166 +1879,13 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       );
     }
 
-    // Otherwise, build default welcome message with title and example questions
-    return _buildDefaultWelcomeMessage();
-  }
-
-  /// Build default welcome message with title and example questions
-  Widget _buildDefaultWelcomeMessage() {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-
-    return Container(
-      margin: widget.welcomeMessageConfig?.containerMargin ??
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: widget.welcomeMessageConfig?.containerPadding ??
-          const EdgeInsets.all(24),
-      decoration: widget.welcomeMessageConfig?.containerDecoration ??
-          BoxDecoration(
-            color: isDarkMode
-                ? const Color(0xFF1E2026).withOpacityCompat(0.9)
-                : Colors.white.withOpacityCompat(0.95),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacityCompat(isDarkMode ? 0.2 : 0.06),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-                spreadRadius: -5,
-              ),
-            ],
-            border: Border.all(
-              color: isDarkMode
-                  ? Colors.white.withOpacityCompat(0.1)
-                  : Colors.black.withOpacityCompat(0.05),
-              width: 0.5,
-            ),
-          ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title
-          if (widget.welcomeMessageConfig?.title != null) ...[
-            Text(
-              widget.welcomeMessageConfig!.title!,
-              style: widget.welcomeMessageConfig?.titleStyle ??
-                  TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: isDarkMode ? Colors.white : Colors.black,
-                  ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // Example questions
-          if (widget.exampleQuestions.isNotEmpty) ...[
-            Container(
-              padding: widget.welcomeMessageConfig?.questionsSectionPadding ??
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration:
-                  widget.welcomeMessageConfig?.questionsSectionDecoration,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.welcomeMessageConfig?.questionsSectionTitle ??
-                        'Here are some questions you can ask:',
-                    style: widget
-                            .welcomeMessageConfig?.questionsSectionTitleStyle ??
-                        TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: isDarkMode ? Colors.white70 : Colors.black87,
-                        ),
-                  ),
-                  SizedBox(
-                      height:
-                          widget.welcomeMessageConfig?.questionSpacing ?? 12.0),
-                  ...widget.exampleQuestions.map(
-                    (question) =>
-                        _buildExampleQuestionInWelcome(question, isDarkMode),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  /// Build an example question within the welcome message
-  Widget _buildExampleQuestionInWelcome(
-      ExampleQuestion question, bool isDarkMode) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.primaryColor;
-
-    return Padding(
-      padding: EdgeInsets.only(
-          bottom: widget.welcomeMessageConfig?.questionSpacing ?? 12.0),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _handleExampleQuestionTap(question.question),
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: question.config?.containerPadding ??
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: question.config?.containerDecoration ??
-                BoxDecoration(
-                  color:
-                      primaryColor.withOpacityCompat(isDarkMode ? 0.12 : 0.06),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color:
-                        primaryColor.withOpacityCompat(isDarkMode ? 0.3 : 0.15),
-                    width: 1,
-                  ),
-                ),
-            child: Row(
-              children: [
-                Icon(
-                  question.config?.iconData ??
-                      Icons.chat_bubble_outline_rounded,
-                  size: question.config?.iconSize ?? 18,
-                  color: question.config?.iconColor ??
-                      (isDarkMode
-                          ? Colors.white.withOpacityCompat(0.8)
-                          : primaryColor.withOpacityCompat(0.8)),
-                ),
-                SizedBox(width: question.config?.spacing ?? 12),
-                Expanded(
-                  child: Text(
-                    question.question,
-                    style: question.config?.textStyle ??
-                        TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: isDarkMode
-                              ? Colors.white.withOpacityCompat(0.9)
-                              : Colors.black.withOpacityCompat(0.8),
-                          height: 1.4,
-                        ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  question.config?.trailingIconData ??
-                      Icons.arrow_forward_ios_rounded,
-                  size: question.config?.trailingIconSize ?? 16,
-                  color: question.config?.trailingIconColor ??
-                      (isDarkMode
-                          ? Colors.white.withOpacityCompat(0.5)
-                          : primaryColor.withOpacityCompat(0.5)),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    // Otherwise, build the package default empty state (`DESIGN.md` §8.6):
+    // no card, positioned at 38% of the available height, start-aligned
+    // inside the reading column.
+    return ChatEmptyState(
+      welcomeMessageConfig: widget.welcomeMessageConfig,
+      exampleQuestions: widget.exampleQuestions,
+      onQuestionTap: _handleExampleQuestionTap,
     );
   }
 
@@ -1860,113 +1908,19 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   }
 
   Widget _buildLoadingPlaceholder(BuildContext context, ChatMessage message) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Pre-first-token: no caption yet -> the "Thinking" sweep. Once a
+    // caption arrives, switch to the skeleton bars with that caption above
+    // them (`DESIGN.md` §8.7).
+    if (message.text.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16),
+        child: ThinkingIndicator(),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (message.text.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                message.text,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? Colors.white54 : Colors.black45,
-                ),
-              ),
-            ),
-          _ShimmerBar(widthFactor: 1.0, isDark: isDark),
-          const SizedBox(height: 8),
-          _ShimmerBar(widthFactor: 0.7, isDark: isDark),
-          const SizedBox(height: 8),
-          _ShimmerBar(widthFactor: 0.5, isDark: isDark),
-        ],
-      ),
+      child: ChatLoadingBars(caption: message.text),
     );
-  }
-}
-
-class _ShimmerBar extends StatelessWidget {
-  const _ShimmerBar({required this.widthFactor, required this.isDark});
-  final double widthFactor;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return FractionallySizedBox(
-      widthFactor: widthFactor,
-      alignment: Alignment.centerLeft,
-      child: Container(
-        height: 12,
-        decoration: BoxDecoration(
-          color: isDark ? Colors.white10 : Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(6),
-        ),
-      ),
-    );
-  }
-}
-
-class _DotIndicator extends StatefulWidget {
-  final double delay;
-  final Color? color;
-  final double? size;
-
-  const _DotIndicator({this.delay = 0.0, this.color, this.size});
-
-  @override
-  State<_DotIndicator> createState() => _DotIndicatorState();
-}
-
-class _DotIndicatorState extends State<_DotIndicator>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-
-    _animation = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Interval(widget.delay, 1.0, curve: Curves.easeInOut),
-      ),
-    );
-
-    _controller.repeat(reverse: true);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final dotSize = widget.size ?? 8.0;
-    final dimColor = widget.color?.withOpacityCompat(0.45) ?? Colors.grey[400]!;
-    final brightColor = widget.color ?? Colors.grey[800]!;
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Container(
-          width: dotSize,
-          height: dotSize,
-          decoration: BoxDecoration(
-            color: Color.lerp(dimColor, brightColor, _animation.value),
-            shape: BoxShape.circle,
-          ),
-        );
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 }
 
@@ -2011,19 +1965,13 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
 
     // Very subtle upward slide - feels like content settling into place
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+    );
 
     // Listen to controller changes for streaming state updates
     widget.controller?.addListener(_onControllerChanged);
@@ -2046,36 +1994,40 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
     final isCurrentlyStreaming = controllerStreamingId == messageId;
     final isStreaming = isCurrentlyStreaming && widget.streamingEnabled;
 
-    debugPrint('🎬 AnimatedFooter - messageId: $messageId');
-    debugPrint(
-        '🎬 AnimatedFooter - controllerStreamingId: $controllerStreamingId');
-    debugPrint(
-        '🎬 AnimatedFooter - isCurrentlyStreaming: $isCurrentlyStreaming');
-    debugPrint(
-        '🎬 AnimatedFooter - streamingEnabled: ${widget.streamingEnabled}');
-    debugPrint('🎬 AnimatedFooter - isStreaming: $isStreaming');
-    debugPrint('🎬 AnimatedFooter - _wasStreaming: $_wasStreaming');
+    _debugLog('🎬 AnimatedFooter - messageId: $messageId');
+    _debugLog(
+      '🎬 AnimatedFooter - controllerStreamingId: $controllerStreamingId',
+    );
+    _debugLog(
+      '🎬 AnimatedFooter - isCurrentlyStreaming: $isCurrentlyStreaming',
+    );
+    _debugLog(
+      '🎬 AnimatedFooter - streamingEnabled: ${widget.streamingEnabled}',
+    );
+    _debugLog('🎬 AnimatedFooter - isStreaming: $isStreaming');
+    _debugLog('🎬 AnimatedFooter - _wasStreaming: $_wasStreaming');
 
     if (isStreaming) {
       _wasStreaming = true;
       _shouldShow = false;
-      debugPrint('🎬 AnimatedFooter - Currently streaming, hiding footer');
+      _debugLog('🎬 AnimatedFooter - Currently streaming, hiding footer');
     } else {
       // Not streaming - show the footer
       if (_wasStreaming) {
         // Was streaming, now complete - animate in
         _shouldShow = true;
         _animController.forward();
-        debugPrint(
-            '🎬 AnimatedFooter - Streaming complete, animating footer in');
+        _debugLog(
+          '🎬 AnimatedFooter - Streaming complete, animating footer in',
+        );
       } else {
         // Was never streaming (loaded message) - show immediately
         _shouldShow = true;
         _animController.value = 1.0;
-        debugPrint('🎬 AnimatedFooter - Never streamed, showing immediately');
+        _debugLog('🎬 AnimatedFooter - Never streamed, showing immediately');
       }
     }
-    debugPrint('🎬 AnimatedFooter - _shouldShow: $_shouldShow');
+    _debugLog('🎬 AnimatedFooter - _shouldShow: $_shouldShow');
   }
 
   @override
@@ -2098,10 +2050,11 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
 
   @override
   Widget build(BuildContext context) {
-    debugPrint(
-        '🎬 AnimatedFooter.build - _shouldShow: $_shouldShow, isUser: ${widget.isUser}');
+    _debugLog(
+      '🎬 AnimatedFooter.build - _shouldShow: $_shouldShow, isUser: ${widget.isUser}',
+    );
     if (!_shouldShow) {
-      debugPrint('🎬 AnimatedFooter.build - Returning SizedBox (not showing)');
+      _debugLog('🎬 AnimatedFooter.build - Returning SizedBox (not showing)');
       return const SizedBox.shrink();
     }
 
@@ -2111,21 +2064,20 @@ class _AnimatedFooterState extends State<_AnimatedFooter>
       widget.isUser,
     );
 
-    debugPrint(
-        '🎬 AnimatedFooter.build - footerWidget is null: ${footerWidget == null}');
+    _debugLog(
+      '🎬 AnimatedFooter.build - footerWidget is null: ${footerWidget == null}',
+    );
     if (footerWidget == null) {
-      debugPrint(
-          '🎬 AnimatedFooter.build - Returning SizedBox (footer is null)');
+      _debugLog(
+        '🎬 AnimatedFooter.build - Returning SizedBox (footer is null)',
+      );
       return const SizedBox.shrink();
     }
 
-    debugPrint('🎬 AnimatedFooter.build - Returning animated footer');
+    _debugLog('🎬 AnimatedFooter.build - Returning animated footer');
     return SlideTransition(
       position: _slideAnimation,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: footerWidget,
-      ),
+      child: FadeTransition(opacity: _fadeAnimation, child: footerWidget),
     );
   }
 }

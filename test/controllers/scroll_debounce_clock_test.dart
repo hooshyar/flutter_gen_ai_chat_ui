@@ -33,8 +33,9 @@ void main() {
     WidgetTester tester, {
     required ScrollBehaviorConfig scrollConfig,
   }) async {
-    final controller =
-        ChatMessagesController(scrollBehaviorConfig: scrollConfig);
+    final controller = ChatMessagesController(
+      scrollBehaviorConfig: scrollConfig,
+    );
     addTearDown(controller.dispose);
 
     await tester.pumpWidget(

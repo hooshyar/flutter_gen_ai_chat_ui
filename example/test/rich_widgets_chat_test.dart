@@ -10,7 +10,7 @@ void main() {
     // (`() {}`), so tapping it did nothing at all — no toast, no state
     // change, no message — and read as a dead button.
     await tester.pumpWidget(
-      const MaterialApp(home: RichWidgetsChatExample()),
+      MaterialApp(home: RichWidgetsChatExample(onToggleTheme: () {})),
     );
     await tester.pump();
 

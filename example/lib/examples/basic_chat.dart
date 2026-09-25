@@ -1,11 +1,17 @@
-// Basic Chat — minimal working chat. No streaming, no markdown.
+// Basic Chat - the proof screen. Only the required arguments, example
+// questions and a welcome title: everything else is the package default.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
 import '../services/mock_ai_service.dart';
+import '../shell/demo_scaffold.dart';
 
 class BasicChatExample extends StatefulWidget {
-  const BasicChatExample({super.key});
+  const BasicChatExample({super.key, required this.onToggleTheme});
+
+  final VoidCallback onToggleTheme;
 
   @override
   State<BasicChatExample> createState() => _BasicChatExampleState();
@@ -15,26 +21,78 @@ class _BasicChatExampleState extends State<BasicChatExample> {
   final _controller = ChatMessagesController();
   final _aiService = ExampleAiService(style: ResponseStyle.plain);
   bool _isLoading = false;
+  StreamSubscription<String>? _streamSub;
+  String? _currentStreamingId;
 
   static const _currentUser = ChatUser(id: 'user', name: 'You');
-  static const _aiUser = ChatUser(id: 'ai', name: 'Bot');
+  static const _aiUser = ChatUser(id: 'ai', name: 'AI');
 
-  void _onSendMessage(ChatMessage message) async {
+  // Streams the reply word by word (via the mock service's tuned 25-40ms
+  // per-word pacing) instead of popping in the full text at once, so a
+  // short reply still visibly streams rather than feeling like it stalled
+  // then snapped in (DESIGN.md §9 "Basic").
+  void _onSendMessage(ChatMessage message) {
     _controller.addMessage(message);
-    setState(() => _isLoading = true);
-    try {
-      final response = await _aiService.generateResponse(message.text);
-      if (!mounted) return;
-      _controller.addMessage(
-        ChatMessage(text: response, user: _aiUser, createdAt: DateTime.now()),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    _streamSub?.cancel();
+    // Finalize whatever the previous stream left open before starting a new
+    // one - cancelling the subscription alone doesn't close the message, so
+    // without this a fast second send leaves the prior reply stuck with a
+    // permanent caret and no Copy button.
+    final prevId = _currentStreamingId;
+    if (prevId != null) {
+      _controller.stopStreamingMessage(prevId);
     }
+    setState(() => _isLoading = true);
+
+    final messageId = 'ai_${DateTime.now().millisecondsSinceEpoch}';
+    _currentStreamingId = messageId;
+    final aiMessage = ChatMessage(
+      text: '',
+      user: _aiUser,
+      createdAt: DateTime.now(),
+      customProperties: {'id': messageId},
+    );
+
+    var receivedFirstChunk = false;
+    _streamSub = _aiService.streamResponse(message.text).listen(
+      (accumulated) {
+        if (!mounted) return;
+        if (receivedFirstChunk) {
+          _controller.updateMessage(aiMessage.copyWith(text: accumulated));
+        } else {
+          receivedFirstChunk = true;
+          _controller
+              .addStreamingMessage(aiMessage.copyWith(text: accumulated));
+        }
+      },
+      onDone: () {
+        if (!mounted) return;
+        _controller.stopStreamingMessage(messageId);
+        setState(() => _isLoading = false);
+      },
+      onError: (_) {
+        if (!mounted) return;
+        _controller.stopStreamingMessage(messageId);
+        setState(() => _isLoading = false);
+      },
+    );
+  }
+
+  // Cancels the in-flight response. Wired to AiChatWidget.onCancelGenerating,
+  // which surfaces a stop button in the input while _isLoading is true.
+  void _onCancelGenerating() {
+    _streamSub?.cancel();
+    _streamSub = null;
+    final id = _currentStreamingId;
+    if (id != null) {
+      _controller.stopStreamingMessage(id);
+    }
+    setState(() => _isLoading = false);
   }
 
   @override
   void dispose() {
+    _streamSub?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -43,73 +101,26 @@ class _BasicChatExampleState extends State<BasicChatExample> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Basic Chat')),
+    return DemoScaffold(
+      title: 'Basic',
+      route: '/basic',
+      isDark: isDark,
+      onToggleTheme: widget.onToggleTheme,
       body: AiChatWidget(
-        maxWidth: 720,
         currentUser: _currentUser,
         aiUser: _aiUser,
         controller: _controller,
         onSendMessage: _onSendMessage,
-        loadingConfig: LoadingConfig(
-          isLoading: _isLoading,
-          loadingIndicator: const LoadingWidget(
-            texts: ['Thinking...', 'Almost there...'],
-          ),
-        ),
-        enableMarkdownStreaming: false,
-        inputOptions: InputOptions(
-          decoration: InputDecoration(
-            hintText: 'Ask anything...',
-            hintStyle: TextStyle(
-              color: isDark ? Colors.white38 : Colors.black38,
-              fontSize: 15,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(24),
-              borderSide: BorderSide.none,
-            ),
-            filled: true,
-            fillColor:
-                isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF2F2F7),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-          sendButtonIcon: Icons.arrow_upward_rounded,
-          sendButtonColor: const Color(0xFF6366F1),
-          sendButtonIconSize: 20,
-          sendButtonPadding: const EdgeInsets.all(6),
-          textStyle: TextStyle(
-            fontSize: 15,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-        welcomeMessageConfig: WelcomeMessageConfig(
-          centerVertically: true,
-          title: 'Hello! 👋',
-          titleStyle: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-          containerDecoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2A2A3A) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),
-            ),
-          ),
-          questionsSectionTitle: 'Try asking:',
-          questionsSectionTitleStyle: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white54 : Colors.black45,
-          ),
-        ),
+        loadingConfig: LoadingConfig(isLoading: _isLoading),
+        // Surfaces a stop button in the input while generating; tapping it
+        // cancels the stream and finalizes the partial message.
+        onCancelGenerating: _onCancelGenerating,
+        welcomeMessageConfig:
+            const WelcomeMessageConfig(title: 'How can I help?'),
         exampleQuestions: const [
           ExampleQuestion(question: 'What can you help me with?'),
           ExampleQuestion(question: 'Tell me about Flutter'),
-          ExampleQuestion(question: 'Show me a code example'),
+          ExampleQuestion(question: 'What is Dart?'),
         ],
       ),
     );

@@ -5,7 +5,8 @@ import 'package:flutter_gen_ai_chat_ui_example/examples/voice_chat.dart';
 void main() {
   testWidgets('tapping the mic simulates listening then fills recognized text',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: VoiceChatExample()));
+    await tester
+        .pumpWidget(MaterialApp(home: VoiceChatExample(onToggleTheme: () {})));
     await tester.pump();
 
     expect(find.byIcon(Icons.mic_none), findsOneWidget);
@@ -31,7 +32,8 @@ void main() {
     // .conversational with themed_chat.dart, so recognized voice phrases —
     // none of which mention themes — got the "Try switching between the
     // Ocean/Sunset/Default themes above" reply anyway.
-    await tester.pumpWidget(const MaterialApp(home: VoiceChatExample()));
+    await tester
+        .pumpWidget(MaterialApp(home: VoiceChatExample(onToggleTheme: () {})));
     await tester.pump();
 
     await tester.tap(find.byIcon(Icons.mic_none));
@@ -39,7 +41,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 950));
 
     // The first simulated phrase is "What is the weather like today?".
-    await tester.tap(find.byIcon(Icons.send));
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
     await tester.pump();
     // Let the mock AI service's simulated response delay (250-600ms) finish
     // and the resulting rebuild land. A single pump right at ~700ms is

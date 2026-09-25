@@ -84,5 +84,5 @@ enum ChatMediaType {
   document,
 
   /// Any other type of file
-  other
+  other,
 }

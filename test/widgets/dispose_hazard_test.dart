@@ -79,11 +79,7 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
-            home: Scaffold(
-              body: CopilotTextarea(
-                controller: controller,
-              ),
-            ),
+            home: Scaffold(body: CopilotTextarea(controller: controller)),
           ),
         );
 
@@ -114,9 +110,7 @@ void main() {
         // Pump the widget — initState schedules a post-frame focus request.
         await tester.pumpWidget(
           const MaterialApp(
-            home: Scaffold(
-              body: SmartChatInput(autoFocus: true),
-            ),
+            home: Scaffold(body: SmartChatInput(autoFocus: true)),
           ),
         );
 

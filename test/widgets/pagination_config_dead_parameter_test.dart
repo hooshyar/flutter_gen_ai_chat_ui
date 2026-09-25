@@ -17,32 +17,34 @@ void main() {
   const aiUser = ChatUser(id: 'ai', name: 'AI Assistant');
 
   testWidgets(
-      'AiChatWidget.paginationConfig actually reaches the loading indicator',
-      (tester) async {
-    final controller = ChatMessagesController(
-      initialMessages: [
-        ChatMessage(text: 'Hi', user: testUser, createdAt: DateTime.now()),
-      ],
-    );
-    addTearDown(controller.dispose);
+    'AiChatWidget.paginationConfig actually reaches the loading indicator',
+    (tester) async {
+      final controller = ChatMessagesController(
+        initialMessages: [
+          ChatMessage(text: 'Hi', user: testUser, createdAt: DateTime.now()),
+        ],
+      );
+      addTearDown(controller.dispose);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Material(
-          child: AiChatWidget(
-            currentUser: testUser,
-            aiUser: aiUser,
-            controller: controller,
-            onSendMessage: (_) async {},
-            paginationConfig:
-                const PaginationConfig(loadingText: 'CustomLoadingText123'),
-            messageListOptions: const MessageListOptions(isLoadingMore: true),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Material(
+            child: AiChatWidget(
+              currentUser: testUser,
+              aiUser: aiUser,
+              controller: controller,
+              onSendMessage: (_) async {},
+              paginationConfig: const PaginationConfig(
+                loadingText: 'CustomLoadingText123',
+              ),
+              messageListOptions: const MessageListOptions(isLoadingMore: true),
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pump();
+      );
+      await tester.pump();
 
-    expect(find.text('CustomLoadingText123'), findsOneWidget);
-  });
+      expect(find.text('CustomLoadingText123'), findsOneWidget);
+    },
+  );
 }

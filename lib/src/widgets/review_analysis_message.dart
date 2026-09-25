@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 
 /// A widget that displays business review analysis in a chat message.
 class ReviewAnalysisMessage extends StatelessWidget {
-  const ReviewAnalysisMessage({
-    super.key,
-    required this.data,
-    this.style,
-  });
+  const ReviewAnalysisMessage({super.key, required this.data, this.style});
 
   final Map<String, dynamic> data;
   final TextStyle? style;
@@ -52,11 +48,7 @@ class ReviewAnalysisMessage extends StatelessWidget {
         ],
 
         // Review Summary
-        _buildSummary(
-          review['summary'] as String,
-          theme,
-          isDark,
-        ),
+        _buildSummary(review['summary'] as String, theme, isDark),
         const SizedBox(height: 16),
 
         // Professional Rating
@@ -151,7 +143,10 @@ class ReviewAnalysisMessage extends StatelessWidget {
   }
 
   Widget _buildStrengths(
-      List<dynamic> strengths, ThemeData theme, bool isDark) {
+    List<dynamic> strengths,
+    ThemeData theme,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(

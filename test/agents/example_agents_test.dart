@@ -49,15 +49,20 @@ void main() {
       expect(agent.canHandle(_req('analyze this text')), isTrue);
       expect(agent.canHandle(_req('check sentiment of my message')), isTrue);
       expect(agent.canHandle(_req('please summarize this')), isTrue);
-      expect(agent.canHandle(_req('run a sentiment analysis on it')), isTrue,
-          reason:
-              'matches the "sentiment_analysis" capability with underscores '
-              'replaced by spaces');
+      expect(
+        agent.canHandle(_req('run a sentiment analysis on it')),
+        isTrue,
+        reason: 'matches the "sentiment_analysis" capability with underscores '
+            'replaced by spaces',
+      );
     });
 
     test('canHandle: returns false for out-of-domain prompts', () {
-      expect(agent.canHandle(_req('refactor my function please')), isFalse,
-          reason: 'no analyze/text/sentiment/summarize keyword');
+      expect(
+        agent.canHandle(_req('refactor my function please')),
+        isFalse,
+        reason: 'no analyze/text/sentiment/summarize keyword',
+      );
       expect(agent.canHandle(_req('what is the weather like')), isFalse);
       expect(agent.canHandle(_req('hello there')), isFalse);
     });
@@ -86,8 +91,9 @@ void main() {
         'processRequest: routes to summary branch when the query contains '
         '"summarize"', () async {
       await agent.initialize(const {});
-      final response = await agent
-          .processRequest(_req('please summarize this long paragraph for me'));
+      final response = await agent.processRequest(
+        _req('please summarize this long paragraph for me'),
+      );
       expect(response.metadata['analysis_type'], 'summary');
       expect(response.content, contains('Summary'));
     }, timeout: const Timeout(Duration(seconds: 5)));
@@ -96,8 +102,9 @@ void main() {
         'processRequest: routes to grammar branch when the query contains '
         '"grammar"', () async {
       await agent.initialize(const {});
-      final response =
-          await agent.processRequest(_req('check grammar in teh sentence'));
+      final response = await agent.processRequest(
+        _req('check grammar in teh sentence'),
+      );
       expect(response.metadata['analysis_type'], 'grammar');
       expect(response.content, contains('Grammar Check'));
     }, timeout: const Timeout(Duration(seconds: 5)));
@@ -159,8 +166,11 @@ void main() {
     test('canHandle: returns false for non-code prompts', () {
       expect(agent.canHandle(_req('what is the capital of France')), isFalse);
       expect(agent.canHandle(_req('how do I cook pasta')), isFalse);
-      expect(agent.canHandle(_req('summarize this paragraph')), isFalse,
-          reason: 'no code/function/debug/optimize/review keyword');
+      expect(
+        agent.canHandle(_req('summarize this paragraph')),
+        isFalse,
+        reason: 'no code/function/debug/optimize/review keyword',
+      );
     });
 
     test(
@@ -181,21 +191,23 @@ void main() {
       expect(agent.status, AgentStatus.idle);
     }, timeout: const Timeout(Duration(seconds: 5)));
 
-    test('dispose: closes state stream so no pending timers/subs leak',
-        () async {
-      final events = <AgentState>[];
-      final completer = Completer<void>();
-      final sub = agent.streamState().listen(
-            events.add,
-            onDone: completer.complete,
-          );
-      await agent.initialize(const {});
+    test(
+      'dispose: closes state stream so no pending timers/subs leak',
+      () async {
+        final events = <AgentState>[];
+        final completer = Completer<void>();
+        final sub = agent.streamState().listen(
+              events.add,
+              onDone: completer.complete,
+            );
+        await agent.initialize(const {});
 
-      await agent.dispose();
-      await completer.future.timeout(const Duration(seconds: 1));
-      await sub.cancel();
-      expect(events, isNotEmpty);
-    });
+        await agent.dispose();
+        await completer.future.timeout(const Duration(seconds: 1));
+        await sub.cancel();
+        expect(events, isNotEmpty);
+      },
+    );
   });
 
   group('GeneralAssistantAgent', () {
@@ -231,8 +243,9 @@ void main() {
         'processRequest: produces a delegation response when the query '
         'matches the text-analyst delegation rules', () async {
       await agent.initialize(const {});
-      final response = await agent
-          .processRequest(_req('please analyze the sentiment of this text'));
+      final response = await agent.processRequest(
+        _req('please analyze the sentiment of this text'),
+      );
       expect(response.type, AgentResponseType.delegation);
       expect(response.metadata['delegate_to'], 'text_analysis_001');
       expect(response.metadata['delegated_query'], isNotNull);
@@ -242,8 +255,9 @@ void main() {
         'processRequest: produces a delegation response when the query '
         'matches the code-analyst delegation rules', () async {
       await agent.initialize(const {});
-      final response =
-          await agent.processRequest(_req('please debug this code'));
+      final response = await agent.processRequest(
+        _req('please debug this code'),
+      );
       expect(response.type, AgentResponseType.delegation);
       expect(response.metadata['delegate_to'], 'code_analysis_001');
     }, timeout: const Timeout(Duration(seconds: 5)));
@@ -274,21 +288,23 @@ void main() {
       orch.dispose();
     }, timeout: const Timeout(Duration(seconds: 5)));
 
-    test('dispose: closes state stream so no pending timers/subs leak',
-        () async {
-      final events = <AgentState>[];
-      final completer = Completer<void>();
-      final sub = agent.streamState().listen(
-            events.add,
-            onDone: completer.complete,
-          );
-      await agent.initialize(const {});
+    test(
+      'dispose: closes state stream so no pending timers/subs leak',
+      () async {
+        final events = <AgentState>[];
+        final completer = Completer<void>();
+        final sub = agent.streamState().listen(
+              events.add,
+              onDone: completer.complete,
+            );
+        await agent.initialize(const {});
 
-      await agent.dispose();
-      await completer.future.timeout(const Duration(seconds: 1));
-      await sub.cancel();
-      expect(events, isNotEmpty);
-    });
+        await agent.dispose();
+        await completer.future.timeout(const Duration(seconds: 1));
+        await sub.cancel();
+        expect(events, isNotEmpty);
+      },
+    );
   });
 
   group('All three agents integrated with AgentOrchestrator', () {
@@ -306,10 +322,16 @@ void main() {
       // returns true. Orchestrator's scorer must prefer the more specific
       // match. If routing accidentally goes to general the response would
       // come back as a delegation — assert it doesn't.
-      expect(response.type, isNot(AgentResponseType.delegation),
-          reason: 'A direct match should not require delegation.');
-      expect(response.agentId, textAgent.id,
-          reason: 'Capability-matching agent should win over the fallback.');
+      expect(
+        response.type,
+        isNot(AgentResponseType.delegation),
+        reason: 'A direct match should not require delegation.',
+      );
+      expect(
+        response.agentId,
+        textAgent.id,
+        reason: 'Capability-matching agent should win over the fallback.',
+      );
 
       orch.dispose();
     }, timeout: const Timeout(Duration(seconds: 5)));

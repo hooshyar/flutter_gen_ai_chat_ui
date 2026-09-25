@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 
+import 'code/code_block_view.dart';
+
 /// A markdown renderer that supports inline and block LaTeX/math expressions.
 ///
 /// Supports:
@@ -17,6 +19,7 @@ class MathMarkdown extends StatelessWidget {
     this.selectable = false,
     this.onTapLink,
     this.textStyle,
+    this.builders = const <String, MarkdownElementBuilder>{},
   });
 
   final String data;
@@ -24,6 +27,10 @@ class MathMarkdown extends StatelessWidget {
   final bool selectable;
   final MarkdownTapLinkCallback? onTapLink;
   final TextStyle? textStyle;
+
+  /// Custom element builders forwarded to the inner [MarkdownBody] — e.g. a
+  /// `pre` builder that renders fenced code blocks as [CodeBlockView].
+  final Map<String, MarkdownElementBuilder> builders;
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +77,7 @@ class MathMarkdown extends StatelessWidget {
       shrinkWrap: true,
       styleSheet: styleSheet,
       onTapLink: onTapLink,
+      builders: builders,
     );
   }
 
@@ -83,8 +91,12 @@ class MathMarkdown extends StatelessWidget {
       if (match.start > last) {
         final before = text.substring(last, match.start);
         if (before.isNotEmpty) {
-          widgets.add(Text(before,
-              style: textStyle ?? DefaultTextStyle.of(context).style));
+          widgets.add(
+            Text(
+              before,
+              style: textStyle ?? DefaultTextStyle.of(context).style,
+            ),
+          );
         }
       }
       widgets.add(
@@ -105,8 +117,9 @@ class MathMarkdown extends StatelessWidget {
     if (last < text.length) {
       final after = text.substring(last);
       if (after.isNotEmpty) {
-        widgets.add(Text(after,
-            style: textStyle ?? DefaultTextStyle.of(context).style));
+        widgets.add(
+          Text(after, style: textStyle ?? DefaultTextStyle.of(context).style),
+        );
       }
     }
     return widgets;

@@ -1,15 +1,19 @@
-// Themed Chat — switch between Ocean, Sunset, and Default styles.
+// Themed Chat - switch between brand presets and the package default via
+// CustomThemeExtension.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
 import '../services/mock_ai_service.dart';
+import '../shell/demo_scaffold.dart';
 
-enum ChatTheme { defaultTheme, ocean, sunset }
+enum _Preset { defaultTheme, chatgpt, claude, gemini }
 
 class ThemedChatExample extends StatefulWidget {
-  const ThemedChatExample({super.key});
+  const ThemedChatExample({super.key, required this.onToggleTheme});
+
+  final VoidCallback onToggleTheme;
 
   @override
   State<ThemedChatExample> createState() => _ThemedChatExampleState();
@@ -20,16 +24,27 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
   final _aiService = ExampleAiService(style: ResponseStyle.conversational);
   bool _isLoading = false;
   StreamSubscription<String>? _streamSub;
-  ChatTheme _selectedTheme = ChatTheme.defaultTheme;
+  String? _currentStreamingId;
+  _Preset _selected = _Preset.defaultTheme;
 
   static const _currentUser = ChatUser(id: 'user', name: 'You');
   static const _aiUser = ChatUser(id: 'ai', name: 'Aria');
 
   void _onSendMessage(ChatMessage message) {
     _controller.addMessage(message);
+    _streamSub?.cancel();
+    // Finalize whatever the previous stream left open before starting a new
+    // one - cancelling the subscription alone doesn't close the message, so
+    // without this a fast second send leaves the prior reply stuck with a
+    // permanent caret and no Copy button.
+    final prevId = _currentStreamingId;
+    if (prevId != null) {
+      _controller.stopStreamingMessage(prevId);
+    }
     setState(() => _isLoading = true);
 
     final messageId = 'ai_${DateTime.now().millisecondsSinceEpoch}';
+    _currentStreamingId = messageId;
     final aiMessage = ChatMessage(
       text: '',
       user: _aiUser,
@@ -38,12 +53,19 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
       customProperties: {'id': messageId},
     );
 
-    _controller.addStreamingMessage(aiMessage);
-
+    // The AI bubble is only added once the first chunk arrives - until then
+    // the LoadingWidget alone signals that a reply is being generated.
+    var receivedFirstChunk = false;
     _streamSub = _aiService.streamResponse(message.text).listen(
       (accumulated) {
         if (!mounted) return;
-        _controller.updateMessage(aiMessage.copyWith(text: accumulated));
+        if (receivedFirstChunk) {
+          _controller.updateMessage(aiMessage.copyWith(text: accumulated));
+        } else {
+          receivedFirstChunk = true;
+          _controller
+              .addStreamingMessage(aiMessage.copyWith(text: accumulated));
+        }
       },
       onDone: () {
         if (!mounted) return;
@@ -58,6 +80,18 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
     );
   }
 
+  // Cancels the in-flight response. Wired to AiChatWidget.onCancelGenerating,
+  // which surfaces a stop button in the input while _isLoading is true.
+  void _onCancelGenerating() {
+    _streamSub?.cancel();
+    _streamSub = null;
+    final id = _currentStreamingId;
+    if (id != null) {
+      _controller.stopStreamingMessage(id);
+    }
+    setState(() => _isLoading = false);
+  }
+
   @override
   void dispose() {
     _streamSub?.cancel();
@@ -65,200 +99,141 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
     super.dispose();
   }
 
-  // --- Theme-specific styles ---
-
-  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-
-  BubbleStyle get _bubbleStyle {
-    final isDark = _isDark;
-    switch (_selectedTheme) {
-      case ChatTheme.ocean:
-        return BubbleStyle(
-          userBubbleColor:
-              isDark ? const Color(0xFF005F8A) : const Color(0xFF0077B6),
-          aiBubbleColor:
-              isDark ? const Color(0xFF1A2F3A) : const Color(0xFFCAF0F8),
-          userBubbleTopLeftRadius: 20,
-          userBubbleTopRightRadius: 20,
-          aiBubbleTopLeftRadius: 20,
-          aiBubbleTopRightRadius: 20,
-          bottomLeftRadius: 20,
-          bottomRightRadius: 4,
-          enableShadow: !isDark,
+  /// Resolves the ambient theme plus, for a brand preset, its
+  /// [CustomThemeExtension] - the widgets that read chat styling
+  /// (`AiChatWidget`, `ChatInput`, message bubbles) pick it up from there.
+  ///
+  /// The Claude preset's light `chatBackground` is nudged to a warm cream
+  /// here (package default is pure white, same as ChatGPT's) so the two
+  /// brand presets stay visually distinct at a glance - the example's
+  /// choice, the package factory itself is untouched.
+  ThemeData _themeFor(BuildContext context) {
+    final base = Theme.of(context);
+    final isDark = base.brightness == Brightness.dark;
+    switch (_selected) {
+      case _Preset.defaultTheme:
+        return base;
+      case _Preset.chatgpt:
+        return base.copyWith(
+          extensions: [CustomThemeExtension.chatgpt(dark: isDark)],
         );
-      case ChatTheme.sunset:
-        return BubbleStyle(
-          userBubbleColor:
-              isDark ? const Color(0xFFC44D03) : const Color(0xFFE85D04),
-          aiBubbleColor:
-              isDark ? const Color(0xFF3A2A1A) : const Color(0xFFFFF3E0),
-          userBubbleTopLeftRadius: 4,
-          userBubbleTopRightRadius: 16,
-          aiBubbleTopLeftRadius: 16,
-          aiBubbleTopRightRadius: 4,
-          bottomLeftRadius: 16,
-          bottomRightRadius: 16,
+      case _Preset.claude:
+        final claude = CustomThemeExtension.claude(dark: isDark);
+        return base.copyWith(
+          extensions: [
+            if (isDark)
+              claude
+            else
+              claude.copyWith(chatBackground: const Color(0xFFFAF7F0)),
+          ],
         );
-      case ChatTheme.defaultTheme:
-        return const BubbleStyle();
-    }
-  }
-
-  Color get _userTextColor {
-    return Colors.white;
-  }
-
-  Color get _aiTextColor {
-    final isDark = _isDark;
-    switch (_selectedTheme) {
-      case ChatTheme.ocean:
-        return isDark ? const Color(0xFF90D5EC) : const Color(0xFF023E8A);
-      case ChatTheme.sunset:
-        return isDark ? const Color(0xFFFFBD73) : const Color(0xFF6B3410);
-      case ChatTheme.defaultTheme:
-        return isDark ? Colors.white : Colors.black87;
-    }
-  }
-
-  InputDecoration get _inputDecoration {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hintColor = isDark ? Colors.white38 : Colors.black38;
-    const hintSize = 15.0;
-
-    switch (_selectedTheme) {
-      case ChatTheme.ocean:
-        return InputDecoration(
-          hintText: 'Dive into a conversation...',
-          hintStyle: TextStyle(color: hintColor, fontSize: hintSize),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: isDark ? const Color(0xFF0A2A3A) : const Color(0xFFE6F7FC),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        );
-      case ChatTheme.sunset:
-        return InputDecoration(
-          hintText: 'Warm up a conversation...',
-          hintStyle: TextStyle(color: hintColor, fontSize: hintSize),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: isDark ? const Color(0xFF3A2010) : const Color(0xFFFFF0E0),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        );
-      case ChatTheme.defaultTheme:
-        return InputDecoration(
-          hintText: 'Type a message...',
-          hintStyle: TextStyle(color: hintColor, fontSize: hintSize),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFF2F2F7),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      case _Preset.gemini:
+        return base.copyWith(
+          extensions: [CustomThemeExtension.gemini(dark: isDark)],
         );
     }
   }
 
-  Color get _sendButtonColor {
-    switch (_selectedTheme) {
-      case ChatTheme.ocean:
-        return const Color(0xFF0077B6);
-      case ChatTheme.sunset:
-        return const Color(0xFFE85D04);
-      case ChatTheme.defaultTheme:
-        return const Color(0xFF6366F1);
-    }
+  /// The active preset's `chatBackground`/`sendButtonColor` for the shared
+  /// demo chrome (top bar, sidebar, preset bar) and the segmented control's
+  /// selection tint, so the whole surface reads as one canvas instead of a
+  /// themed chat area sitting inside default-toned chrome.
+  Color? _presetBackground(BuildContext context) {
+    if (_selected == _Preset.defaultTheme) return null;
+    return _themeFor(context).extension<CustomThemeExtension>()?.chatBackground;
+  }
+
+  Color? _presetAccent(BuildContext context) {
+    if (_selected == _Preset.defaultTheme) return null;
+    return _themeFor(context)
+        .extension<CustomThemeExtension>()
+        ?.sendButtonColor;
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final presetBackground = _presetBackground(context);
+    final presetAccent = _presetAccent(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Custom Themes'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: SegmentedButton<ChatTheme>(
-              segments: const [
-                ButtonSegment(
-                    value: ChatTheme.defaultTheme, label: Text('Default')),
-                ButtonSegment(value: ChatTheme.ocean, label: Text('Ocean')),
-                ButtonSegment(value: ChatTheme.sunset, label: Text('Sunset')),
-              ],
-              selected: {_selectedTheme},
-              onSelectionChanged: (s) =>
-                  setState(() => _selectedTheme = s.first),
+    return DemoScaffold(
+      title: 'Themes',
+      route: '/themed',
+      isDark: isDark,
+      onToggleTheme: widget.onToggleTheme,
+      backgroundColor: presetBackground,
+      selectedItemColor: presetAccent,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            color: presetBackground,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Center(
+              child: SegmentedButton<_Preset>(
+                segments: const [
+                  ButtonSegment(
+                      value: _Preset.defaultTheme, label: Text('Default')),
+                  ButtonSegment(value: _Preset.chatgpt, label: Text('ChatGPT')),
+                  ButtonSegment(value: _Preset.claude, label: Text('Claude')),
+                  ButtonSegment(value: _Preset.gemini, label: Text('Gemini')),
+                ],
+                selected: {_selected},
+                onSelectionChanged: (s) => setState(() => _selected = s.first),
+                // The four labels aren't the same length, and the default
+                // selected-segment checkmark only adds its width to
+                // whichever one is currently selected - switching presets
+                // shifted the whole control's width. No checkmark needed
+                // here; the fill/text color change already signals the
+                // active preset.
+                showSelectedIcon: false,
+                // Tint the selected segment with the active preset's accent
+                // instead of the app's default blue, so the control itself
+                // reflects the brand it's driving.
+                style: presetAccent == null
+                    ? null
+                    : SegmentedButton.styleFrom(
+                        selectedBackgroundColor: presetAccent,
+                        selectedForegroundColor:
+                            ThemeData.estimateBrightnessForColor(
+                                        presetAccent) ==
+                                    Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
+                      ),
+              ),
             ),
           ),
-        ),
-      ),
-      body: AiChatWidget(
-        maxWidth: 720,
-        currentUser: _currentUser,
-        aiUser: _aiUser,
-        controller: _controller,
-        onSendMessage: _onSendMessage,
-        enableMarkdownStreaming: true,
-        loadingConfig: LoadingConfig(
-          isLoading: _isLoading,
-          loadingIndicator: const LoadingWidget(
-            texts: ['Aria is typing...', 'Styling response...'],
-          ),
-        ),
-        messageOptions: MessageOptions(
-          showTime: true,
-          bubbleStyle: _bubbleStyle,
-          userTextColor: _userTextColor,
-          aiTextColor: _aiTextColor,
-        ),
-        inputOptions: InputOptions(
-          decoration: _inputDecoration,
-          sendButtonIcon: Icons.arrow_upward_rounded,
-          sendButtonColor: _sendButtonColor,
-          sendButtonIconSize: 20,
-          sendButtonPadding: const EdgeInsets.all(6),
-          textStyle: TextStyle(
-            fontSize: 15,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-        welcomeMessageConfig: WelcomeMessageConfig(
-          centerVertically: true,
-          title: 'Design Playground 🎨',
-          titleStyle: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-          containerDecoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2A2A3A) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? const Color(0xFF2A2A3A) : const Color(0xFFE5E7EB),
+          Expanded(
+            child: Theme(
+              data: _themeFor(context),
+              child: AiChatWidget(
+                currentUser: _currentUser,
+                aiUser: _aiUser,
+                controller: _controller,
+                onSendMessage: _onSendMessage,
+                enableMarkdownStreaming: true,
+                // Surfaces a stop button in the input while generating;
+                // tapping it cancels the stream and finalizes the partial
+                // message.
+                onCancelGenerating: _onCancelGenerating,
+                loadingConfig: LoadingConfig(
+                  isLoading: _isLoading,
+                  loadingIndicator: const LoadingWidget(
+                    texts: ['Aria is typing...', 'Styling response...'],
+                  ),
+                ),
+                welcomeMessageConfig: const WelcomeMessageConfig(
+                  title: 'Design Playground',
+                  questionsSectionTitle: 'Switch themes above, then try:',
+                ),
+                exampleQuestions: const [
+                  ExampleQuestion(question: 'Send me a long response'),
+                  ExampleQuestion(question: 'How do custom themes work?'),
+                ],
+              ),
             ),
           ),
-          questionsSectionTitle: 'Switch themes above, then try:',
-          questionsSectionTitleStyle: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white54 : Colors.black45,
-          ),
-        ),
-        exampleQuestions: const [
-          ExampleQuestion(question: 'Send me a long response'),
-          ExampleQuestion(question: 'How do custom themes work?'),
         ],
       ),
     );

@@ -183,8 +183,10 @@ void main() {
       const typography = ChatTypography();
       final scaledTypography = typography.scale(1.5);
 
-      expect(scaledTypography.messageBody.fontSize!,
-          greaterThan(typography.messageBody.fontSize!));
+      expect(
+        scaledTypography.messageBody.fontSize!,
+        greaterThan(typography.messageBody.fontSize!),
+      );
     });
   });
 
@@ -222,8 +224,10 @@ void main() {
       const animations = ChatAnimationPresets();
       final scaledAnimations = animations.scale(0.5);
 
-      expect(scaledAnimations.microInteraction.inMilliseconds,
-          lessThan(animations.microInteraction.inMilliseconds));
+      expect(
+        scaledAnimations.microInteraction.inMilliseconds,
+        lessThan(animations.microInteraction.inMilliseconds),
+      );
     });
   });
 

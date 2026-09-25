@@ -37,10 +37,12 @@ void main() {
 
   bool hasBubbleWithColor(Color color) {
     return find
-        .byWidgetPredicate((w) =>
-            w is Container &&
-            w.decoration is BoxDecoration &&
-            (w.decoration! as BoxDecoration).color == color)
+        .byWidgetPredicate(
+          (w) =>
+              w is Container &&
+              w.decoration is BoxDecoration &&
+              (w.decoration! as BoxDecoration).color == color,
+        )
         .evaluate()
         .isNotEmpty;
   }
@@ -49,143 +51,190 @@ void main() {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 
-    await tester.pumpWidget(wrap(
-      AiChatWidget(
-        currentUser: testUser,
-        aiUser: aiUser,
-        controller: controller,
-        onSendMessage: (_) async {},
+    await tester.pumpWidget(
+      wrap(
+        AiChatWidget(
+          currentUser: testUser,
+          aiUser: aiUser,
+          controller: controller,
+          onSendMessage: (_) async {},
+        ),
       ),
-    ));
+    );
     await tester.pump();
 
-    final container = tester.widget<Container>(find
-        .ancestor(
-          of: find.byType(CustomChatWidget),
-          matching: find.byType(Container),
-        )
-        .first);
+    final container = tester.widget<Container>(
+      find
+          .ancestor(
+            of: find.byType(CustomChatWidget),
+            matching: find.byType(Container),
+          )
+          .first,
+    );
     expect(container.color, ext.chatBackground);
   });
 
   testWidgets(
-      'messageBubbleColor / userBubbleColor / messageTextColor apply to '
-      'rendered bubbles', (tester) async {
-    final controller = ChatMessagesController(
-      initialMessages: [
-        ChatMessage(
-          text: 'Hi from the user',
-          user: testUser,
-          createdAt: DateTime.now(),
+    'messageBubbleColor / userBubbleColor / messageTextColor apply to '
+    'rendered bubbles',
+    (tester) async {
+      final controller = ChatMessagesController(
+        initialMessages: [
+          ChatMessage(
+            text: 'Hi from the user',
+            user: testUser,
+            createdAt: DateTime.now(),
+          ),
+          ChatMessage(
+            text: 'Hi from the AI',
+            user: aiUser,
+            createdAt: DateTime.now(),
+          ),
+        ],
+      );
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        wrap(
+          AiChatWidget(
+            currentUser: testUser,
+            aiUser: aiUser,
+            controller: controller,
+            onSendMessage: (_) async {},
+            enableMarkdownStreaming: false,
+          ),
         ),
-        ChatMessage(
-          text: 'Hi from the AI',
-          user: aiUser,
-          createdAt: DateTime.now(),
-        ),
-      ],
-    );
-    addTearDown(controller.dispose);
+      );
+      await tester.pumpAndSettle();
 
-    await tester.pumpWidget(wrap(
-      AiChatWidget(
-        currentUser: testUser,
-        aiUser: aiUser,
-        controller: controller,
-        onSendMessage: (_) async {},
-        enableMarkdownStreaming: false,
-      ),
-    ));
-    await tester.pumpAndSettle();
+      expect(
+        hasBubbleWithColor(ext.userBubbleColor!),
+        isTrue,
+        reason: 'user bubble should use CustomThemeExtension.userBubbleColor',
+      );
+      expect(
+        hasBubbleWithColor(ext.messageBubbleColor!),
+        isTrue,
+        reason: 'AI bubble should use CustomThemeExtension.messageBubbleColor',
+      );
 
-    expect(hasBubbleWithColor(ext.userBubbleColor!), isTrue,
-        reason: 'user bubble should use CustomThemeExtension.userBubbleColor');
-    expect(hasBubbleWithColor(ext.messageBubbleColor!), isTrue,
-        reason: 'AI bubble should use CustomThemeExtension.messageBubbleColor');
-
-    final userText = tester.widget<Text>(find.text('Hi from the user'));
-    final aiText = tester.widget<Text>(find.text('Hi from the AI'));
-    expect(userText.style?.color, ext.messageTextColor);
-    expect(aiText.style?.color, ext.messageTextColor);
-  });
+      final userText = tester.widget<Text>(find.text('Hi from the user'));
+      final aiText = tester.widget<Text>(find.text('Hi from the AI'));
+      expect(userText.style?.color, ext.messageTextColor);
+      expect(aiText.style?.color, ext.messageTextColor);
+    },
+  );
 
   testWidgets(
-      'explicit BubbleStyle/MessageOptions colors still take precedence '
-      'over the theme extension', (tester) async {
-    final controller = ChatMessagesController(
-      initialMessages: [
-        ChatMessage(
-          text: 'Explicit color',
-          user: testUser,
-          createdAt: DateTime.now(),
+    'explicit BubbleStyle/MessageOptions colors still take precedence '
+    'over the theme extension',
+    (tester) async {
+      final controller = ChatMessagesController(
+        initialMessages: [
+          ChatMessage(
+            text: 'Explicit color',
+            user: testUser,
+            createdAt: DateTime.now(),
+          ),
+        ],
+      );
+      addTearDown(controller.dispose);
+
+      const explicitUserBubble = Color(0xFFFF00FF);
+      const explicitUserText = Color(0xFF00FF00);
+
+      await tester.pumpWidget(
+        wrap(
+          AiChatWidget(
+            currentUser: testUser,
+            aiUser: aiUser,
+            controller: controller,
+            onSendMessage: (_) async {},
+            enableMarkdownStreaming: false,
+            messageOptions: const MessageOptions(
+              userTextColor: explicitUserText,
+              bubbleStyle: BubbleStyle(userBubbleColor: explicitUserBubble),
+            ),
+          ),
         ),
-      ],
-    );
-    addTearDown(controller.dispose);
+      );
+      await tester.pumpAndSettle();
 
-    const explicitUserBubble = Color(0xFFFF00FF);
-    const explicitUserText = Color(0xFF00FF00);
+      expect(hasBubbleWithColor(explicitUserBubble), isTrue);
+      expect(hasBubbleWithColor(ext.userBubbleColor!), isFalse);
 
-    await tester.pumpWidget(wrap(
-      AiChatWidget(
-        currentUser: testUser,
-        aiUser: aiUser,
-        controller: controller,
-        onSendMessage: (_) async {},
-        enableMarkdownStreaming: false,
-        messageOptions: const MessageOptions(
-          userTextColor: explicitUserText,
-          bubbleStyle: BubbleStyle(userBubbleColor: explicitUserBubble),
-        ),
-      ),
-    ));
-    await tester.pumpAndSettle();
+      final text = tester.widget<Text>(find.text('Explicit color'));
+      expect(text.style?.color, explicitUserText);
+    },
+  );
 
-    expect(hasBubbleWithColor(explicitUserBubble), isTrue);
-    expect(hasBubbleWithColor(ext.userBubbleColor!), isFalse);
-
-    final text = tester.widget<Text>(find.text('Explicit color'));
-    expect(text.style?.color, explicitUserText);
-  });
-
-  testWidgets('sendButtonColor applies to the default send button icon',
-      (tester) async {
+  testWidgets(
+      'sendButtonColor applies to the default send button disc '
+      '(DESIGN.md §8.5: the default send control is a filled disc, not a '
+      'bare colored icon)', (tester) async {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 
-    await tester.pumpWidget(wrap(
-      AiChatWidget(
-        currentUser: testUser,
-        aiUser: aiUser,
-        controller: controller,
-        onSendMessage: (_) async {},
+    await tester.pumpWidget(
+      wrap(
+        AiChatWidget(
+          currentUser: testUser,
+          aiUser: aiUser,
+          controller: controller,
+          onSendMessage: (_) async {},
+        ),
       ),
-    ));
+    );
     await tester.pump();
 
-    final icon = tester.widget<Icon>(find.byIcon(Icons.send));
-    expect(icon.color, ext.sendButtonColor);
+    // The disc's fill override only applies in the enabled (non-empty,
+    // non-generating) state; the empty state always uses a token-derived
+    // alpha fill regardless of sendButtonColor.
+    await tester.enterText(find.byType(TextField), 'hi');
+    await tester.pump();
+
+    final disc = tester.widgetList<AnimatedContainer>(
+      find.descendant(
+        of: find.byTooltip('Send message'),
+        matching: find.byType(AnimatedContainer),
+      ),
+    );
+    final decoration = disc.first.decoration as BoxDecoration;
+    expect(decoration.color, ext.sendButtonColor);
   });
 
   testWidgets(
-      'inputBackgroundColor/inputTextColor apply to the text field '
-      'when no explicit decoration/style is set', (tester) async {
+      'inputBackgroundColor/inputTextColor apply to the composer '
+      'when no explicit decoration/style is set '
+      '(DESIGN.md §8.4: the fill now lives on the composer\'s own '
+      'container, not the TextField\'s decoration)', (tester) async {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 
-    await tester.pumpWidget(wrap(
-      AiChatWidget(
-        currentUser: testUser,
-        aiUser: aiUser,
-        controller: controller,
-        onSendMessage: (_) async {},
+    await tester.pumpWidget(
+      wrap(
+        AiChatWidget(
+          currentUser: testUser,
+          aiUser: aiUser,
+          controller: controller,
+          onSendMessage: (_) async {},
+        ),
       ),
-    ));
+    );
     await tester.pump();
+
+    final composer = tester.widget<AnimatedContainer>(
+      find
+          .ancestor(
+            of: find.byType(TextField),
+            matching: find.byType(AnimatedContainer),
+          )
+          .first,
+    );
+    final decoration = composer.decoration as BoxDecoration;
+    expect(decoration.color, ext.inputBackgroundColor);
 
     final field = tester.widget<TextField>(find.byType(TextField));
-    expect(field.decoration?.fillColor, ext.inputBackgroundColor);
-    expect(field.decoration?.filled, isTrue);
     expect(field.style?.color, ext.inputTextColor);
     expect(field.decoration?.hintStyle?.color, ext.hintTextColor);
   });
@@ -198,18 +247,20 @@ void main() {
 
     const explicitStyle = TextStyle(color: Color(0xFF123456));
 
-    await tester.pumpWidget(wrap(
-      AiChatWidget(
-        currentUser: testUser,
-        aiUser: aiUser,
-        controller: controller,
-        onSendMessage: (_) async {},
-        inputOptions: const InputOptions(
-          textStyle: explicitStyle,
-          decoration: InputDecoration(hintText: 'Type...'),
+    await tester.pumpWidget(
+      wrap(
+        AiChatWidget(
+          currentUser: testUser,
+          aiUser: aiUser,
+          controller: controller,
+          onSendMessage: (_) async {},
+          inputOptions: const InputOptions(
+            textStyle: explicitStyle,
+            decoration: InputDecoration(hintText: 'Type...'),
+          ),
         ),
       ),
-    ));
+    );
     await tester.pump();
 
     final field = tester.widget<TextField>(find.byType(TextField));

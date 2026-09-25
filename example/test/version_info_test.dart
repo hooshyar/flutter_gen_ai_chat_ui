@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_gen_ai_chat_ui_example/main.dart';
 import 'package:flutter_gen_ai_chat_ui_example/version_info.dart';
 
 /// Regression coverage for task-021: the home screen's version badge used
@@ -27,13 +26,5 @@ void main() {
           'was bumped without re-running '
           '`dart run tool/generate_version.dart` (from example/).',
     );
-  });
-
-  testWidgets('home screen shows the badge derived from packageVersion',
-      (tester) async {
-    await tester.pumpWidget(const ExampleApp());
-    await tester.pump();
-
-    expect(find.text('v$packageVersion'), findsOneWidget);
   });
 }

@@ -28,10 +28,14 @@ void main() {
   });
 
   test('light and dark variants differ', () {
-    expect(CustomThemeExtension.chatgpt().chatBackground,
-        isNot(CustomThemeExtension.chatgpt(dark: true).chatBackground));
-    expect(CustomThemeExtension.gemini().userBubbleColor,
-        isNot(CustomThemeExtension.gemini(dark: true).userBubbleColor));
+    expect(
+      CustomThemeExtension.chatgpt().chatBackground,
+      isNot(CustomThemeExtension.chatgpt(dark: true).chatBackground),
+    );
+    expect(
+      CustomThemeExtension.gemini().userBubbleColor,
+      isNot(CustomThemeExtension.gemini(dark: true).userBubbleColor),
+    );
   });
 
   test('brands are visually distinct (accent colors differ)', () {
@@ -49,9 +53,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(
-          extensions: [CustomThemeExtension.claude()],
-        ),
+        theme: ThemeData(extensions: [CustomThemeExtension.claude()]),
         home: Scaffold(
           body: AiChatWidget(
             currentUser: const ChatUser(id: 'u', firstName: 'U'),

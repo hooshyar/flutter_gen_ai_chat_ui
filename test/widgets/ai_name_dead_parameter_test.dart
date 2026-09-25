@@ -12,8 +12,9 @@ import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 /// ever) source of truth for the displayed name so a future change can't
 /// silently reintroduce a second, ignored name source.
 void main() {
-  testWidgets('the AI display name always comes from aiUser.name, not aiName',
-      (tester) async {
+  testWidgets('the AI display name always comes from aiUser.name, not aiName', (
+    tester,
+  ) async {
     const testUser = ChatUser(id: 'user', name: 'Test User');
     const aiUser = ChatUser(id: 'ai', name: 'RealName');
     final controller = ChatMessagesController();
@@ -28,17 +29,18 @@ void main() {
             controller: controller,
             onSendMessage: (_) async {},
             aiName: 'Ignored Name',
+            // The default document layout hides AI names (DESIGN.md §8.1);
+            // opt in so the test can check WHICH name source is displayed.
+            messageOptions: const MessageOptions(showUserName: true),
           ),
         ),
       ),
     );
     await tester.pump();
 
-    controller.addMessage(ChatMessage(
-      text: 'Hello',
-      user: aiUser,
-      createdAt: DateTime.now(),
-    ));
+    controller.addMessage(
+      ChatMessage(text: 'Hello', user: aiUser, createdAt: DateTime.now()),
+    );
     // addMessage() may schedule a debounced auto-scroll Timer (up to 300ms)
     // not tied to a scheduled frame; use a pumpAndSettle step at least that
     // long so it can't be left pending at teardown.

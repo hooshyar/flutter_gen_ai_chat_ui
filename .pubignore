@@ -61,3 +61,6 @@ doc/api/
 
 # Agent backlog / planning docs — not for package users
 backlog/
+
+# Design direction (repo doc, not package content)
+DESIGN.md

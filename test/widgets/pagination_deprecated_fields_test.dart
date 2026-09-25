@@ -23,99 +23,103 @@ void main() {
   const aiUser = ChatUser(id: 'ai', name: 'AI Assistant');
 
   testWidgets(
-      'loadingBuilder (not the deprecated loadMoreIndicator) renders the '
-      'load-more indicator', (tester) async {
-    final controller = ChatMessagesController(
-      initialMessages: [
-        ChatMessage(text: 'Hi', user: testUser, createdAt: DateTime.now()),
-      ],
-    );
-    addTearDown(controller.dispose);
+    'loadingBuilder (not the deprecated loadMoreIndicator) renders the '
+    'load-more indicator',
+    (tester) async {
+      final controller = ChatMessagesController(
+        initialMessages: [
+          ChatMessage(text: 'Hi', user: testUser, createdAt: DateTime.now()),
+        ],
+      );
+      addTearDown(controller.dispose);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Material(
-          child: AiChatWidget(
-            currentUser: testUser,
-            aiUser: aiUser,
-            controller: controller,
-            onSendMessage: (_) async {},
-            paginationConfig: PaginationConfig(
-              // Deprecated, ignored field — set to prove it has no effect.
-              loadMoreIndicator: ({required isLoading}) =>
-                  const Text('IGNORED_DEPRECATED_INDICATOR'),
-              loadingBuilder: () => const Text('REAL_LOADING_INDICATOR'),
-            ),
-            messageListOptions: const MessageListOptions(isLoadingMore: true),
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-
-    expect(find.text('REAL_LOADING_INDICATOR'), findsOneWidget);
-    expect(find.text('IGNORED_DEPRECATED_INDICATOR'), findsNothing);
-  });
-
-  testWidgets(
-      'auto-load-on-scroll fires based on distanceToTriggerLoadPixels, not '
-      'the deprecated scrollThreshold', (tester) async {
-    var loadMoreCalls = 0;
-    final controller = ChatMessagesController(
-      initialMessages: List.generate(
-        30,
-        (i) => ChatMessage(
-          text: 'Message $i ' * 8,
-          user: i.isEven ? testUser : aiUser,
-          createdAt: DateTime.now(),
-        ),
-      ),
-    );
-    addTearDown(controller.dispose);
-    final scrollController = ScrollController();
-    addTearDown(scrollController.dispose);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Material(
-          child: SizedBox(
-            height: 400,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Material(
             child: AiChatWidget(
               currentUser: testUser,
               aiUser: aiUser,
               controller: controller,
               onSendMessage: (_) async {},
-              scrollController: scrollController,
-              messageListOptions: MessageListOptions(
-                hasMoreMessages: true,
-                isLoadingMore: false,
-                onLoadMore: () async {
-                  loadMoreCalls++;
-                },
-                paginationConfig: const PaginationConfig(
-                  enabled: true,
-                  autoLoadOnScroll: true,
-                  distanceToTriggerLoadPixels: 100,
-                  loadMoreDebounceTime: Duration.zero,
-                  // Deprecated, ignored field — set to a value that would
-                  // make loading trigger almost never (if it had any
-                  // effect) to prove it doesn't gate the real mechanism.
-                  scrollThreshold: 0.0001,
+              paginationConfig: PaginationConfig(
+                // Deprecated, ignored field — set to prove it has no effect.
+                loadMoreIndicator: ({required isLoading}) =>
+                    const Text('IGNORED_DEPRECATED_INDICATOR'),
+                loadingBuilder: () => const Text('REAL_LOADING_INDICATOR'),
+              ),
+              messageListOptions: const MessageListOptions(isLoadingMore: true),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('REAL_LOADING_INDICATOR'), findsOneWidget);
+      expect(find.text('IGNORED_DEPRECATED_INDICATOR'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'auto-load-on-scroll fires based on distanceToTriggerLoadPixels, not '
+    'the deprecated scrollThreshold',
+    (tester) async {
+      var loadMoreCalls = 0;
+      final controller = ChatMessagesController(
+        initialMessages: List.generate(
+          30,
+          (i) => ChatMessage(
+            text: 'Message $i ' * 8,
+            user: i.isEven ? testUser : aiUser,
+            createdAt: DateTime.now(),
+          ),
+        ),
+      );
+      addTearDown(controller.dispose);
+      final scrollController = ScrollController();
+      addTearDown(scrollController.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Material(
+            child: SizedBox(
+              height: 400,
+              child: AiChatWidget(
+                currentUser: testUser,
+                aiUser: aiUser,
+                controller: controller,
+                onSendMessage: (_) async {},
+                scrollController: scrollController,
+                messageListOptions: MessageListOptions(
+                  hasMoreMessages: true,
+                  isLoadingMore: false,
+                  onLoadMore: () async {
+                    loadMoreCalls++;
+                  },
+                  paginationConfig: const PaginationConfig(
+                    enabled: true,
+                    autoLoadOnScroll: true,
+                    distanceToTriggerLoadPixels: 100,
+                    loadMoreDebounceTime: Duration.zero,
+                    // Deprecated, ignored field — set to a value that would
+                    // make loading trigger almost never (if it had any
+                    // effect) to prove it doesn't gate the real mechanism.
+                    scrollThreshold: 0.0001,
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.pump();
+      );
+      await tester.pump();
 
-    expect(scrollController.position.maxScrollExtent, greaterThan(200));
-    scrollController.jumpTo(scrollController.position.maxScrollExtent);
-    await tester.pump(const Duration(milliseconds: 50));
-    scrollController.jumpTo(1);
-    await tester.pump(const Duration(milliseconds: 50));
+      expect(scrollController.position.maxScrollExtent, greaterThan(200));
+      scrollController.jumpTo(scrollController.position.maxScrollExtent);
+      await tester.pump(const Duration(milliseconds: 50));
+      scrollController.jumpTo(1);
+      await tester.pump(const Duration(milliseconds: 50));
 
-    expect(loadMoreCalls, greaterThan(0));
-  });
+      expect(loadMoreCalls, greaterThan(0));
+    },
+  );
 }

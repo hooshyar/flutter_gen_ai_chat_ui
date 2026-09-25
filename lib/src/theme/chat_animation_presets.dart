@@ -276,32 +276,53 @@ class ChatAnimationPresets {
   /// Lerp between two animation preset instances
   ChatAnimationPresets lerp(ChatAnimationPresets other, double t) {
     return ChatAnimationPresets(
-      microInteraction:
-          _lerpDuration(microInteraction, other.microInteraction, t),
+      microInteraction: _lerpDuration(
+        microInteraction,
+        other.microInteraction,
+        t,
+      ),
       quickTransition: _lerpDuration(quickTransition, other.quickTransition, t),
-      mediumTransition:
-          _lerpDuration(mediumTransition, other.mediumTransition, t),
+      mediumTransition: _lerpDuration(
+        mediumTransition,
+        other.mediumTransition,
+        t,
+      ),
       slowTransition: _lerpDuration(slowTransition, other.slowTransition, t),
       messageSlideIn: _lerpDuration(messageSlideIn, other.messageSlideIn, t),
       messageFadeIn: _lerpDuration(messageFadeIn, other.messageFadeIn, t),
-      messageTypewriter:
-          _lerpDuration(messageTypewriter, other.messageTypewriter, t),
-      messageExpansion:
-          _lerpDuration(messageExpansion, other.messageExpansion, t),
+      messageTypewriter: _lerpDuration(
+        messageTypewriter,
+        other.messageTypewriter,
+        t,
+      ),
+      messageExpansion: _lerpDuration(
+        messageExpansion,
+        other.messageExpansion,
+        t,
+      ),
       inputFocus: _lerpDuration(inputFocus, other.inputFocus, t),
       inputExpansion: _lerpDuration(inputExpansion, other.inputExpansion, t),
       sendButtonPress: _lerpDuration(sendButtonPress, other.sendButtonPress, t),
-      attachmentButton:
-          _lerpDuration(attachmentButton, other.attachmentButton, t),
-      streamingIndicator:
-          _lerpDuration(streamingIndicator, other.streamingIndicator, t),
+      attachmentButton: _lerpDuration(
+        attachmentButton,
+        other.attachmentButton,
+        t,
+      ),
+      streamingIndicator: _lerpDuration(
+        streamingIndicator,
+        other.streamingIndicator,
+        t,
+      ),
       typingIndicator: _lerpDuration(typingIndicator, other.typingIndicator, t),
       skeletonShimmer: _lerpDuration(skeletonShimmer, other.skeletonShimmer, t),
       pullToRefresh: _lerpDuration(pullToRefresh, other.pullToRefresh, t),
       themeSwitch: _lerpDuration(themeSwitch, other.themeSwitch, t),
       colorTransition: _lerpDuration(colorTransition, other.colorTransition, t),
-      layoutTransition:
-          _lerpDuration(layoutTransition, other.layoutTransition, t),
+      layoutTransition: _lerpDuration(
+        layoutTransition,
+        other.layoutTransition,
+        t,
+      ),
       // Curves don't lerp - use threshold
       elasticOut: t < 0.5 ? elasticOut : other.elasticOut,
       smoothOut: t < 0.5 ? smoothOut : other.smoothOut,
@@ -337,11 +358,13 @@ class ChatAnimationPresets {
   /// Predefined animation presets
   static const ChatAnimationPresets standard = ChatAnimationPresets();
 
-  static final ChatAnimationPresets fast =
-      const ChatAnimationPresets().scale(0.7);
+  static final ChatAnimationPresets fast = const ChatAnimationPresets().scale(
+    0.7,
+  );
 
-  static final ChatAnimationPresets slow =
-      const ChatAnimationPresets().scale(1.5);
+  static final ChatAnimationPresets slow = const ChatAnimationPresets().scale(
+    1.5,
+  );
 
   static const ChatAnimationPresets reduced = ChatAnimationPresets(
     microInteraction: Duration(milliseconds: 0),

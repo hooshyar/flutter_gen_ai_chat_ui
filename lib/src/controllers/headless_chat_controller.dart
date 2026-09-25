@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+
 import '../models/chat/chat_message.dart';
 import '../models/chat_thread.dart';
 
@@ -34,10 +36,9 @@ class HeadlessChatController extends ChangeNotifier {
     final updatedThreads = Map<String, ChatThread>.from(_state.threads);
     updatedThreads[threadId] = thread;
 
-    _updateState(_state.copyWith(
-      threads: updatedThreads,
-      activeThreadId: threadId,
-    ));
+    _updateState(
+      _state.copyWith(threads: updatedThreads, activeThreadId: threadId),
+    );
 
     return threadId;
   }
@@ -59,10 +60,9 @@ class HeadlessChatController extends ChangeNotifier {
       newActiveId = updatedThreads.values.first.id;
     }
 
-    _updateState(_state.copyWith(
-      threads: updatedThreads,
-      activeThreadId: newActiveId,
-    ));
+    _updateState(
+      _state.copyWith(threads: updatedThreads, activeThreadId: newActiveId),
+    );
   }
 
   /// Append a message to the current thread
@@ -178,23 +178,27 @@ class HeadlessChatController extends ChangeNotifier {
 
     if (data['threads'] != null) {
       for (final entry in (data['threads'] as Map).entries) {
-        threads[entry.key as String] =
-            ChatThread.fromJson(entry.value as Map<String, dynamic>);
+        threads[entry.key as String] = ChatThread.fromJson(
+          entry.value as Map<String, dynamic>,
+        );
       }
     }
 
-    _updateState(ThreadState(
-      threads: threads,
-      activeThreadId: data['activeThreadId'] as String?,
-      isLoading: false,
-    ));
+    _updateState(
+      ThreadState(
+        threads: threads,
+        activeThreadId: data['activeThreadId'] as String?,
+        isLoading: false,
+      ),
+    );
   }
 
   /// Save thread state to storage
   Map<String, dynamic> saveThreadState() {
     return {
-      'threads':
-          _state.threads.map((key, thread) => MapEntry(key, thread.toJson())),
+      'threads': _state.threads.map(
+        (key, thread) => MapEntry(key, thread.toJson()),
+      ),
       'activeThreadId': _state.activeThreadId,
     };
   }

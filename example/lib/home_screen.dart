@@ -1,6 +1,19 @@
+// The example app's landing screen: a split hero (pitch + a live chat
+// panel) above a grouped demo index. DESIGN.md §9 "Home screen".
 import 'package:flutter/material.dart';
+import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import 'version_info.dart';
+import 'shell/app_theme.dart';
+import 'shell/demo_catalog.dart';
+import 'shell/live_preview.dart';
+
+/// Width at which the hero and demo index switch from stacked to a split,
+/// 12-column layout.
+const double _heroBreakpoint = 1024;
+
+/// Width at which the demo index lays out two groups per row.
+const double _groupsTwoColumnBreakpoint = 840;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.onToggleTheme});
@@ -11,452 +24,364 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _anim = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..forward();
-  }
-
-  @override
-  void dispose() {
-    _anim.dispose();
-    super.dispose();
-  }
+class _HomeScreenState extends State<HomeScreen> {
+  // Keeping this key stable across rebuilds (rather than creating one per
+  // build) lets LivePreview's State survive the Row/Column swap at the 1024
+  // breakpoint: Flutter relocates the existing element instead of
+  // destroying and recreating it, so the scripted exchange never replays on
+  // resize (DESIGN.md §9).
+  final _livePreviewKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surface = Theme.of(context).colorScheme.surface;
+    final colors = context.appColors;
 
     return Scaffold(
-      backgroundColor: surface,
+      backgroundColor: colors.canvas,
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 500),
-            child: CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 48, 24, 0),
-                  sliver: SliverToBoxAdapter(
-                    child: _FadeSlideIn(
-                      animation: _anim,
-                      intervalStart: 0.0,
-                      child: _Header(
-                        isDark: isDark,
-                        onToggleTheme: widget.onToggleTheme,
-                      ),
-                    ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
-                  sliver: SliverToBoxAdapter(
-                    child: _FadeSlideIn(
-                      animation: _anim,
-                      intervalStart: 0.1,
-                      child: _FeaturedCard(
-                        isDark: isDark,
-                        onTap: () => Navigator.pushNamed(context, '/streaming'),
-                      ),
-                    ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                  sliver: SliverList.list(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= _heroBreakpoint;
+
+            return SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                isWide ? 32 : 20,
+                24,
+                isWide ? 32 : 20,
+                48,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      for (var i = 0; i < _examples.length; i++)
-                        Padding(
-                          padding: EdgeInsets.only(top: i == 0 ? 0 : 8),
-                          child: _FadeSlideIn(
-                            animation: _anim,
-                            intervalStart: 0.2 + i * 0.1,
-                            child: _CompactCard(
-                              data: _examples[i],
-                              isDark: isDark,
-                            ),
-                          ),
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: _ThemeToggle(
+                          isDark: isDark,
+                          onToggle: widget.onToggleTheme,
                         ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (isWide)
+                        _WideHero(
+                          colors: colors,
+                          livePreviewKey: _livePreviewKey,
+                        )
+                      else
+                        _StackedHero(
+                          colors: colors,
+                          livePreviewKey: _livePreviewKey,
+                        ),
+                      const SizedBox(height: 48),
+                      _DemoIndex(
+                        colors: colors,
+                        twoColumns:
+                            constraints.maxWidth >= _groupsTwoColumnBreakpoint,
+                      ),
                     ],
                   ),
                 ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
-                  sliver: SliverToBoxAdapter(
-                    child: Center(
-                      child: Text(
-                        'pub.dev/packages/flutter_gen_ai_chat_ui',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isDark ? Colors.white24 : Colors.black26,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 }
 
-const _examples = [
-  _CardData(
-    title: 'Basic Chat',
-    description: 'Simple send & receive, no streaming',
-    icon: Icons.chat_outlined,
-    color: Color(0xFF10B981),
-    route: '/basic',
-  ),
-  _CardData(
-    title: 'Custom Themes',
-    description: 'Ocean, Sunset, and Default styles',
-    icon: Icons.palette_outlined,
-    color: Color(0xFFEAB308),
-    route: '/themed',
-  ),
-  _CardData(
-    title: 'AI Actions',
-    description: 'Calculator, weather, color commands',
-    icon: Icons.bolt_outlined,
-    color: Color(0xFF8B5CF6),
-    route: '/actions',
-  ),
-  _CardData(
-    title: 'Rich Widgets',
-    description: 'Weather cards, products, charts inline',
-    icon: Icons.widgets_outlined,
-    color: Color(0xFFEC4899),
-    route: '/rich-widgets',
-  ),
-  _CardData(
-    title: 'RTL Chat',
-    description: 'Arabic streaming with bidi auto-detect',
-    icon: Icons.translate_rounded,
-    color: Color(0xFF0EA5E9),
-    route: '/rtl',
-  ),
-  _CardData(
-    title: 'Attachments',
-    description: 'File upload button and attached-file rendering',
-    icon: Icons.attach_file_rounded,
-    color: Color(0xFF14B8A6),
-    route: '/attachments',
-  ),
-  _CardData(
-    title: 'Voice Input',
-    description: 'Mic/send toggle with the VoiceSendButton widget',
-    icon: Icons.mic_none_rounded,
-    color: Color(0xFFF97316),
-    route: '/voice',
-  ),
-];
-
-// -- Header --
-
-class _Header extends StatelessWidget {
-  const _Header({required this.isDark, required this.onToggleTheme});
+class _ThemeToggle extends StatelessWidget {
+  const _ThemeToggle({required this.isDark, required this.onToggle});
 
   final bool isDark;
-  final VoidCallback onToggleTheme;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final colors = context.appColors;
+    return IconButton(
+      tooltip: isDark ? 'Switch to light theme' : 'Switch to dark theme',
+      icon: Icon(
+        isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+        color: colors.textSecondary,
+      ),
+      onPressed: onToggle,
+    );
+  }
+}
+
+// -- Hero --
+
+class _WideHero extends StatelessWidget {
+  const _WideHero({required this.colors, required this.livePreviewKey});
+
+  final AppColors colors;
+  final Key livePreviewKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 5,
+            child: Align(
+              alignment: Alignment.center,
+              child: _HeroPitch(colors: colors, headlineSize: 40),
+            ),
+          ),
+          const SizedBox(width: 32),
+          Expanded(
+            flex: 7,
+            child: LivePreview(key: livePreviewKey, height: 560),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StackedHero extends StatelessWidget {
+  const _StackedHero({required this.colors, required this.livePreviewKey});
+
+  final AppColors colors;
+  final Key livePreviewKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Flutter Gen AI\nChat UI',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.8,
-                      height: 1.15,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  'v$packageVersion',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white54 : Colors.black45,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ),
-            ],
+        _HeroPitch(colors: colors, headlineSize: 32),
+        const SizedBox(height: 24),
+        LivePreview(key: livePreviewKey, height: 440),
+      ],
+    );
+  }
+}
+
+class _HeroPitch extends StatelessWidget {
+  const _HeroPitch({required this.colors, required this.headlineSize});
+
+  final AppColors colors;
+  final double headlineSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'flutter_gen_ai_chat_ui',
+          style: TextStyle(
+            fontFamily: 'monospace',
+            fontSize: 12,
+            color: colors.textSecondary,
           ),
         ),
-        IconButton(
-          icon: Icon(
-            isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-            size: 20,
-            color: isDark ? Colors.white54 : Colors.black45,
+        const SizedBox(height: 16),
+        Text(
+          'Chat UI for Flutter AI apps',
+          style: TextStyle(
+            fontSize: headlineSize,
+            height: headlineSize == 40 ? 44 / 40 : 36 / 32,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.8,
+            color: colors.textPrimary,
           ),
-          onPressed: onToggleTheme,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Streaming markdown, syntax-highlighted code, RTL and tool '
+          'results. One widget, zero config, fully themeable.',
+          style: TextStyle(
+            fontSize: 16,
+            height: 1.56,
+            color: colors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 24),
+        const ClipRRect(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          child: CodeBlockView(
+            code: 'flutter pub add flutter_gen_ai_chat_ui',
+            language: 'bash',
+          ),
+        ),
+        const SizedBox(height: 16),
+        InkWell(
+          onTap: () => launchUrl(
+            Uri.parse(
+              'https://github.com/hooshyar/flutter_gen_ai_chat_ui',
+            ),
+            mode: LaunchMode.externalApplication,
+          ),
+          child: Text(
+            'GitHub',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: colors.accent,
+              decoration: TextDecoration.underline,
+              decorationColor: colors.accent,
+            ),
+          ),
         ),
       ],
     );
   }
 }
 
-// -- Featured card (Streaming — the most impressive demo) --
+// -- Demo index --
 
-class _FeaturedCard extends StatelessWidget {
-  const _FeaturedCard({required this.isDark, required this.onTap});
+class _DemoIndex extends StatelessWidget {
+  const _DemoIndex({required this.colors, required this.twoColumns});
 
-  final bool isDark;
-  final VoidCallback onTap;
+  final AppColors colors;
+  final bool twoColumns;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isDark ? const Color(0xFF1C1C2E) : Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
-      elevation: isDark ? 0 : 2,
-      shadowColor: Colors.black26,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.stream_rounded,
-                      color: Color(0xFF3B82F6),
-                      size: 18,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Recommended',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF3B82F6),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Streaming + Markdown',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.3,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Word-by-word streaming with code blocks, tables, and rich text rendering. The full experience.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isDark ? Colors.white54 : Colors.black45,
-                      height: 1.5,
-                    ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _FeatureChip(label: 'Streaming', isDark: isDark),
-                  const SizedBox(width: 6),
-                  _FeatureChip(label: 'Markdown', isDark: isDark),
-                  const SizedBox(width: 6),
-                  _FeatureChip(label: 'Code blocks', isDark: isDark),
-                ],
-              ),
-            ],
+    final groups = demoGroupOrder
+        .map((group) => DemoGroupSection(
+              group: group,
+              entries: demoCatalog.where((e) => e.group == group).toList(),
+              colors: colors,
+            ))
+        .toList();
+
+    if (!twoColumns) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final group in groups) ...[
+            group,
+            const SizedBox(height: 32),
+          ],
+        ],
+      );
+    }
+
+    return Wrap(
+      spacing: 48,
+      runSpacing: 32,
+      children: [
+        for (final group in groups)
+          SizedBox(
+            width: (1200 - 48) / 2,
+            child: group,
           ),
-        ),
-      ),
+      ],
     );
   }
 }
 
-class _FeatureChip extends StatelessWidget {
-  const _FeatureChip({required this.label, required this.isDark});
-
-  final String label;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.06)
-            : Colors.black.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          color: isDark ? Colors.white38 : Colors.black38,
-        ),
-      ),
-    );
-  }
-}
-
-// -- Compact list cards --
-
-class _CardData {
-  const _CardData({
-    required this.title,
-    required this.description,
-    required this.icon,
-    required this.color,
-    required this.route,
+/// One group of demo rows with its section title. Public (rather than
+/// private) so tests can count instances directly.
+class DemoGroupSection extends StatelessWidget {
+  const DemoGroupSection({
+    super.key,
+    required this.group,
+    required this.entries,
+    required this.colors,
   });
 
-  final String title;
-  final String description;
-  final IconData icon;
-  final Color color;
-  final String route;
-}
-
-class _CompactCard extends StatelessWidget {
-  const _CompactCard({required this.data, required this.isDark});
-
-  final _CardData data;
-  final bool isDark;
+  final String group;
+  final List<DemoEntry> entries;
+  final AppColors colors;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isDark ? const Color(0xFF1C1C2E) : Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      elevation: isDark ? 0 : 1,
-      shadowColor: Colors.black12,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          group,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: colors.textSecondary,
+          ),
+        ),
+        for (final entry in entries) DemoIndexRow(entry: entry, colors: colors),
+      ],
+    );
+  }
+}
+
+/// One row of the demo index. Public so tests can count instances directly.
+class DemoIndexRow extends StatefulWidget {
+  const DemoIndexRow({super.key, required this.entry, required this.colors});
+
+  final DemoEntry entry;
+  final AppColors colors;
+
+  @override
+  State<DemoIndexRow> createState() => _DemoIndexRowState();
+}
+
+class _DemoIndexRowState extends State<DemoIndexRow> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = widget.colors;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => Navigator.pushNamed(context, data.route),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        onTap: () => Navigator.of(context).pushNamed(widget.entry.route),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: colors.border)),
+          ),
           child: Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: data.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(data.icon, color: data.color, size: 20),
-              ),
-              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      data.title,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                      widget.entry.title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 20 / 14,
+                        fontWeight: FontWeight.w500,
+                        color: colors.textPrimary,
+                      ),
                     ),
                     Text(
-                      data.description,
+                      widget.entry.description,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.white38 : Colors.black38,
+                        height: 16 / 12,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: isDark ? Colors.white24 : Colors.black26,
+              AnimatedOpacity(
+                opacity: _hovering ? 1 : 0,
+                duration: const Duration(milliseconds: 150),
+                child: Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 16,
+                  color: colors.textTertiary,
+                ),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-// -- Stagger animation helper --
-
-class _FadeSlideIn extends StatelessWidget {
-  const _FadeSlideIn({
-    required this.animation,
-    required this.intervalStart,
-    required this.child,
-  });
-
-  final Animation<double> animation;
-  final double intervalStart;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final end = (intervalStart + 0.4).clamp(0.0, 1.0);
-    final curve = CurvedAnimation(
-      parent: animation,
-      curve: Interval(intervalStart, end, curve: Curves.easeOutCubic),
-    );
-
-    return AnimatedBuilder(
-      animation: curve,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - curve.value)),
-          child: Opacity(
-            opacity: curve.value,
-            child: child,
-          ),
-        );
-      },
-      child: child,
     );
   }
 }

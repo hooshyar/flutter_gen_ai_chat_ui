@@ -18,11 +18,7 @@ void main() {
             text: 'here is an image',
             user: const ChatUser(id: 'ai', firstName: 'AI'),
             createdAt: DateTime.now(),
-            media: const [
-              ChatMedia(
-                url: 'https://example.com/photo.png',
-              ),
-            ],
+            media: const [ChatMedia(url: 'https://example.com/photo.png')],
           ),
         ],
       );
@@ -37,10 +33,8 @@ void main() {
               controller: controller,
               onSendMessage: (_) {},
               fileUploadOptions: FileUploadOptions(
-                fileDisplayBuilder: (context, media) => Text(
-                  'custom:${media.url}',
-                  key: const Key('custom_media'),
-                ),
+                fileDisplayBuilder: (context, media) =>
+                    Text('custom:${media.url}', key: const Key('custom_media')),
               ),
             ),
           ),
@@ -51,10 +45,7 @@ void main() {
       // The consumer's builder must be used to render the attachment. Before the
       // fix this never fired and the default Image.network renderer was used.
       expect(find.byKey(const Key('custom_media')), findsOneWidget);
-      expect(
-        find.text('custom:https://example.com/photo.png'),
-        findsOneWidget,
-      );
+      expect(find.text('custom:https://example.com/photo.png'), findsOneWidget);
     },
   );
 

@@ -14,10 +14,7 @@ class AnimatedChatWidgets {
     required AnimationController controller,
     Duration delay = Duration.zero,
   }) {
-    final animation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(
+    final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: controller,
         curve: Interval(
@@ -31,10 +28,7 @@ class AnimatedChatWidgets {
     return AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
-        return Transform.scale(
-          scale: animation.value,
-          child: child,
-        );
+        return Transform.scale(scale: animation.value, child: child);
       },
       child: child,
     );
@@ -61,10 +55,7 @@ class AnimatedChatWidgets {
       ),
     );
 
-    final fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(
+    final fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: controller,
         curve: Interval(
@@ -80,10 +71,7 @@ class AnimatedChatWidgets {
       builder: (context, child) {
         return FadeTransition(
           opacity: fadeAnimation,
-          child: SlideTransition(
-            position: slideAnimation,
-            child: child,
-          ),
+          child: SlideTransition(position: slideAnimation, child: child),
         );
       },
       child: child,
@@ -192,18 +180,12 @@ class _AnimatedBubbleState extends State<AnimatedBubble>
         final fadeAnimation = Tween<double>(
           begin: 0.0,
           end: 1.0,
-        ).animate(CurvedAnimation(
-          parent: _controller,
-          curve: Curves.easeOut,
-        ));
+        ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
         animatedChild = AnimatedBuilder(
           animation: fadeAnimation,
           builder: (context, child) {
-            return Opacity(
-              opacity: fadeAnimation.value,
-              child: child,
-            );
+            return Opacity(opacity: fadeAnimation.value, child: child);
           },
           child: _buildBubble(),
         );
@@ -493,8 +475,4 @@ class _NeonGlowBubbleState extends State<NeonGlowBubble>
 }
 
 /// Animation types for bubbles
-enum BubbleAnimation {
-  bounceIn,
-  slideIn,
-  fadeIn,
-}
+enum BubbleAnimation { bounceIn, slideIn, fadeIn }

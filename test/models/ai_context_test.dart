@@ -50,10 +50,7 @@ void main() {
         final context = AiContextData.userProfile(
           id: 'user_123',
           name: 'John Doe',
-          profileData: {
-            'email': 'john@example.com',
-            'role': 'admin',
-          },
+          profileData: {'email': 'john@example.com', 'role': 'admin'},
           priority: AiContextPriority.high,
           categories: ['user', 'profile'],
         );
@@ -184,7 +181,9 @@ void main() {
         final aiString = context.toAiString();
 
         expect(
-            aiString, equals('User Data: {name: John, age: 30, active: true}'));
+          aiString,
+          equals('User Data: {name: John, age: 30, active: true}'),
+        );
       });
 
       test('should serialize list data correctly', () {

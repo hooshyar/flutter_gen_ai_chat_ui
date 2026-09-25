@@ -38,23 +38,28 @@ void main() {
       await tester.pump();
     }
 
-    testWidgets('bare Enter sends when sendOnEnter is true and text non-empty',
-        (tester) async {
-      var sends = 0;
-      ChatMessage? sent;
-      await pump(tester, onSend: (m) {
-        sends++;
-        sent = m;
-      });
+    testWidgets(
+      'bare Enter sends when sendOnEnter is true and text non-empty',
+      (tester) async {
+        var sends = 0;
+        ChatMessage? sent;
+        await pump(
+          tester,
+          onSend: (m) {
+            sends++;
+            sent = m;
+          },
+        );
 
-      await tester.tap(find.byType(TextField));
-      await tester.enterText(find.byType(TextField), 'hello world');
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-      await tester.pump();
+        await tester.tap(find.byType(TextField));
+        await tester.enterText(find.byType(TextField), 'hello world');
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pump();
 
-      expect(sends, 1);
-      expect(sent?.text, 'hello world');
-    });
+        expect(sends, 1);
+        expect(sent?.text, 'hello world');
+      },
+    );
 
     testWidgets('Enter on empty input is a no-op', (tester) async {
       var sends = 0;
@@ -79,8 +84,9 @@ void main() {
       expect(sends, 0);
     });
 
-    testWidgets('sendOnEnter: false leaves Enter to the TextField',
-        (tester) async {
+    testWidgets('sendOnEnter: false leaves Enter to the TextField', (
+      tester,
+    ) async {
       var sends = 0;
       await pump(
         tester,
@@ -108,8 +114,9 @@ void main() {
       expect(sends, 1);
     });
 
-    testWidgets('Holding Enter does not fire onSend repeatedly',
-        (tester) async {
+    testWidgets('Holding Enter does not fire onSend repeatedly', (
+      tester,
+    ) async {
       var sends = 0;
       await pump(tester, onSend: (_) => sends++);
 
@@ -141,8 +148,9 @@ void main() {
       expect(sends, 0);
     });
 
-    testWidgets('options.onSubmitted is forwarded when Enter sends',
-        (tester) async {
+    testWidgets('options.onSubmitted is forwarded when Enter sends', (
+      tester,
+    ) async {
       String? submitted;
       await pump(
         tester,
@@ -182,8 +190,9 @@ void main() {
       expect(sends, 0);
     });
 
-    testWidgets('Custom focusNode passed via InputOptions still sends',
-        (tester) async {
+    testWidgets('Custom focusNode passed via InputOptions still sends', (
+      tester,
+    ) async {
       var sends = 0;
       final fn = FocusNode();
       await pump(
