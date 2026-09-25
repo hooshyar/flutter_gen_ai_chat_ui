@@ -74,6 +74,17 @@ MarkdownStyleSheet chatMarkdownStyle(
     blockquote: scale(16, 1.56, FontWeight.w400, color: tokens.textSecondary),
     tableHead: scale(16, 1.56, FontWeight.w600),
     tableBody: scale(16, 1.56, FontWeight.w400),
+    // flutter_markdown_plus defaults header cells to TextAlign.center while
+    // body cells with no explicit column-alignment markup render
+    // TextAlign.left - so headers visually float above their column instead
+    // of lining up with it. `.start` (not `.left`) matters for RTL: the
+    // package's table-cell builder maps a cell's TextAlign to a Wrap's
+    // WrapAlignment, and TextAlign.left there resolves to the
+    // direction-aware WrapAlignment.start (same bucket `.start` itself
+    // falls into) rather than a hard physical left - so `.start` tracks
+    // plain body cells' actual (already direction-aware) alignment in both
+    // LTR and RTL, while `.right`/`.left` would not.
+    tableHeadAlign: TextAlign.start,
     tableHeadCellsDecoration: BoxDecoration(color: tokens.surfaceSunken),
     tableCellsPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
     tableBorder: TableBorder(

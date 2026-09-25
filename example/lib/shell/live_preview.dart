@@ -193,13 +193,11 @@ class _LivePreviewState extends State<LivePreview> {
         // The framed hero panel is short (per [height]) and never needs a
         // scroll-to-bottom affordance - at phone widths the floating button
         // otherwise covers the code block. `disabled` on
-        // `ScrollToBottomOptions` is declared but not actually consulted by
-        // `_buildScrollToBottomButton` (it only affects list bottom
-        // padding), so it doesn't hide the button on its own - a custom
-        // builder that renders nothing does. DESIGN.md §9.
-        scrollToBottomOptions: ScrollToBottomOptions(
-          scrollToBottomBuilder: (_) => const SizedBox.shrink(),
-        ),
+        // `ScrollToBottomOptions` now opts the button out entirely
+        // (see `CustomChatWidget._buildScrollToBottomButton`), so it's no
+        // longer necessary to fake that with a builder that renders nothing.
+        // DESIGN.md §9.
+        scrollToBottomOptions: const ScrollToBottomOptions(disabled: true),
         loadingConfig: LoadingConfig(isLoading: _isLoading),
         onCancelGenerating: () {
           _streamSub?.cancel();

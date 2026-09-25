@@ -231,5 +231,60 @@ void main() {
 
       controller.dispose();
     });
+
+    test(
+        'addMessage does not drop a same-millisecond AI message '
+        '(auto id collision)', () {
+      // Regression test: a caller that adds two AI messages back-to-back in
+      // the same synchronous handler - e.g. a tool-call JSON block
+      // immediately followed by a `ChatMessage.rich` result card, with
+      // neither message given an explicit id - relies on addMessage()'s
+      // auto id generation ('${user.id}_${createdAt.millisecondsSinceEpoch}')
+      // to keep both messages distinct.
+      //
+      // `DateTime.now()` only has millisecond resolution on web (it's
+      // backed by JS `Date.now()`, unlike the VM's microsecond clock), so
+      // two such calls a few statements apart reliably return the SAME
+      // instant there - and did in the real example app
+      // (example/lib/examples/actions_chat.dart's `/calculate` and
+      // `/weather` handlers) even though this rarely reproduced on the Dart
+      // VM, where flutter's own test suite runs by default. This test
+      // reproduces the collision deterministically, on any platform, by
+      // constructing two messages with an explicit, identical `createdAt`
+      // instead of depending on real-clock timing.
+      final controller = ChatMessagesController();
+      final aiUser = ChatUser(id: 'ai', firstName: 'Agent');
+      final sameInstant = DateTime(2026, 1, 1, 12, 0, 0);
+
+      controller.addMessage(ChatMessage(
+        text: 'Calling the calculator tool: ...',
+        user: aiUser,
+        createdAt: sameInstant,
+        isMarkdown: true,
+      ));
+      controller.addMessage(ChatMessage.rich(
+        user: aiUser,
+        resultKind: 'action_result',
+        data: const {'label': 'Result', 'value': '42 * 7 = 294'},
+        createdAt: sameInstant,
+      ));
+
+      expect(controller.messages.length, 2);
+      expect(
+        controller.messages
+            .where((m) => m.customProperties?['resultKind'] == 'action_result')
+            .length,
+        1,
+        reason: 'the rich result-card message must not be dropped when it '
+            'shares its auto-generated id with the preceding AI message',
+      );
+
+      // The two auto-generated ids must be distinct even though both
+      // messages were created at the exact same instant.
+      final ids = controller.messages.map(controller.getMessageId).toSet();
+      expect(ids.length, 2);
+
+      controller.dispose();
+    });
   });
 }

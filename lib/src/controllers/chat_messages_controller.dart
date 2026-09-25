@@ -557,8 +557,25 @@ class ChatMessagesController extends ChangeNotifier {
     var messageId = _getMessageId(message);
     if (message.customProperties == null ||
         message.customProperties!['id'] == null) {
-      final generatedId =
+      var generatedId =
           '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
+      // `DateTime.now()` only has millisecond resolution on web (it's backed
+      // by JS `Date.now()`, unlike the VM's microsecond clock), so two
+      // messages from the same user added back-to-back with no `id` of
+      // their own - e.g. a tool-call block immediately followed by a
+      // `ChatMessage.rich` result card in the same synchronous handler -
+      // reliably land in the same millisecond on web and would otherwise
+      // generate the same id. Left alone, the `!_messageCache.containsKey`
+      // guard below would then silently drop the second message instead of
+      // adding it. Disambiguate with a monotonically increasing suffix
+      // whenever the timestamp-only id is already taken.
+      if (_messageCache.containsKey(generatedId)) {
+        var suffix = 1;
+        while (_messageCache.containsKey('${generatedId}_$suffix')) {
+          suffix++;
+        }
+        generatedId = '${generatedId}_$suffix';
+      }
       message = message.copyWith(
         customProperties: {
           ...?message.customProperties,
