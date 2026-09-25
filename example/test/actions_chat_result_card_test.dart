@@ -1,6 +1,3 @@
-@TestOn('chrome')
-library;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 import 'package:flutter_gen_ai_chat_ui_example/examples/actions_chat.dart';
@@ -22,16 +19,22 @@ import 'package:flutter_test/flutter_test.dart';
 /// two messages then got the same auto id, and the second `addMessage` call
 /// was silently dropped by the "id already cached" de-dup guard.
 ///
-/// This is why the bug only reproduced in a real browser and never in a
-/// plain `flutter test` run: on the Dart VM, two `DateTime.now()` calls a
-/// few statements apart are - empirically - typically microseconds to a few
-/// milliseconds apart and don't collide, so the drop never triggered there.
+/// This is why the bug only reproduced in a real browser and never
+/// reliably in a plain `flutter test` run: on the Dart VM, two
+/// `DateTime.now()` calls a few statements apart are - empirically -
+/// typically microseconds to a few milliseconds apart and rarely collide.
 ///
-/// This suite is pinned to the `chrome` platform (`@TestOn('chrome')`, run
-/// via `flutter test --platform chrome`) so it exercises the exact
-/// real-world timing this bug depends on instead of a platform where it
-/// happens not to reproduce. It's skipped (not run, not failed) under the
-/// VM-default `flutter test`.
+/// `ChatMessagesController` now disambiguates a same-millisecond id
+/// collision between two genuinely DIFFERENT messages with a suffix
+/// (instead of silently dropping the second one) while still deduping a
+/// truly identical re-added message onto its existing id - see
+/// `ChatMessagesController._resolveGeneratedMessageId`. The real proof of
+/// that fix is the deterministic, explicit-`createdAt` collision test in
+/// `test/chat_messages_controller_test.dart`; this suite is the
+/// integration-level regression for the concrete example that surfaced the
+/// bug, and now runs on the Dart VM like the rest of the suite. It can
+/// also be run with `flutter test --platform chrome` to exercise the real
+/// web timing directly.
 void main() {
   testWidgets('/calculate 42 * 7 renders a result card containing 294',
       (tester) async {

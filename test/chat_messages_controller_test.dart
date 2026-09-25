@@ -286,5 +286,122 @@ void main() {
 
       controller.dispose();
     });
+
+    test(
+        'addMessage still dedupes re-adding the exact same id-less message '
+        '(round-10 fix must not break this)', () {
+      // Regression test for a bug introduced by the same-millisecond-id
+      // suffix fix above: it must only suffix when the collision is with a
+      // genuinely DIFFERENT message. Re-adding the SAME message content
+      // (no explicit id, same user/createdAt/text) must still collapse to
+      // one stored message, exactly like before the suffix fix existed.
+      final controller = ChatMessagesController();
+      final aiUser = ChatUser(id: 'ai', firstName: 'Agent');
+      final sameInstant = DateTime(2026, 1, 1, 12, 0, 0);
+
+      final message = ChatMessage(
+        text: 'Hello there',
+        user: aiUser,
+        createdAt: sameInstant,
+      );
+
+      controller.addMessage(message);
+      controller.addMessage(message);
+
+      expect(controller.messages.length, 1,
+          reason: 'adding the identical message twice must dedupe, not '
+              'create a second entry with a suffixed id');
+
+      controller.dispose();
+    });
+
+    test('setMessages then addMessage of the same id-less message dedupes', () {
+      final controller = ChatMessagesController();
+      final aiUser = ChatUser(id: 'ai', firstName: 'Agent');
+      final sameInstant = DateTime(2026, 1, 1, 12, 0, 0);
+
+      final message = ChatMessage(
+        text: 'Hello there',
+        user: aiUser,
+        createdAt: sameInstant,
+      );
+
+      controller.setMessages([message]);
+      controller.addMessage(message);
+
+      expect(controller.messages.length, 1);
+
+      controller.dispose();
+    });
+
+    test(
+        'addMessage dedupes onto an existing suffixed id, not just the base '
+        'id', () {
+      // Three id-less messages share the same millisecond: A, then a
+      // DIFFERENT message B (forces the base id to be taken by A and B to
+      // land on `baseId_1`), then A again. The third add must dedupe onto
+      // B's `baseId_1` slot... no - onto A's original (base) id, since A's
+      // content matches the FIRST stored message under the base id, which
+      // is walked before any suffix.
+      final controller = ChatMessagesController();
+      final aiUser = ChatUser(id: 'ai', firstName: 'Agent');
+      final sameInstant = DateTime(2026, 1, 1, 12, 0, 0);
+
+      final messageA = ChatMessage(
+        text: 'Message A',
+        user: aiUser,
+        createdAt: sameInstant,
+      );
+      final messageB = ChatMessage(
+        text: 'Message B',
+        user: aiUser,
+        createdAt: sameInstant,
+      );
+
+      controller.addMessage(messageA);
+      controller.addMessage(messageB);
+      expect(controller.messages.length, 2);
+
+      // Re-add content-identical to B (which is stored under the `_1`
+      // suffix) - must dedupe onto B's id, not create a third message.
+      controller.addMessage(ChatMessage(
+        text: 'Message B',
+        user: aiUser,
+        createdAt: sameInstant,
+      ));
+
+      expect(controller.messages.length, 2,
+          reason: 're-adding content identical to the message stored under '
+              'the suffixed id must dedupe onto it, not add a third message');
+
+      controller.dispose();
+    });
+
+    test(
+        'two different id-less messages sharing user+createdAt are kept as '
+        'two distinct messages', () {
+      // Same scenario as the collision test above, phrased directly per the
+      // acceptance criteria: distinct content, same millisecond, no
+      // explicit ids - both must survive.
+      final controller = ChatMessagesController();
+      final aiUser = ChatUser(id: 'ai', firstName: 'Agent');
+      final sameInstant = DateTime(2026, 1, 1, 12, 0, 0);
+
+      controller.addMessage(ChatMessage(
+        text: 'First distinct message',
+        user: aiUser,
+        createdAt: sameInstant,
+      ));
+      controller.addMessage(ChatMessage.rich(
+        user: aiUser,
+        resultKind: 'weather',
+        data: const {'city': 'Baghdad', 'temp': 42},
+        createdAt: sameInstant,
+      ));
+
+      expect(controller.messages.length, 2);
+
+      controller.dispose();
+    });
   });
 }

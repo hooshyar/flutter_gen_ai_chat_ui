@@ -21,7 +21,7 @@ No breaking API changes: every public change is additive. **The default look cha
 - `WelcomeMessageConfig.subtitle` / `subtitleStyle`.
 
 ### Fixed
-- **Messages added back to back no longer disappear on web.** When you add a message without an id, the controller builds one from the user id and a millisecond timestamp. On web, two messages added in the same millisecond got the same id, and the second was silently dropped. Colliding ids now get a unique suffix.
+- **Messages added back to back no longer disappear on web.** When you add a message without an id, the controller builds one from the user id and a millisecond timestamp. On web, two messages added in the same millisecond got the same id, and the second was silently dropped. A DISTINCT message that collides with an existing id now gets a unique suffix and is kept as a separate message. An IDENTICAL message re-added under the same id is still deduped into the existing one, same as before — this change does not add or alter any other deduplication behavior.
 - **Markdown table headers line up with their columns.** They are start-aligned, so this also holds in RTL. Before, headers were centred over left-aligned cells.
 - **`ScrollToBottomOptions.disabled` now actually hides the button.** Before, it only changed the list padding. It now covers both the default button and `scrollToBottomBuilder`.
 - **Debug trace logging only runs in debug builds.** The internal streaming-pin and scroll trace lines no longer reach release or profile consoles.
