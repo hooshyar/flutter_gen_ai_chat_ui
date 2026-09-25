@@ -370,6 +370,12 @@ void main() {
         expect(padding.top, 14);
         expect(padding.bottom, 14);
 
+        final codeText = tester.widget<Text>(
+          find.descendant(
+            of: find.byType(SingleChildScrollView),
+            matching: find.byType(Text),
+          ),
+        );
         final textSize = tester.getSize(
           find.descendant(
             of: find.byType(SingleChildScrollView),
@@ -379,6 +385,11 @@ void main() {
         final scrollViewSize =
             tester.getSize(find.byType(SingleChildScrollView));
 
+        // The rendered span itself must not carry the fence's trailing
+        // newline — the old code passed the raw, unstripped textContent
+        // straight to the Text widget.
+        expect(codeText.textSpan!.toPlainText(), isNot(endsWith('\n')));
+
         // Exactly one line of text, not two: height is the text's own
         // height plus the 28px (14 + 14) of vertical padding, with a small
         // tolerance for platform font-metric rounding — not roughly double
@@ -387,6 +398,12 @@ void main() {
           scrollViewSize.height,
           closeTo(textSize.height + 28, 2),
         );
+
+        // Old behavior rendered a phantom second line (~68px total here);
+        // the fix keeps the whole scroll area under two line-heights of
+        // padded content (~48px) - well short of what a trailing blank
+        // line would need.
+        expect(scrollViewSize.height, lessThan(textSize.height * 2 + 28));
       },
     );
 

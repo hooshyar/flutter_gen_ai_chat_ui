@@ -27,6 +27,30 @@ double _contrastRatio(Color a, Color b) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
+/// Reads the base/highlight colours actually fed into the private
+/// `_ShimmerEffect` that drives the `ShaderMask` behind the loading text.
+///
+/// `text.style.color` is not a meaningful contrast signal here: the
+/// `ShaderMask(BlendMode.srcIn)` wrapping the text repaints every pixel
+/// with the shimmer gradient regardless of the `Text` widget's own style,
+/// so asserting on `Text.style.color` proves nothing about what actually
+/// lands on screen. `_ShimmerEffect` is private to `loading_widget.dart`
+/// (not `@visibleForTesting`), so its type can't be named here - locate it
+/// by runtime type string instead and reach its `Color` fields dynamically
+/// (member-name based dispatch, unaffected by library-level privacy).
+({Color base, Color highlight}) _shimmerColors(WidgetTester tester) {
+  final state = tester.state(
+    find.byWidgetPredicate(
+      (w) => w.runtimeType.toString() == '_ShimmerEffect',
+    ),
+  );
+  final dynamic widget = (state as dynamic).widget;
+  return (
+    base: widget.baseColor as Color,
+    highlight: widget.highlightColor as Color
+  );
+}
+
 void main() {
   group(
     'LoadingWidget default text/shimmer colour (the faint "Generating '
@@ -46,15 +70,19 @@ void main() {
         );
         await tester.pump();
 
-        final text = tester.widget<Text>(
-          find.text('Generating code...'),
-        );
-        final color = text.style?.color;
-        expect(color, isNotNull);
+        final colors = _shimmerColors(tester);
         // Full opacity — never dimmed below the resting `textSecondary`.
-        expect(color!.a, 1.0);
+        expect(colors.base.a, 1.0);
+        // The dimmest part of the shimmer sweep (its resting `baseColor`,
+        // not the brighter `highlightColor` band) is what must clear the
+        // WCAG floor against the canvas — the old light default (#F7F8F8,
+        // near-white) fails this by a wide margin.
         expect(
-          _contrastRatio(color, ChatTokens.light.canvas),
+          _contrastRatio(colors.base, ChatTokens.light.canvas),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(
+          _contrastRatio(colors.highlight, ChatTokens.light.canvas),
           greaterThanOrEqualTo(4.5),
         );
       });
@@ -73,14 +101,14 @@ void main() {
         );
         await tester.pump();
 
-        final text = tester.widget<Text>(
-          find.text('Generating code...'),
-        );
-        final color = text.style?.color;
-        expect(color, isNotNull);
-        expect(color!.a, 1.0);
+        final colors = _shimmerColors(tester);
+        expect(colors.base.a, 1.0);
         expect(
-          _contrastRatio(color, ChatTokens.dark.canvas),
+          _contrastRatio(colors.base, ChatTokens.dark.canvas),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(
+          _contrastRatio(colors.highlight, ChatTokens.dark.canvas),
           greaterThanOrEqualTo(4.5),
         );
       });

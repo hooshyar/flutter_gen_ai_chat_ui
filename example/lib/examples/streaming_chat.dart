@@ -56,6 +56,14 @@ class _StreamingChatExampleState extends State<StreamingChatExample> {
   void _onSendMessage(ChatMessage message) {
     _controller.addMessage(message);
     _streamSub?.cancel();
+    // Finalize whatever the previous stream left open before starting a new
+    // one - cancelling the subscription alone doesn't close the message, so
+    // without this a fast second send leaves the prior reply stuck with a
+    // permanent caret and no Copy button.
+    final prevId = _currentStreamingId;
+    if (prevId != null) {
+      _controller.stopStreamingMessage(prevId);
+    }
     setState(() => _isLoading = true);
 
     final messageId = 'ai_${DateTime.now().millisecondsSinceEpoch}';

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 import 'package:flutter_gen_ai_chat_ui_example/home_screen.dart';
 import 'package:flutter_gen_ai_chat_ui_example/shell/app_theme.dart';
+import 'package:flutter_gen_ai_chat_ui_example/shell/live_preview.dart';
 
 void setSurfaceSize(WidgetTester tester, Size size) {
   tester.view.physicalSize = size;
@@ -107,7 +108,25 @@ void main() {
     // Cross the split-hero breakpoint downward - the Row/Column swap would
     // recreate LivePreview's State (and replay the script) without a
     // GlobalKey preserving it across the rebuild.
+    //
+    // Capture the State object itself before resizing: a 10s pumpAndSettle
+    // alone can't tell "preserved" from "replayed", since a fast replay of
+    // the scripted exchange settles into the exact same visible text and
+    // icons within that window. Checking object identity right after a
+    // SINGLE pump - not a full settle - is the precise signal: a
+    // recreated State is a different instance immediately, before any
+    // replay has had time to run at all.
+    final stateBeforeResize = tester.state(find.byType(LivePreview));
     setSurfaceSize(tester, const Size(390, 844));
+    await tester.pump();
+
+    expect(
+      identical(stateBeforeResize, tester.state(find.byType(LivePreview))),
+      isTrue,
+      reason: 'LivePreview\'s State must survive the breakpoint resize, not '
+          'be torn down and recreated (which would replay the script)',
+    );
+
     await tester.pumpAndSettle(const Duration(seconds: 10));
 
     expect(find.text('Write a debounce helper in Dart'), findsOneWidget);
