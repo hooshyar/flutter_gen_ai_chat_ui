@@ -569,5 +569,75 @@ void main() {
       final keyword = spans.firstWhere((s) => s.text == 'void');
       expect(keyword.style?.color, CodeBlockTheme.dark().keywordColor);
     });
+
+    /// Regression: a caller-supplied `MessageOptions.markdownStyleSheet`'s
+    /// `codeblockPadding` was silently ignored (acceptance criterion A10).
+    /// flutter_markdown_plus only applies `codeblockPadding` on its own
+    /// `pre` rendering path, but this package always registers a custom
+    /// `pre` builder (`CodeBlockMarkdownBuilder`) that bypassed it entirely
+    /// — no matter what the caller set, the code text always used
+    /// `CodeBlockView`'s own default padding. Fixed by forwarding a
+    /// non-null caller `codeblockPadding` into `CodeBlockView.padding`.
+    testWidgets(
+      'user markdownStyleSheet codeblockPadding reaches the code text inset',
+      (tester) async {
+        const decoration = BoxDecoration(color: Color(0xFF123456));
+
+        Future<double> insetFor(EdgeInsets codeblockPadding) async {
+          final controller = ChatMessagesController();
+          controller.addMessage(codeMessage(dartBlock));
+
+          await tester.pumpWidget(
+            buildChat(
+              controller: controller,
+              streamingEnabled: false,
+              messageOptions: MessageOptions(
+                markdownStyleSheet: MarkdownStyleSheet(
+                  codeblockDecoration: decoration,
+                  codeblockPadding: codeblockPadding,
+                ),
+              ),
+            ),
+          );
+          await tester.pump();
+
+          // The user-decorated Container flutter_markdown_plus wraps the
+          // pre builder's output in.
+          final container = tester
+              .widgetList<Container>(
+                find.descendant(
+                  of: find.byType(Markdown),
+                  matching: find.byType(Container),
+                ),
+              )
+              .firstWhere((c) => c.decoration == decoration);
+          final containerFinder = find.byWidgetPredicate(
+            (w) => w is Container && w.decoration == decoration,
+          );
+          final containerLeft = tester.getTopLeft(containerFinder).dx;
+          final targetText = codeTextOf(tester, find.byType(CodeBlockView));
+          final textLeft = tester
+              .getTopLeft(
+                find.byWidgetPredicate((w) => identical(w, targetText)),
+              )
+              .dx;
+          expect(container.decoration, decoration);
+          return textLeft - containerLeft;
+        }
+
+        final zeroInset = await insetFor(EdgeInsets.zero);
+        final thirtyInset = await insetFor(const EdgeInsets.all(30));
+
+        expect(
+          thirtyInset - zeroInset,
+          closeTo(30, 5),
+          reason: 'codeblockPadding: 0 gave inset ${zeroInset}px and '
+              'codeblockPadding: 30 gave inset ${thirtyInset}px — a caller '
+              "stylesheet's codeblockPadding should change the code text's "
+              'inset inside the decorated container by ~30px, not be '
+              'silently ignored.',
+        );
+      },
+    );
   });
 }

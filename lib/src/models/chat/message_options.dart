@@ -756,7 +756,12 @@ class ScrollToBottomOptions {
   /// Custom builder for scroll to bottom button
   final Widget Function(ScrollController)? scrollToBottomBuilder;
 
-  /// Distance from bottom of the screen (default is 72)
+  /// Distance from the bottom of the chat surface this button floats over
+  /// (`CustomChatWidget`, which ends exactly at the composer's top edge) to
+  /// the button's 48x48 hit area (default is 6, chosen so the painted 36px
+  /// disc, centred within that hit area, lands ~12px above the composer per
+  /// `DESIGN.md` §8.10; not from the viewport/screen bottom despite the
+  /// field's name).
   final double bottomOffset;
 
   /// Distance from right of the screen (default is 16). Only applied when
@@ -783,7 +788,7 @@ class ScrollToBottomOptions {
     this.alwaysVisible = false,
     this.onScrollToBottomPress,
     this.scrollToBottomBuilder,
-    this.bottomOffset = 72,
+    this.bottomOffset = 6,
     this.rightOffset = 16,
     this.showText = false,
     this.buttonText = 'Scroll to bottom',

@@ -365,6 +365,7 @@ class CodeBlockMarkdownBuilder extends MarkdownElementBuilder {
     this.showCopyButton = true,
     this.baseStyle,
     this.ownsDecoration = true,
+    this.padding,
   });
 
   /// Visual theme forwarded to [CodeBlockView.theme].
@@ -383,6 +384,16 @@ class CodeBlockMarkdownBuilder extends MarkdownElementBuilder {
   /// `MarkdownStyleSheet.codeblockDecoration` is a caller-supplied,
   /// non-transparent value that already paints the block's chrome.
   final bool ownsDecoration;
+
+  /// Forwarded to [CodeBlockView.padding].
+  ///
+  /// flutter_markdown_plus's own `MarkdownStyleSheet.codeblockPadding` is
+  /// only consumed on its own `pre` rendering path — registering a custom
+  /// `pre` builder (this class) bypasses that path entirely, so a caller's
+  /// `codeblockPadding` would otherwise be silently dropped even though
+  /// they set it on the very stylesheet passed to `MessageOptions`. Set
+  /// this from that value (when non-null) so it still takes effect.
+  final EdgeInsets? padding;
 
   String? _language;
 
@@ -415,6 +426,7 @@ class CodeBlockMarkdownBuilder extends MarkdownElementBuilder {
       showCopyButton: showCopyButton,
       baseStyle: baseStyle,
       decorate: ownsDecoration,
+      padding: padding,
     );
     if (!ownsDecoration) return view;
     // Bottom-only: the ambient block spacing plus this already lines up

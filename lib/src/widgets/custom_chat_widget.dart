@@ -539,10 +539,23 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   /// without this, a small [ChatSpacingConfig.messageListPadding] lets the
   /// last message's own layout extend into the button's reserved zone).
   /// A caller-configured padding that's already >= that footprint is left
-  /// untouched. No-op when the button is disabled.
+  /// untouched.
+  ///
+  /// Only widened when the button can actually be showing AT max scroll —
+  /// i.e. [ScrollToBottomOptions.alwaysVisible] — since that's the only
+  /// case where the button and the last message can occupy the same
+  /// on-screen space at once. The normal (non-`alwaysVisible`) button hides
+  /// itself once scrolled within ~100px of the bottom (`_handleScroll`), so
+  /// by the time a user is actually AT the bottom the button isn't showing
+  /// and there is nothing to clear — reserving its 120px footprint there
+  /// unconditionally (as a prior version of this getter did) permanently
+  /// doubled the resting gap between the last message and the composer
+  /// (~85px -> ~197px) for every default chat, even though the button is
+  /// invisible at that scroll position. No-op when the button is disabled.
   EdgeInsets get _effectiveMessageListPadding {
     final base = widget.spacingConfig.messageListPadding;
     if (widget.scrollToBottomOptions.disabled) return base;
+    if (!widget.scrollToBottomOptions.alwaysVisible) return base;
     final minBottom = widget.scrollToBottomOptions.bottomOffset +
         ScrollToBottomButton.hitAreaSize;
     if (base.bottom >= minBottom) return base;
@@ -1391,6 +1404,14 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           // own real codeblockDecoration, so CodeBlockView must not also
           // decorate (see CodeBlockMarkdownBuilder's doc comment).
           ownsDecoration: widget.messageOptions.markdownStyleSheet == null,
+          // A caller-supplied stylesheet's codeblockPadding would otherwise
+          // be silently ignored — flutter_markdown_plus only applies it on
+          // its own `pre` path, which this custom builder bypasses (see
+          // CodeBlockMarkdownBuilder.padding's doc comment). The package's
+          // own default stylesheet already sets codeblockPadding to zero
+          // (CodeBlockView paints its own default padding instead), so this
+          // only ever forwards an explicit caller value.
+          padding: widget.messageOptions.markdownStyleSheet?.codeblockPadding,
         ),
       };
 
