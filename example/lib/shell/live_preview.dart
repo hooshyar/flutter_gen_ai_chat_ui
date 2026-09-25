@@ -174,6 +174,14 @@ class _LivePreviewState extends State<LivePreview> {
         onSendMessage: _onSendMessage,
         enableMarkdownStreaming: true,
         persistentExampleQuestions: false,
+        // Keep the scripted exchange readable from its start in the framed
+        // panel: pin the user's question at the top while the answer
+        // streams in instead of chasing the growing code block to the
+        // bottom, which otherwise clips the header and the start of the
+        // answer at phone widths (DESIGN.md §9).
+        scrollBehaviorConfig: const ScrollBehaviorConfig(
+          pinDuringStreaming: StreamingPinAnchor.userMessage,
+        ),
         loadingConfig: LoadingConfig(isLoading: _isLoading),
         onCancelGenerating: () {
           _streamSub?.cancel();

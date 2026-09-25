@@ -94,6 +94,11 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
   /// Resolves the ambient theme plus, for a brand preset, its
   /// [CustomThemeExtension] - the widgets that read chat styling
   /// (`AiChatWidget`, `ChatInput`, message bubbles) pick it up from there.
+  ///
+  /// The Claude preset's light `chatBackground` is nudged to a warm cream
+  /// here (package default is pure white, same as ChatGPT's) so the two
+  /// brand presets stay visually distinct at a glance - the example's
+  /// choice, the package factory itself is untouched.
   ThemeData _themeFor(BuildContext context) {
     final base = Theme.of(context);
     final isDark = base.brightness == Brightness.dark;
@@ -105,8 +110,14 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
           extensions: [CustomThemeExtension.chatgpt(dark: isDark)],
         );
       case _Preset.claude:
+        final claude = CustomThemeExtension.claude(dark: isDark);
         return base.copyWith(
-          extensions: [CustomThemeExtension.claude(dark: isDark)],
+          extensions: [
+            if (isDark)
+              claude
+            else
+              claude.copyWith(chatBackground: const Color(0xFFFAF7F0)),
+          ],
         );
       case _Preset.gemini:
         return base.copyWith(
@@ -115,19 +126,39 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
     }
   }
 
+  /// The active preset's `chatBackground`/`sendButtonColor` for the shared
+  /// demo chrome (top bar, sidebar, preset bar) and the segmented control's
+  /// selection tint, so the whole surface reads as one canvas instead of a
+  /// themed chat area sitting inside default-toned chrome.
+  Color? _presetBackground(BuildContext context) {
+    if (_selected == _Preset.defaultTheme) return null;
+    return _themeFor(context).extension<CustomThemeExtension>()?.chatBackground;
+  }
+
+  Color? _presetAccent(BuildContext context) {
+    if (_selected == _Preset.defaultTheme) return null;
+    return _themeFor(context)
+        .extension<CustomThemeExtension>()
+        ?.sendButtonColor;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final presetBackground = _presetBackground(context);
+    final presetAccent = _presetAccent(context);
 
     return DemoScaffold(
       title: 'Themes',
       route: '/themed',
       isDark: isDark,
       onToggleTheme: widget.onToggleTheme,
+      backgroundColor: presetBackground,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
+          Container(
+            color: presetBackground,
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Center(
               child: SegmentedButton<_Preset>(
@@ -140,6 +171,20 @@ class _ThemedChatExampleState extends State<ThemedChatExample> {
                 ],
                 selected: {_selected},
                 onSelectionChanged: (s) => setState(() => _selected = s.first),
+                // Tint the selected segment with the active preset's accent
+                // instead of the app's default blue, so the control itself
+                // reflects the brand it's driving.
+                style: presetAccent == null
+                    ? null
+                    : SegmentedButton.styleFrom(
+                        selectedBackgroundColor: presetAccent,
+                        selectedForegroundColor:
+                            ThemeData.estimateBrightnessForColor(
+                                        presetAccent) ==
+                                    Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
+                      ),
               ),
             ),
           ),

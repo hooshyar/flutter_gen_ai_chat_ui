@@ -17,6 +17,7 @@ class DemoScaffold extends StatefulWidget {
     required this.isDark,
     required this.onToggleTheme,
     this.actions = const [],
+    this.backgroundColor,
   });
 
   /// Top-bar title, `label` 16/600.
@@ -34,6 +35,12 @@ class DemoScaffold extends StatefulWidget {
   /// toggle and pin menu), rendered before the shared theme toggle and
   /// source button.
   final List<Widget> actions;
+
+  /// Overrides the default `colors.canvas` fill for the scaffold, top bar
+  /// and sidebar. Used by demos (e.g. Themes) whose body applies its own
+  /// preset background, so the whole surface reads as one canvas instead of
+  /// a seam between a themed chat area and the default-toned chrome.
+  final Color? backgroundColor;
 
   @override
   State<DemoScaffold> createState() => _DemoScaffoldState();
@@ -68,9 +75,10 @@ class _DemoScaffoldState extends State<DemoScaffold> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final surface = widget.backgroundColor ?? colors.canvas;
 
     return Scaffold(
-      backgroundColor: colors.canvas,
+      backgroundColor: surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -79,6 +87,7 @@ class _DemoScaffoldState extends State<DemoScaffold> {
               title: widget.title,
               isDark: widget.isDark,
               scrolledUnder: _scrolledUnder,
+              backgroundColor: surface,
               onBack: () => Navigator.of(context).pop(),
               onToggleTheme: widget.onToggleTheme,
               onOpenSource: _openSource,
@@ -133,12 +142,14 @@ class _TopBar extends StatelessWidget {
     required this.onToggleTheme,
     required this.onOpenSource,
     this.actions = const [],
+    required this.backgroundColor,
   });
 
   final double height;
   final String title;
   final bool isDark;
   final bool scrolledUnder;
+  final Color backgroundColor;
   final VoidCallback onBack;
   final VoidCallback onToggleTheme;
   final Future<void> Function() onOpenSource;
@@ -152,7 +163,7 @@ class _TopBar extends StatelessWidget {
       height: height,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: colors.canvas,
+        color: backgroundColor,
         border: Border(
           bottom: BorderSide(
             color: scrolledUnder ? colors.border : Colors.transparent,
@@ -187,8 +198,8 @@ class _TopBar extends StatelessWidget {
             onPressed: onToggleTheme,
           ),
           IconButton(
-            tooltip: 'View source on GitHub',
-            icon: Icon(Icons.code_rounded, color: colors.textSecondary),
+            tooltip: 'View source',
+            icon: Icon(Icons.open_in_new_rounded, color: colors.textSecondary),
             onPressed: onOpenSource,
           ),
         ],

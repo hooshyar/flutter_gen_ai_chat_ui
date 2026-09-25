@@ -205,6 +205,17 @@ class _RtlChatExampleState extends State<RtlChatExample> {
             // Surfaces a stop button in the input while generating; tapping
             // it cancels the stream and finalizes the partial message.
             onCancelGenerating: _onCancelGenerating,
+            // The default "Message..." hint reverses to "...Message" once
+            // the composer sits in an RTL context - give this demo a
+            // localized, direction-correct hint instead.
+            inputOptions: const InputOptions(
+              decoration: InputDecoration(
+                hintText: 'اكتب رسالة...',
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsetsDirectional.fromSTEB(16, 12, 8, 12),
+              ),
+            ),
             loadingConfig: LoadingConfig(
               isLoading: _isLoading,
               loadingIndicator: const LoadingWidget(
@@ -219,9 +230,12 @@ class _RtlChatExampleState extends State<RtlChatExample> {
               ExampleQuestion(question: 'ما هي عاصمة العراق؟'),
               ExampleQuestion(question: 'پایتەختی هەرێمی کوردستان کوێیە؟'),
               ExampleQuestion(question: 'اكتب لي قصيدة قصيرة'),
-              // U+200E LRM keeps this Latin question's trailing "?" on the
-              // correct side inside an RTL chip.
-              ExampleQuestion(question: '‎What is Flutter?'),
+              // U+200E LRM markers on both ends keep this Latin question's
+              // trailing "?" from being pulled to the visual start inside
+              // an RTL chip (a single leading LRM isn't enough - the "?" at
+              // the edge of the string still picks up the RTL paragraph
+              // direction without one after it too).
+              ExampleQuestion(question: '‎What is Flutter?‎'),
               // Arabic answer containing a ```dart block - the code stays
               // LTR inside the RTL bubble.
               ExampleQuestion(question: 'أرني مثالاً على كود Dart'),
