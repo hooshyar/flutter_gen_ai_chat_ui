@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
@@ -303,6 +304,13 @@ class AiChatWidget extends StatefulWidget {
 
 class _AiChatWidgetState extends State<AiChatWidget>
     with TickerProviderStateMixin {
+  /// `debugPrint` is not stripped in profile/release builds, so this
+  /// widget's verbose init/config trace lines were reaching a shipped
+  /// release web build's console. Gate them to debug builds.
+  static void _debugLog(String message) {
+    if (kDebugMode) debugPrint(message);
+  }
+
   late ScrollController _effectiveScrollController;
   late AnimationController _animationController;
   late TextEditingController _textController;
@@ -340,7 +348,7 @@ class _AiChatWidgetState extends State<AiChatWidget>
     // Set the scroll behavior configuration
     if (widget.scrollBehaviorConfig != null) {
       widget.controller.scrollBehaviorConfig = widget.scrollBehaviorConfig;
-      debugPrint('AiChatWidget: Initially set scroll behavior to: '
+      _debugLog('AiChatWidget: Initially set scroll behavior to: '
           '${widget.scrollBehaviorConfig!.autoScrollBehavior}, '
           'scrollToFirstMessage: ${widget.scrollBehaviorConfig!.scrollToFirstResponseMessage}');
     }
@@ -350,24 +358,24 @@ class _AiChatWidgetState extends State<AiChatWidget>
     final hasExampleQuestions = widget.exampleQuestions.isNotEmpty;
 
     // Debug check for example questions
-    debugPrint('AiChatWidget: Has welcome config: $hasWelcomeConfig');
-    debugPrint(
+    _debugLog('AiChatWidget: Has welcome config: $hasWelcomeConfig');
+    _debugLog(
         'AiChatWidget: Has example questions: $hasExampleQuestions (count: ${widget.exampleQuestions.length})');
     if (hasExampleQuestions) {
       for (var i = 0; i < widget.exampleQuestions.length; i++) {
-        debugPrint('  Question $i: ${widget.exampleQuestions[i].question}');
+        _debugLog('  Question $i: ${widget.exampleQuestions[i].question}');
       }
     }
-    debugPrint(
+    _debugLog(
         'AiChatWidget: Current message count: ${widget.controller.messages.length}');
 
     // Only show welcome message if welcome config or example questions are provided
     if ((hasWelcomeConfig || hasExampleQuestions) &&
         widget.controller.messages.isEmpty) {
-      debugPrint('AiChatWidget: Setting showWelcomeMessage to true');
+      _debugLog('AiChatWidget: Setting showWelcomeMessage to true');
       widget.controller.showWelcomeMessage = true;
     } else {
-      debugPrint(
+      _debugLog(
           'AiChatWidget: Not showing welcome message. Conditions not met.');
     }
   }
@@ -380,7 +388,7 @@ class _AiChatWidgetState extends State<AiChatWidget>
     if (widget.scrollBehaviorConfig != oldWidget.scrollBehaviorConfig) {
       if (widget.scrollBehaviorConfig != null) {
         widget.controller.scrollBehaviorConfig = widget.scrollBehaviorConfig;
-        debugPrint('AiChatWidget: Updated scroll behavior config to: '
+        _debugLog('AiChatWidget: Updated scroll behavior config to: '
             '${widget.scrollBehaviorConfig!.autoScrollBehavior}, '
             'scrollToFirstMessage: ${widget.scrollBehaviorConfig!.scrollToFirstResponseMessage}');
       }
