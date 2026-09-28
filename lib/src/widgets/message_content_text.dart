@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_streaming_text_markdown/flutter_streaming_text_markdown.dart';
+import 'package:flutter_streaming_text_markdown/flutter_streaming_text_markdown.dart'
+    hide CodeBlockView, CodeBlockTheme;
 
 import '../utils/font_helper.dart';
 

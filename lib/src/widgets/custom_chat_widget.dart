@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:flutter_streaming_text_markdown/flutter_streaming_text_markdown.dart';
+import 'package:flutter_streaming_text_markdown/flutter_streaming_text_markdown.dart'
+    hide CodeBlockView, CodeBlockTheme;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../controllers/chat_messages_controller.dart';
