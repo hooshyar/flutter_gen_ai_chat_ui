@@ -1,0 +1,3 @@
+- [Flutter tooling churn + pana timeouts](flutter-tooling-churn-and-pana.md) — pub get rewrites analysis_options.yaml (fake dry-run warning); first pana run can time out, giving a bogus score
+- [PR CI runs the merge ref](pr-ci-runs-merge-ref.md) — local dry-run green != PR CI green; main moving (new docs/) can add pub warnings
+- [pana downgrade / lower bounds](pana-downgrade-lower-bounds.md) — CI lacks pub downgrade; new dep APIs under old floors pass CI but lose 20 pana pts
