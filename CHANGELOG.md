@@ -45,7 +45,10 @@ Zero breaking changes: the public API only gains additions. **The default look c
 ### Migration and dependency notes
 - **Default visuals changed.** To keep the old look, pass your own `BubbleStyle`, `markdownStyleSheet`, `InputOptions.decoration`/`containerDecoration` or a `CustomThemeExtension` preset, set `MessageOptions.aiMessageLayout` to `bubble`, and set `enableSyntaxHighlighting: false` if you do not want highlighted code.
 - **Bumped `flutter_streaming_text_markdown` to `^1.11.0`.** That release exports `CodeBlockView` and `CodeBlockTheme`, and so does this package. If you import both packages, add `hide CodeBlockView, CodeBlockTheme` to one of the imports to avoid an ambiguous-name error.
-- **Example app:** raised the `google_fonts` floor to `^8.1.0` so it resolves at the declared SDK floor.
+- **Raised the `flutter_markdown_plus` minimum to `^1.0.12`** (from `^1.0.3`): the new markdown styling needs it (`MarkdownStyleSheet.tableHeadCellsDecoration` only exists in recent releases).
+- **`markdown` `^7.3.1` is now a direct dependency**, used by `CodeBlockView`'s `pre`-element builder. Most apps already had it transitively via `flutter_markdown_plus`; this only makes the import explicit.
+- **Example app overhauled:** new shell (`app_theme`, `demo_catalog`, `demo_scaffold`, `live_preview`), a rebuilt home screen with a live preview, ChatGPT/Claude/Gemini theme presets, an RTL demo using the Vazirmatn font with a Sorani prompt, and the version pill removed.
+- **Example app:** added `google_fonts` `^8.1.0` so it resolves at the declared SDK floor.
 
 ## 2.19.1 - 2026-09-03
 
