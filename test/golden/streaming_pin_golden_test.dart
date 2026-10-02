@@ -29,64 +29,83 @@ void main() {
     );
     addTearDown(controller.dispose);
 
-    await tester.pumpWidget(MaterialApp(
-      home: Material(
-        child: SizedBox(
-          width: 400,
-          height: 600,
-          child: AiChatWidget(
-            currentUser: testUser,
-            aiUser: aiUser,
-            controller: controller,
-            onSendMessage: (_) async {},
-            enableMarkdownStreaming: false,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Material(
+          child: SizedBox(
+            width: 400,
+            height: 600,
+            child: AiChatWidget(
+              currentUser: testUser,
+              aiUser: aiUser,
+              controller: controller,
+              onSendMessage: (_) async {},
+              enableMarkdownStreaming: false,
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pump();
 
-    controller.addMessage(ChatMessage(
-      text: 'Explain how the pin works.',
-      user: testUser,
-      createdAt: DateTime(2026, 1, 1, 12),
-      customProperties: const {'id': 'q', 'isUserMessage': true},
-    ));
+    controller.addMessage(
+      ChatMessage(
+        text: 'Explain how the pin works.',
+        user: testUser,
+        createdAt: DateTime(2026, 1, 1, 12),
+        customProperties: const {'id': 'q', 'isUserMessage': true},
+      ),
+    );
     await tester.pump();
 
     const props = {'id': 'a', 'responseId': 'a', 'isStartOfResponse': true};
-    controller.addMessage(ChatMessage(
-      text: '',
-      user: aiUser,
-      createdAt: DateTime(2026, 1, 1, 12, 0, 1),
-      customProperties: const {...props, 'isStreaming': true},
-    ));
-    await tester.pump();
-    for (var i = 1; i <= 4; i++) {
-      controller.updateMessage(ChatMessage(
-        text: longAnswer.substring(0, (longAnswer.length * i / 4).floor()),
+    controller.addMessage(
+      ChatMessage(
+        text: '',
         user: aiUser,
         createdAt: DateTime(2026, 1, 1, 12, 0, 1),
         customProperties: const {...props, 'isStreaming': true},
-      ));
+      ),
+    );
+    await tester.pump();
+    for (var i = 1; i <= 4; i++) {
+      controller.updateMessage(
+        ChatMessage(
+          text: longAnswer.substring(0, (longAnswer.length * i / 4).floor()),
+          user: aiUser,
+          createdAt: DateTime(2026, 1, 1, 12, 0, 1),
+          customProperties: const {...props, 'isStreaming': true},
+        ),
+      );
       await tester.pump();
       await tester.pump();
     }
     await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
+    // Not pumpAndSettle(): this golden deliberately captures the answer
+    // mid-stream (still flagged `isStreaming: true`), which keeps the live
+    // StreamingCaret's repeating animation mounted (`DESIGN.md` §8.9) —
+    // pumpAndSettle() requires zero pending frames and would time out
+    // against it. A bounded pump settles every one-shot scroll
+    // animation/timer this was actually waiting on.
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
   }
 
-  testWidgets('streaming pin OFF — bottom follows, answer start scrolled away',
-      (tester) async {
-    await pumpScenario(tester, StreamingPinAnchor.none);
-    await expectLater(
-      find.byType(AiChatWidget),
-      matchesGoldenFile('goldens/streaming_pin_off.png'),
-    );
-  });
+  testWidgets(
+    'streaming pin OFF — bottom follows, answer start scrolled away',
+    (tester) async {
+      await pumpScenario(tester, StreamingPinAnchor.none);
+      await expectLater(
+        find.byType(AiChatWidget),
+        matchesGoldenFile('goldens/streaming_pin_off.png'),
+      );
+    },
+  );
 
-  testWidgets('streaming pin ON — answer start held at the viewport top',
-      (tester) async {
+  testWidgets('streaming pin ON — answer start held at the viewport top', (
+    tester,
+  ) async {
     await pumpScenario(tester, StreamingPinAnchor.responseStart);
     await expectLater(
       find.byType(AiChatWidget),

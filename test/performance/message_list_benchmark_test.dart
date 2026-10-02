@@ -199,8 +199,9 @@ void main() {
       return controller;
     }
 
-    testWidgets('initial build+layout with 1000 messages is bounded',
-        (tester) async {
+    testWidgets('initial build+layout with 1000 messages is bounded', (
+      tester,
+    ) async {
       final stopwatch = Stopwatch()..start();
       await pumpChatWith(tester, 1000);
       await tester.pump();
@@ -216,8 +217,9 @@ void main() {
       expect(stopwatch.elapsedMilliseconds, lessThan(5000));
     });
 
-    testWidgets('scrolling through 1000 messages stays bounded',
-        (tester) async {
+    testWidgets('scrolling through 1000 messages stays bounded', (
+      tester,
+    ) async {
       await pumpChatWith(tester, 1000);
       await tester.pump();
 

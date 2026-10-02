@@ -20,9 +20,13 @@ void main() {
       });
 
       test('should create action with optional render function', () {
-        Widget renderFunction(BuildContext context, ActionStatus status,
-            Map<String, dynamic> params,
-            {ActionResult? result, String? error}) {
+        Widget renderFunction(
+          BuildContext context,
+          ActionStatus status,
+          Map<String, dynamic> params, {
+          ActionResult? result,
+          String? error,
+        }) {
           return const Text('Rendered');
         }
 
@@ -148,8 +152,10 @@ void main() {
         );
 
         expect(param.validate('option1'), isNull);
-        expect(param.validate('invalid'),
-            equals('choice must be one of: option1, option2'));
+        expect(
+          param.validate('invalid'),
+          equals('choice must be one of: option1, option2'),
+        );
       });
     });
 
@@ -178,7 +184,9 @@ void main() {
         expect(param.validate(3.14), isNull);
         expect(param.validate(null), equals('count is required'));
         expect(
-            param.validate('not a number'), equals('count must be a number'));
+          param.validate('not a number'),
+          equals('count must be a number'),
+        );
       });
     });
 
@@ -204,8 +212,10 @@ void main() {
         expect(param.validate(true), isNull);
         expect(param.validate(false), isNull);
         expect(param.validate(null), equals('enabled is required'));
-        expect(param.validate('not a boolean'),
-            equals('enabled must be a boolean'));
+        expect(
+          param.validate('not a boolean'),
+          equals('enabled must be a boolean'),
+        );
       });
     });
 
@@ -233,9 +243,13 @@ void main() {
         expect(param.validate(['item1', 'item2']), isNull);
         expect(param.validate(null), equals('items is required'));
         expect(
-            param.validate('not an array'), equals('items must be an array'));
-        expect(param.validate([1, 2]),
-            equals('All items in items must be string'));
+          param.validate('not an array'),
+          equals('items must be an array'),
+        );
+        expect(
+          param.validate([1, 2]),
+          equals('All items in items must be string'),
+        );
       });
     });
 

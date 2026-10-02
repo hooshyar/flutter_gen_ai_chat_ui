@@ -39,31 +39,40 @@ void main() {
 
   testWidgets('bubbleBuilder wraps the default bubble', (tester) async {
     Widget? receivedDefault;
-    await tester.pumpWidget(host(MessageOptions(
-      bubbleBuilder: (context, message, isCurrentUser, defaultBubble) {
-        receivedDefault = defaultBubble;
-        return Column(
-          children: [
-            const Text('WRAP', key: Key('wrap_marker')),
-            defaultBubble,
-          ],
-        );
-      },
-    )));
+    await tester.pumpWidget(
+      host(
+        MessageOptions(
+          bubbleBuilder: (context, message, isCurrentUser, defaultBubble) {
+            receivedDefault = defaultBubble;
+            return Column(
+              children: [
+                const Text('WRAP', key: Key('wrap_marker')),
+                defaultBubble,
+              ],
+            );
+          },
+        ),
+      ),
+    );
     await tester.pump();
 
     expect(find.byKey(const Key('wrap_marker')), findsOneWidget);
     expect(receivedDefault, isNotNull);
   });
 
-  testWidgets('bubbleBuilder takes precedence over customBubbleBuilder',
-      (tester) async {
-    await tester.pumpWidget(host(MessageOptions(
-      bubbleBuilder: (context, message, isCurrentUser, defaultBubble) =>
-          const Text('FROM_WRAP', key: Key('from_wrap')),
-      customBubbleBuilder: (context, message, isCurrentUser) =>
-          const Text('FROM_CUSTOM', key: Key('from_custom')),
-    )));
+  testWidgets('bubbleBuilder takes precedence over customBubbleBuilder', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        MessageOptions(
+          bubbleBuilder: (context, message, isCurrentUser, defaultBubble) =>
+              const Text('FROM_WRAP', key: Key('from_wrap')),
+          customBubbleBuilder: (context, message, isCurrentUser) =>
+              const Text('FROM_CUSTOM', key: Key('from_custom')),
+        ),
+      ),
+    );
     await tester.pump();
 
     expect(find.byKey(const Key('from_wrap')), findsOneWidget);

@@ -1,5 +1,7 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
+
 import '../utils/color_extensions.dart';
 
 /// A container with a glassmorphic effect (blurred transparent background).

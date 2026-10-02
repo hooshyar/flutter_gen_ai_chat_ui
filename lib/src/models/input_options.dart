@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../utils/color_extensions.dart';
 
 /// Controls how the input container's width should be sized
@@ -11,7 +12,7 @@ enum InputContainerWidth {
   wrapContent,
 
   /// Use a specific width provided in inputContainerConstraints
-  custom
+  custom,
 }
 
 /// Input options for customizing the chat input field.
@@ -55,24 +56,33 @@ class InputOptions {
   /// makes RTL auto-detection work without per-widget configuration). Will
   /// be removed in v3.0.0.
   @Deprecated(
-      'Has no effect — the input always follows the ambient Directionality. '
-      'Will be removed in v3.0.0.')
+    'Has no effect — the input always follows the ambient Directionality. '
+    'Will be removed in v3.0.0.',
+  )
   final TextDirection? inputTextDirection;
 
   // Position properties — dead: nothing in AiChatWidget wraps the input in
   // a Stack/Positioned to consume these (it uses a Column, with the input
   // as a regular last child). Kept for source compatibility only.
-  @Deprecated('Has no effect — the input is not laid out in a Stack. '
-      'Will be removed in v3.0.0.')
+  @Deprecated(
+    'Has no effect — the input is not laid out in a Stack. '
+    'Will be removed in v3.0.0.',
+  )
   final double? positionedLeft;
-  @Deprecated('Has no effect — the input is not laid out in a Stack. '
-      'Will be removed in v3.0.0.')
+  @Deprecated(
+    'Has no effect — the input is not laid out in a Stack. '
+    'Will be removed in v3.0.0.',
+  )
   final double? positionedRight;
-  @Deprecated('Has no effect — the input is not laid out in a Stack. '
-      'Will be removed in v3.0.0.')
+  @Deprecated(
+    'Has no effect — the input is not laid out in a Stack. '
+    'Will be removed in v3.0.0.',
+  )
   final double? positionedBottom;
-  @Deprecated('Has no effect — the input is not laid out in a Stack. '
-      'Will be removed in v3.0.0.')
+  @Deprecated(
+    'Has no effect — the input is not laid out in a Stack. '
+    'Will be removed in v3.0.0.',
+  )
   final double? positionedTop;
 
   // Special effects
@@ -81,7 +91,16 @@ class InputOptions {
 
   // Send button customization
   final Widget Function(VoidCallback onSend)? sendButtonBuilder;
+
+  /// Fill color of the default send disc's enabled state. Ignored by the
+  /// empty and generating states, which always use token-derived fills.
+  /// Only read when [sendButtonBuilder], [sendOrMicBuilder] and
+  /// [cancelButtonBuilder] are all null (`DESIGN.md` §8.5).
   final Color? sendButtonColor;
+
+  /// Icon for the default send button's enabled/empty states. Defaults to
+  /// `Icons.arrow_upward_rounded` (changed from `Icons.send`). Never used
+  /// for the generating state, which always renders a fixed stop square.
   final IconData? sendButtonIcon;
   final double? sendButtonIconSize;
   final EdgeInsets? sendButtonPadding;
@@ -129,8 +148,9 @@ class InputOptions {
   /// ambient `Directionality` from `BuildContext` (see [inputTextDirection],
   /// the other field with the same fate). Will be removed in v3.0.0.
   @Deprecated(
-      'Has no effect — the input always follows the ambient Directionality. '
-      'Will be removed in v3.0.0.')
+    'Has no effect — the input always follows the ambient Directionality. '
+    'Will be removed in v3.0.0.',
+  )
   final TextDirection? textDirection;
   final List<TextInputFormatter>? inputFormatters;
   final bool enableSuggestions;
@@ -226,7 +246,7 @@ class InputOptions {
     this.textController,
     this.textStyle,
     this.decoration,
-    this.maxLines = 5,
+    this.maxLines = 8,
     this.minLines = 1,
     this.sendOnEnter = true,
     this.readOnly = false,
@@ -256,7 +276,7 @@ class InputOptions {
     this.clipBehavior = false,
     this.sendButtonBuilder,
     this.sendButtonColor,
-    this.sendButtonIcon = Icons.send,
+    this.sendButtonIcon = Icons.arrow_upward_rounded,
     this.sendButtonIconSize = 24.0,
     this.sendButtonPadding = const EdgeInsets.all(4.0),
     this.sendButtonTooltip = 'Send message',

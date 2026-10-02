@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'chat/media.dart'; // Add import for ChatMedia
 
 /// Options for customizing the file upload functionality

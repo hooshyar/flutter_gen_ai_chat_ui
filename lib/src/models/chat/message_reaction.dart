@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'chat_user.dart';
 
 /// Represents a reaction to a chat message.

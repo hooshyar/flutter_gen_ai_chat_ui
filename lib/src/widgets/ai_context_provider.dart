@@ -118,14 +118,16 @@ class _AiContextProviderState extends State<AiContextProvider>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _controller.setContext(AiContextData.custom(
-      id: 'app_lifecycle',
-      name: 'App Lifecycle',
-      data: state.toString().split('.').last,
-      description: 'Current application lifecycle state',
-      categories: ['system', 'lifecycle'],
-      priority: AiContextPriority.low,
-    ));
+    _controller.setContext(
+      AiContextData.custom(
+        id: 'app_lifecycle',
+        name: 'App Lifecycle',
+        data: state.toString().split('.').last,
+        description: 'Current application lifecycle state',
+        categories: ['system', 'lifecycle'],
+        priority: AiContextPriority.low,
+      ),
+    );
   }
 
   void _setupAutomaticContext() {
@@ -158,50 +160,56 @@ class _AiContextProviderState extends State<AiContextProvider>
 
     final route = ModalRoute.of(context);
     if (route != null) {
-      _controller.setContext(AiContextData.navigationContext(
-        id: 'current_route',
-        currentPage: route.settings.name ?? 'unknown',
-        pageData: route.settings.arguments as Map<String, dynamic>?,
-        priority: AiContextPriority.high,
-      ));
+      _controller.setContext(
+        AiContextData.navigationContext(
+          id: 'current_route',
+          currentPage: route.settings.name ?? 'unknown',
+          pageData: route.settings.arguments as Map<String, dynamic>?,
+          priority: AiContextPriority.high,
+        ),
+      );
     }
   }
 
   void _updateThemeContext() {
     final theme = Theme.of(context);
-    _controller.setContext(AiContextData.custom(
-      id: 'theme_context',
-      name: 'Theme Settings',
-      data: {
-        'brightness': theme.brightness.toString().split('.').last,
-        'primaryColor': theme.primaryColor.toString(),
-        'platform': theme.platform.toString().split('.').last,
-        'visualDensity': theme.visualDensity.toString(),
-      },
-      description: 'Current theme and UI settings',
-      categories: ['ui', 'theme'],
-      priority: AiContextPriority.low,
-    ));
+    _controller.setContext(
+      AiContextData.custom(
+        id: 'theme_context',
+        name: 'Theme Settings',
+        data: {
+          'brightness': theme.brightness.toString().split('.').last,
+          'primaryColor': theme.primaryColor.toString(),
+          'platform': theme.platform.toString().split('.').last,
+          'visualDensity': theme.visualDensity.toString(),
+        },
+        description: 'Current theme and UI settings',
+        categories: ['ui', 'theme'],
+        priority: AiContextPriority.low,
+      ),
+    );
   }
 
   void _updateDeviceContext() {
     final mediaQuery = MediaQuery.of(context);
-    _controller.setContext(AiContextData.custom(
-      id: 'device_context',
-      name: 'Device Information',
-      data: {
-        'screenSize':
-            '${mediaQuery.size.width.round()}x${mediaQuery.size.height.round()}',
-        'devicePixelRatio': mediaQuery.devicePixelRatio,
-        'platformBrightness':
-            mediaQuery.platformBrightness.toString().split('.').last,
-        'textScaler': mediaQuery.textScaler.toString(),
-        'orientation': mediaQuery.orientation.toString().split('.').last,
-      },
-      description: 'Device and screen information',
-      categories: ['device', 'screen'],
-      priority: AiContextPriority.low,
-    ));
+    _controller.setContext(
+      AiContextData.custom(
+        id: 'device_context',
+        name: 'Device Information',
+        data: {
+          'screenSize':
+              '${mediaQuery.size.width.round()}x${mediaQuery.size.height.round()}',
+          'devicePixelRatio': mediaQuery.devicePixelRatio,
+          'platformBrightness':
+              mediaQuery.platformBrightness.toString().split('.').last,
+          'textScaler': mediaQuery.textScaler.toString(),
+          'orientation': mediaQuery.orientation.toString().split('.').last,
+        },
+        description: 'Device and screen information',
+        categories: ['device', 'screen'],
+        priority: AiContextPriority.low,
+      ),
+    );
   }
 
   void _logContextEvent(AiContextEvent event) {
@@ -368,10 +376,7 @@ class AiContextHook {
 class AiContextBuilder extends StatelessWidget {
   final Widget Function(BuildContext context, AiContextHook hook) builder;
 
-  const AiContextBuilder({
-    super.key,
-    required this.builder,
-  });
+  const AiContextBuilder({super.key, required this.builder});
 
   @override
   Widget build(BuildContext context) {

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 /// message, given its `data` payload. Registered per-`kind` in
 /// [ResultRendererRegistry.builders].
 typedef ResultBuilder = Widget Function(
-    BuildContext context, Map<String, dynamic> data);
+  BuildContext context,
+  Map<String, dynamic> data,
+);
 
 /// UI-only registry mapping a string `kind` to a result widget builder.
 ///
@@ -40,7 +42,10 @@ class ResultRendererRegistry extends InheritedWidget {
 
   /// Returns a widget for the given kind, or null if not registered.
   Widget? buildResult(
-      BuildContext context, String kind, Map<String, dynamic> data) {
+    BuildContext context,
+    String kind,
+    Map<String, dynamic> data,
+  ) {
     final builder = builders[kind];
     if (builder == null) return null;
     return builder(context, data);
@@ -48,7 +53,10 @@ class ResultRendererRegistry extends InheritedWidget {
 
   /// Returns a loading widget for the given kind, or null if not registered.
   Widget? buildLoading(
-      BuildContext context, String kind, Map<String, dynamic> data) {
+    BuildContext context,
+    String kind,
+    Map<String, dynamic> data,
+  ) {
     final builder = loadingBuilders[kind];
     if (builder == null) return null;
     return builder(context, data);
@@ -61,10 +69,7 @@ class ResultRendererRegistry extends InheritedWidget {
   }) {
     return ResultRendererRegistry(
       builders: {...builders, ...additions},
-      loadingBuilders: {
-        ...loadingBuilders,
-        ...?loadingAdditions,
-      },
+      loadingBuilders: {...loadingBuilders, ...?loadingAdditions},
       child: child,
     );
   }

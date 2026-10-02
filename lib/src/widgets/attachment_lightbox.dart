@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/chat/media.dart';
 import '../utils/color_extensions.dart';
 
@@ -122,8 +123,10 @@ class _AttachmentLightboxState extends State<AttachmentLightbox> {
                 right: 0,
                 child: Center(
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacityCompat(0.5),
                       borderRadius: BorderRadius.circular(16),

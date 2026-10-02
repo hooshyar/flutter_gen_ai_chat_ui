@@ -71,11 +71,13 @@ void main() {
     });
 
     test('clears messages correctly', () {
-      controller.addMessage(ChatMessage(
-        text: 'Test message',
-        user: testUser,
-        createdAt: DateTime.now(),
-      ));
+      controller.addMessage(
+        ChatMessage(
+          text: 'Test message',
+          user: testUser,
+          createdAt: DateTime.now(),
+        ),
+      );
 
       controller.clearMessages();
 
@@ -125,12 +127,13 @@ void main() {
 
       // Attempt multiple concurrent loads
       final futures = List<Future<void>>.generate(
-          3,
-          (_) => controller.loadMore(() async {
-                callCount++;
-                await Future.delayed(const Duration(milliseconds: 100));
-                return [];
-              }));
+        3,
+        (_) => controller.loadMore(() async {
+          callCount++;
+          await Future.delayed(const Duration(milliseconds: 100));
+          return [];
+        }),
+      );
 
       await Future.wait(futures);
 
@@ -171,11 +174,7 @@ void main() {
     });
 
     test('handles example questions correctly', () {
-      controller.handleExampleQuestion(
-        'Test question',
-        testUser,
-        aiUser,
-      );
+      controller.handleExampleQuestion('Test question', testUser, aiUser);
 
       expect(controller.showWelcomeMessage, isFalse);
       expect(controller.messages.length, 1);
@@ -235,8 +234,10 @@ void main() {
       // Schedule a completion 10 seconds out. If untracked, this timer
       // would outlive dispose() and (in fake_async/test environments)
       // would surface a leak.
-      c.simulateStreamingCompletion('sim_test',
-          delay: const Duration(seconds: 10));
+      c.simulateStreamingCompletion(
+        'sim_test',
+        delay: const Duration(seconds: 10),
+      );
       expect(c.isCurrentlyStreaming, isTrue);
       c.dispose();
       // After dispose, scheduling more does nothing (mounted=false).

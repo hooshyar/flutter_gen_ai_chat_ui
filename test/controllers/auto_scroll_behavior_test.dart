@@ -23,8 +23,9 @@ void main() {
   });
 
   group('ChatMessagesController Auto-Scroll Behavior', () {
-    testWidgets('scroll behavior setup is correct',
-        (WidgetTester tester) async {
+    testWidgets('scroll behavior setup is correct', (
+      WidgetTester tester,
+    ) async {
       // Create a widget to test scrolling
       await tester.pumpWidget(
         MaterialApp(
@@ -47,54 +48,59 @@ void main() {
       );
 
       // Verify the config is set correctly
-      expect(controller.scrollBehaviorConfig.autoScrollBehavior,
-          equals(AutoScrollBehavior.onUserMessageOnly));
+      expect(
+        controller.scrollBehaviorConfig.autoScrollBehavior,
+        equals(AutoScrollBehavior.onUserMessageOnly),
+      );
     });
 
     testWidgets(
-        'does not scroll on AI message with "onUserMessageOnly" setting',
-        (WidgetTester tester) async {
-      // Create a widget to test scrolling
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              height: 400,
-              child: ListView.builder(
-                controller: scrollController,
-                itemCount: 20,
-                itemBuilder: (context, index) => const SizedBox(height: 50),
+      'does not scroll on AI message with "onUserMessageOnly" setting',
+      (WidgetTester tester) async {
+        // Create a widget to test scrolling
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                height: 400,
+                child: ListView.builder(
+                  controller: scrollController,
+                  itemCount: 20,
+                  itemBuilder: (context, index) => const SizedBox(height: 50),
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Set initial scroll position
-      scrollController.jumpTo(500);
-      await tester.pumpAndSettle();
+        // Set initial scroll position
+        scrollController.jumpTo(500);
+        await tester.pumpAndSettle();
 
-      // Capture initial position
-      final initialPosition = scrollController.position.pixels;
+        // Capture initial position
+        final initialPosition = scrollController.position.pixels;
 
-      // Set scroll behavior
-      controller.scrollBehaviorConfig = const ScrollBehaviorConfig(
-        autoScrollBehavior: AutoScrollBehavior.onUserMessageOnly,
-      );
+        // Set scroll behavior
+        controller.scrollBehaviorConfig = const ScrollBehaviorConfig(
+          autoScrollBehavior: AutoScrollBehavior.onUserMessageOnly,
+        );
 
-      // Add an AI message
-      controller.addMessage(ChatMessage(
-        text: 'AI message',
-        user: aiUser,
-        createdAt: DateTime.now(),
-      ));
+        // Add an AI message
+        controller.addMessage(
+          ChatMessage(
+            text: 'AI message',
+            user: aiUser,
+            createdAt: DateTime.now(),
+          ),
+        );
 
-      // Wait for animation
-      await tester.pumpAndSettle();
+        // Wait for animation
+        await tester.pumpAndSettle();
 
-      // Verify scroll position (should NOT scroll)
-      expect(scrollController.position.pixels, initialPosition);
-    });
+        // Verify scroll position (should NOT scroll)
+        expect(scrollController.position.pixels, initialPosition);
+      },
+    );
 
     test('controller handles scroll behavior modes properly', () {
       // Instead of testing the actual scrolling, we can test that the controller
@@ -106,26 +112,32 @@ void main() {
       );
 
       // The controller should properly identify this as a no-scroll scenario
-      expect(controller.scrollBehaviorConfig.autoScrollBehavior,
-          equals(AutoScrollBehavior.never));
+      expect(
+        controller.scrollBehaviorConfig.autoScrollBehavior,
+        equals(AutoScrollBehavior.never),
+      );
     });
   });
 
   group('ChatMessagesController Response Message Tracking', () {
     test('marks first message of AI response correctly', () {
       // Add user message first
-      controller.addMessage(ChatMessage(
-        text: 'User message',
-        user: userA,
-        createdAt: DateTime.now(),
-      ));
+      controller.addMessage(
+        ChatMessage(
+          text: 'User message',
+          user: userA,
+          createdAt: DateTime.now(),
+        ),
+      );
 
       // Add AI message (should be marked as first response)
-      controller.addMessage(ChatMessage(
-        text: 'AI response',
-        user: aiUser,
-        createdAt: DateTime.now(),
-      ));
+      controller.addMessage(
+        ChatMessage(
+          text: 'AI response',
+          user: aiUser,
+          createdAt: DateTime.now(),
+        ),
+      );
 
       // Get the AI message
       final aiMessage =
@@ -137,11 +149,13 @@ void main() {
 
     test('adds custom properties to messages', () {
       // Add user message
-      controller.addMessage(ChatMessage(
-        text: 'User message',
-        user: userA,
-        createdAt: DateTime.now(),
-      ));
+      controller.addMessage(
+        ChatMessage(
+          text: 'User message',
+          user: userA,
+          createdAt: DateTime.now(),
+        ),
+      );
 
       // Verify custom properties exist
       expect(controller.messages.first.customProperties, isNotNull);
@@ -155,40 +169,35 @@ void main() {
         text: 'Initial',
         user: aiUser,
         createdAt: DateTime.now(),
-        customProperties: {
-          'id': 'streaming-msg',
-          'isStreaming': true,
-        },
+        customProperties: {'id': 'streaming-msg', 'isStreaming': true},
       );
 
       // Add the initial message
       controller.addMessage(streamingMessage);
 
       // Update it with new content
-      controller.updateMessage(ChatMessage(
-        text: 'Initial text with more content',
-        user: aiUser,
-        createdAt: DateTime.now(),
-        customProperties: {
-          'id': 'streaming-msg',
-          'isStreaming': true,
-        },
-      ));
+      controller.updateMessage(
+        ChatMessage(
+          text: 'Initial text with more content',
+          user: aiUser,
+          createdAt: DateTime.now(),
+          customProperties: {'id': 'streaming-msg', 'isStreaming': true},
+        ),
+      );
 
       // Verify message was updated
       expect(controller.messages.length, 1);
       expect(controller.messages.first.text, 'Initial text with more content');
 
       // Finalize the message (end streaming)
-      controller.updateMessage(ChatMessage(
-        text: 'Final text',
-        user: aiUser,
-        createdAt: DateTime.now(),
-        customProperties: {
-          'id': 'streaming-msg',
-          'isStreaming': false,
-        },
-      ));
+      controller.updateMessage(
+        ChatMessage(
+          text: 'Final text',
+          user: aiUser,
+          createdAt: DateTime.now(),
+          customProperties: {'id': 'streaming-msg', 'isStreaming': false},
+        ),
+      );
 
       // Verify message was updated
       expect(controller.messages.length, 1);
@@ -201,25 +210,21 @@ void main() {
         text: 'Initial',
         user: aiUser,
         createdAt: DateTime.now(),
-        customProperties: {
-          'id': 'streaming-msg',
-          'isStreaming': true,
-        },
+        customProperties: {'id': 'streaming-msg', 'isStreaming': true},
       );
 
       // Add the initial message
       controller.addMessage(streamingMessage);
 
       // Update the streaming message
-      controller.updateMessage(ChatMessage(
-        text: 'Updated content',
-        user: aiUser,
-        createdAt: DateTime.now(),
-        customProperties: {
-          'id': 'streaming-msg',
-          'isStreaming': true,
-        },
-      ));
+      controller.updateMessage(
+        ChatMessage(
+          text: 'Updated content',
+          user: aiUser,
+          createdAt: DateTime.now(),
+          customProperties: {'id': 'streaming-msg', 'isStreaming': true},
+        ),
+      );
 
       // Verify the message was updated correctly
       expect(controller.messages.first.text, 'Updated content');
@@ -235,8 +240,9 @@ void main() {
       expect(controller.scrollToMessage, isNotNull);
     });
 
-    testWidgets('accepts message IDs for scrolling',
-        (WidgetTester tester) async {
+    testWidgets('accepts message IDs for scrolling', (
+      WidgetTester tester,
+    ) async {
       // Create a widget to test scrolling
       await tester.pumpWidget(
         MaterialApp(
@@ -254,12 +260,14 @@ void main() {
       );
 
       // Add a message with an ID
-      controller.addMessage(ChatMessage(
-        text: 'Test message',
-        user: userA,
-        createdAt: DateTime.now(),
-        customProperties: {'id': 'test-msg-id'},
-      ));
+      controller.addMessage(
+        ChatMessage(
+          text: 'Test message',
+          user: userA,
+          createdAt: DateTime.now(),
+          customProperties: {'id': 'test-msg-id'},
+        ),
+      );
 
       // Wait for render
       await tester.pumpAndSettle();

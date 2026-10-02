@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+
 import '../models/ai_agent.dart';
 
 /// Text analysis specialist agent
@@ -33,8 +34,9 @@ class TextAnalysisAgent extends AIAgent {
   @override
   bool canHandle(AgentRequest request) {
     final queryLower = request.query.toLowerCase();
-    return capabilities.any((capability) =>
-            queryLower.contains(capability.replaceAll('_', ' '))) ||
+    return capabilities.any(
+          (capability) => queryLower.contains(capability.replaceAll('_', ' ')),
+        ) ||
         queryLower.contains('analyze') ||
         queryLower.contains('text') ||
         queryLower.contains('sentiment') ||
@@ -104,13 +106,15 @@ class TextAnalysisAgent extends AIAgent {
   }
 
   void _emitState() {
-    _stateController.add(AgentState(
-      agentId: id,
-      status: _status,
-      currentTask: _currentTask,
-      workload: _status == AgentStatus.processing ? 0.7 : 0.0,
-      lastUpdated: DateTime.now(),
-    ));
+    _stateController.add(
+      AgentState(
+        agentId: id,
+        status: _status,
+        currentTask: _currentTask,
+        workload: _status == AgentStatus.processing ? 0.7 : 0.0,
+        lastUpdated: DateTime.now(),
+      ),
+    );
   }
 
   String _analyzeSentiment(String text) {
@@ -121,7 +125,7 @@ class TextAnalysisAgent extends AIAgent {
       'excellent',
       'amazing',
       'wonderful',
-      'happy'
+      'happy',
     ];
     final negativeWords = [
       'bad',
@@ -129,7 +133,7 @@ class TextAnalysisAgent extends AIAgent {
       'awful',
       'sad',
       'angry',
-      'disappointed'
+      'disappointed',
     ];
 
     final textLower = text.toLowerCase();
@@ -220,8 +224,9 @@ class CodeAnalysisAgent extends AIAgent {
   @override
   bool canHandle(AgentRequest request) {
     final queryLower = request.query.toLowerCase();
-    return capabilities.any((capability) =>
-            queryLower.contains(capability.replaceAll('_', ' '))) ||
+    return capabilities.any(
+          (capability) => queryLower.contains(capability.replaceAll('_', ' ')),
+        ) ||
         queryLower.contains('code') ||
         queryLower.contains('function') ||
         queryLower.contains('debug') ||
@@ -247,10 +252,7 @@ class CodeAnalysisAgent extends AIAgent {
         content: content,
         type: AgentResponseType.finalAnswer,
         confidence: 0.9,
-        metadata: {
-          'analysis_type': 'code_review',
-          'language': 'multiple',
-        },
+        metadata: {'analysis_type': 'code_review', 'language': 'multiple'},
         timestamp: DateTime.now(),
       );
 
@@ -278,13 +280,15 @@ class CodeAnalysisAgent extends AIAgent {
   }
 
   void _emitState() {
-    _stateController.add(AgentState(
-      agentId: id,
-      status: _status,
-      currentTask: _currentTask,
-      workload: _status == AgentStatus.processing ? 0.8 : 0.0,
-      lastUpdated: DateTime.now(),
-    ));
+    _stateController.add(
+      AgentState(
+        agentId: id,
+        status: _status,
+        currentTask: _currentTask,
+        workload: _status == AgentStatus.processing ? 0.8 : 0.0,
+        lastUpdated: DateTime.now(),
+      ),
+    );
   }
 
   String _analyzeCode(String query) {
@@ -352,11 +356,17 @@ class GeneralAssistantAgent extends AIAgent {
 
       // Check if this should be delegated to a specialist
       if (_shouldDelegateToTextAnalyst(queryLower)) {
-        return _createDelegationResponse(request, 'text_analysis_001',
-            'Delegating text analysis request to specialist');
+        return _createDelegationResponse(
+          request,
+          'text_analysis_001',
+          'Delegating text analysis request to specialist',
+        );
       } else if (_shouldDelegateToCodeAnalyst(queryLower)) {
-        return _createDelegationResponse(request, 'code_analysis_001',
-            'Delegating code analysis request to specialist');
+        return _createDelegationResponse(
+          request,
+          'code_analysis_001',
+          'Delegating code analysis request to specialist',
+        );
       }
 
       // Handle general queries
@@ -396,13 +406,15 @@ class GeneralAssistantAgent extends AIAgent {
   }
 
   void _emitState() {
-    _stateController.add(AgentState(
-      agentId: id,
-      status: _status,
-      currentTask: _currentTask,
-      workload: _status == AgentStatus.processing ? 0.3 : 0.0,
-      lastUpdated: DateTime.now(),
-    ));
+    _stateController.add(
+      AgentState(
+        agentId: id,
+        status: _status,
+        currentTask: _currentTask,
+        workload: _status == AgentStatus.processing ? 0.3 : 0.0,
+        lastUpdated: DateTime.now(),
+      ),
+    );
   }
 
   bool _shouldDelegateToTextAnalyst(String query) {
@@ -420,7 +432,10 @@ class GeneralAssistantAgent extends AIAgent {
   }
 
   AgentResponse _createDelegationResponse(
-      AgentRequest request, String targetAgentId, String message) {
+    AgentRequest request,
+    String targetAgentId,
+    String message,
+  ) {
     return AgentResponse(
       id: 'delegation_${DateTime.now().millisecondsSinceEpoch}',
       requestId: request.id,

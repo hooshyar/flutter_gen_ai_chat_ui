@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter/widgets.dart';
 
 /// A controller that manages readable context data for AI consumption
@@ -30,11 +31,13 @@ class ReadableContextController extends ChangeNotifier {
 
   /// Get all contexts as a structured map for programmatic use
   Map<String, dynamic> get contextData {
-    return _contexts.map((key, context) => MapEntry(key, {
-          'description': context.description,
-          'value': context.value,
-          'lastUpdated': context.lastUpdated.toIso8601String(),
-        }));
+    return _contexts.map(
+      (key, context) => MapEntry(key, {
+        'description': context.description,
+        'value': context.value,
+        'lastUpdated': context.lastUpdated.toIso8601String(),
+      }),
+    );
   }
 
   /// Add or update a readable context

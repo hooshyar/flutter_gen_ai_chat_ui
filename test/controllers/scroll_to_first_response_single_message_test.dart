@@ -54,12 +54,14 @@ void main() {
     await tester.pump();
 
     // A short user question...
-    controller.addMessage(ChatMessage(
-      text: 'Hi',
-      user: testUser,
-      createdAt: DateTime.now(),
-      customProperties: const {'id': 'u1', 'isUserMessage': true},
-    ));
+    controller.addMessage(
+      ChatMessage(
+        text: 'Hi',
+        user: testUser,
+        createdAt: DateTime.now(),
+        customProperties: const {'id': 'u1', 'isUserMessage': true},
+      ),
+    );
     await tester.pump();
 
     // ...followed by one very long AI answer, delivered incrementally like a
@@ -79,32 +81,40 @@ void main() {
       'isStartOfResponse': true,
     };
 
-    controller.addMessage(ChatMessage(
-      text: '',
-      user: aiUser,
-      createdAt: DateTime.now(),
-      customProperties: const {...responseProperties, 'isStreaming': true},
-    ));
-    await tester.pump();
-
-    for (var i = 1; i <= 5; i++) {
-      final chunk =
-          longAnswer.substring(0, (longAnswer.length * i / 5).floor());
-      controller.updateMessage(ChatMessage(
-        text: chunk,
+    controller.addMessage(
+      ChatMessage(
+        text: '',
         user: aiUser,
         createdAt: DateTime.now(),
         customProperties: const {...responseProperties, 'isStreaming': true},
-      ));
+      ),
+    );
+    await tester.pump();
+
+    for (var i = 1; i <= 5; i++) {
+      final chunk = longAnswer.substring(
+        0,
+        (longAnswer.length * i / 5).floor(),
+      );
+      controller.updateMessage(
+        ChatMessage(
+          text: chunk,
+          user: aiUser,
+          createdAt: DateTime.now(),
+          customProperties: const {...responseProperties, 'isStreaming': true},
+        ),
+      );
       await tester.pump();
     }
 
-    controller.updateMessage(ChatMessage(
-      text: longAnswer,
-      user: aiUser,
-      createdAt: DateTime.now(),
-      customProperties: const {...responseProperties, 'isStreaming': false},
-    ));
+    controller.updateMessage(
+      ChatMessage(
+        text: longAnswer,
+        user: aiUser,
+        createdAt: DateTime.now(),
+        customProperties: const {...responseProperties, 'isStreaming': false},
+      ),
+    );
     controller.stopStreamingMessage('resp1');
     await tester.pump();
 

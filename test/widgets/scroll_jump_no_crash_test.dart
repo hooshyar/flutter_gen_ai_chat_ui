@@ -17,8 +17,9 @@ import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 /// direct `jumpTo`) so a regression here fails loudly instead of only
 /// showing up for real users mid-scroll.
 void main() {
-  testWidgets('scrolling the message list via jumpTo does not throw',
-      (tester) async {
+  testWidgets('scrolling the message list via jumpTo does not throw', (
+    tester,
+  ) async {
     const testUser = ChatUser(id: 'user', name: 'Test User');
     const aiUser = ChatUser(id: 'ai', name: 'AI Assistant');
     final controller = ChatMessagesController(

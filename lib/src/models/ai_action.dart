@@ -302,9 +302,7 @@ class ActionParameter {
 
   /// Converts to JSON schema representation used for function calling
   Map<String, dynamic> toJsonSchema() {
-    final schema = <String, dynamic>{
-      'description': description,
-    };
+    final schema = <String, dynamic>{'description': description};
 
     String typeString(ActionParameterType t) {
       switch (t) {
@@ -397,22 +395,18 @@ class ActionResult {
   });
 
   /// Creates a successful result
-  static ActionResult createSuccess(
-          [dynamic data, Map<String, dynamic>? metadata]) =>
-      ActionResult(
-        success: true,
-        data: data,
-        metadata: metadata,
-      );
+  static ActionResult createSuccess([
+    dynamic data,
+    Map<String, dynamic>? metadata,
+  ]) =>
+      ActionResult(success: true, data: data, metadata: metadata);
 
   /// Creates a failed result
-  static ActionResult createFailure(String error,
-          [Map<String, dynamic>? metadata]) =>
-      ActionResult(
-        success: false,
-        error: error,
-        metadata: metadata,
-      );
+  static ActionResult createFailure(
+    String error, [
+    Map<String, dynamic>? metadata,
+  ]) =>
+      ActionResult(success: false, error: error, metadata: metadata);
 
   /// Converts to JSON representation
   Map<String, dynamic> toJson() => {

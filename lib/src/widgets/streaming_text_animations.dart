@@ -515,9 +515,7 @@ class _StreamingTextWidgetState extends State<StreamingTextWidget>
           },
           child: Text(
             widget.config.animateByWord ? '$part ' : part,
-            style: widget.style?.copyWith(
-              color: Colors.white,
-            ),
+            style: widget.style?.copyWith(color: Colors.white),
           ),
         );
       }).toList(),

@@ -41,15 +41,12 @@ class ActionErrorHandler {
       debugPrint('Stack trace: $stackTrace');
     }
 
-    return ActionResult.createFailure(
-      userMessage,
-      {
-        'errorCode': errorCode,
-        'actionName': actionName,
-        'timestamp': DateTime.now().toIso8601String(),
-        ...?errorMetadata,
-      },
-    );
+    return ActionResult.createFailure(userMessage, {
+      'errorCode': errorCode,
+      'actionName': actionName,
+      'timestamp': DateTime.now().toIso8601String(),
+      ...?errorMetadata,
+    });
   }
 
   /// Validates action parameters and returns validation errors
@@ -93,11 +90,7 @@ class ActionException implements Exception {
   final String? code;
   final Map<String, dynamic>? metadata;
 
-  const ActionException(
-    this.message, {
-    this.code,
-    this.metadata,
-  });
+  const ActionException(this.message, {this.code, this.metadata});
 
   @override
   String toString() =>
@@ -120,8 +113,6 @@ class TimeoutException extends ActionException {
 class ValidationException extends ActionException {
   final Map<String, String> validationErrors;
 
-  const ValidationException(
-    super.message,
-    this.validationErrors,
-  ) : super(code: 'VALIDATION_ERROR', metadata: validationErrors);
+  const ValidationException(super.message, this.validationErrors)
+      : super(code: 'VALIDATION_ERROR', metadata: validationErrors);
 }

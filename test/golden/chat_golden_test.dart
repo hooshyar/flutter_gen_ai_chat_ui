@@ -17,19 +17,16 @@ void main() {
   const testUser = ChatUser(id: 'user', name: 'You');
   const aiUser = ChatUser(id: 'ai', name: 'Assistant');
 
-  Widget wrap(Widget child,
-      {TextDirection direction = TextDirection.ltr, ThemeData? theme}) {
+  Widget wrap(
+    Widget child, {
+    TextDirection direction = TextDirection.ltr,
+    ThemeData? theme,
+  }) {
     return MaterialApp(
       theme: theme,
       home: Directionality(
         textDirection: direction,
-        child: Material(
-          child: SizedBox(
-            width: 400,
-            height: 600,
-            child: child,
-          ),
-        ),
+        child: Material(child: SizedBox(width: 400, height: 600, child: child)),
       ),
     );
   }
@@ -51,15 +48,17 @@ void main() {
     );
     addTearDown(controller.dispose);
 
-    await tester.pumpWidget(wrap(
-      AiChatWidget(
-        currentUser: testUser,
-        aiUser: aiUser,
-        controller: controller,
-        onSendMessage: (_) async {},
-        enableMarkdownStreaming: false,
+    await tester.pumpWidget(
+      wrap(
+        AiChatWidget(
+          currentUser: testUser,
+          aiUser: aiUser,
+          controller: controller,
+          onSendMessage: (_) async {},
+          enableMarkdownStreaming: false,
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
 
     await expectLater(
@@ -72,22 +71,24 @@ void main() {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 
-    await tester.pumpWidget(wrap(
-      AiChatWidget(
-        currentUser: testUser,
-        aiUser: aiUser,
-        controller: controller,
-        onSendMessage: (_) async {},
-        enableMarkdownStreaming: false,
-        welcomeMessageConfig: const WelcomeMessageConfig(
-          title: 'How can I help you today?',
+    await tester.pumpWidget(
+      wrap(
+        AiChatWidget(
+          currentUser: testUser,
+          aiUser: aiUser,
+          controller: controller,
+          onSendMessage: (_) async {},
+          enableMarkdownStreaming: false,
+          welcomeMessageConfig: const WelcomeMessageConfig(
+            title: 'How can I help you today?',
+          ),
+          exampleQuestions: const [
+            ExampleQuestion(question: 'What is the capital of Iraq?'),
+            ExampleQuestion(question: 'Write me a short poem'),
+          ],
         ),
-        exampleQuestions: const [
-          ExampleQuestion(question: 'What is the capital of Iraq?'),
-          ExampleQuestion(question: 'Write me a short poem'),
-        ],
       ),
-    ));
+    );
     await tester.pumpAndSettle();
 
     await expectLater(
@@ -100,28 +101,32 @@ void main() {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 
-    await tester.pumpWidget(wrap(
-      AiChatWidget(
-        currentUser: testUser,
-        aiUser: aiUser,
-        controller: controller,
-        onSendMessage: (_) async {},
-        // Streaming animation intentionally left OFF for the golden itself —
-        // the animation's live per-frame reveal is exercised by
-        // streaming_rapid_update_test.dart / streaming_disable_test.dart;
-        // this golden pins the STATIC appearance of a partially-arrived
-        // response (what a real mid-stream frame looks like), not the
-        // ticking animation, which would make the golden nondeterministic.
-        enableMarkdownStreaming: false,
+    await tester.pumpWidget(
+      wrap(
+        AiChatWidget(
+          currentUser: testUser,
+          aiUser: aiUser,
+          controller: controller,
+          onSendMessage: (_) async {},
+          // Streaming animation intentionally left OFF for the golden itself —
+          // the animation's live per-frame reveal is exercised by
+          // streaming_rapid_update_test.dart / streaming_disable_test.dart;
+          // this golden pins the STATIC appearance of a partially-arrived
+          // response (what a real mid-stream frame looks like), not the
+          // ticking animation, which would make the golden nondeterministic.
+          enableMarkdownStreaming: false,
+        ),
       ),
-    ));
+    );
 
-    controller.addMessage(ChatMessage(
-      text: 'What is the capital of Ira',
-      user: aiUser,
-      createdAt: DateTime(2026, 1, 1, 12, 0),
-      customProperties: const {'id': 'resp1', 'isStreaming': true},
-    ));
+    controller.addMessage(
+      ChatMessage(
+        text: 'What is the capital of Ira',
+        user: aiUser,
+        createdAt: DateTime(2026, 1, 1, 12, 0),
+        customProperties: const {'id': 'resp1', 'isStreaming': true},
+      ),
+    );
     await tester.pump();
 
     await expectLater(
@@ -148,15 +153,17 @@ void main() {
     );
     addTearDown(controller.dispose);
 
-    await tester.pumpWidget(wrap(
-      AiChatWidget(
-        currentUser: testUser,
-        aiUser: aiUser,
-        controller: controller,
-        onSendMessage: (_) async {},
-        enableMarkdownStreaming: false,
+    await tester.pumpWidget(
+      wrap(
+        AiChatWidget(
+          currentUser: testUser,
+          aiUser: aiUser,
+          controller: controller,
+          onSendMessage: (_) async {},
+          enableMarkdownStreaming: false,
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
 
     await expectLater(
@@ -184,16 +191,18 @@ void main() {
     );
     addTearDown(controller.dispose);
 
-    await tester.pumpWidget(wrap(
-      AiChatWidget(
-        currentUser: rtlUser,
-        aiUser: rtlAi,
-        controller: controller,
-        onSendMessage: (_) async {},
-        enableMarkdownStreaming: false,
+    await tester.pumpWidget(
+      wrap(
+        AiChatWidget(
+          currentUser: rtlUser,
+          aiUser: rtlAi,
+          controller: controller,
+          onSendMessage: (_) async {},
+          enableMarkdownStreaming: false,
+        ),
+        direction: TextDirection.rtl,
       ),
-      direction: TextDirection.rtl,
-    ));
+    );
     await tester.pumpAndSettle();
 
     await expectLater(
@@ -204,8 +213,9 @@ void main() {
 
   testWidgets(
       'CustomThemeExtension.chatgpt() brand preset actually applies '
-      '(regression guard: this extension used to be read nowhere)',
-      (tester) async {
+      '(regression guard: this extension used to be read nowhere)', (
+    tester,
+  ) async {
     final controller = ChatMessagesController(
       initialMessages: [
         ChatMessage(
@@ -222,16 +232,18 @@ void main() {
     );
     addTearDown(controller.dispose);
 
-    await tester.pumpWidget(wrap(
-      AiChatWidget(
-        currentUser: testUser,
-        aiUser: aiUser,
-        controller: controller,
-        onSendMessage: (_) async {},
-        enableMarkdownStreaming: false,
+    await tester.pumpWidget(
+      wrap(
+        AiChatWidget(
+          currentUser: testUser,
+          aiUser: aiUser,
+          controller: controller,
+          onSendMessage: (_) async {},
+          enableMarkdownStreaming: false,
+        ),
+        theme: ThemeData(extensions: [CustomThemeExtension.chatgpt()]),
       ),
-      theme: ThemeData(extensions: [CustomThemeExtension.chatgpt()]),
-    ));
+    );
     await tester.pumpAndSettle();
 
     await expectLater(

@@ -44,11 +44,13 @@ class Callout extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(color: colors.accent)),
+                  Text(
+                    title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(color: colors.accent),
+                  ),
                   const SizedBox(height: 4),
                   Text(message, style: Theme.of(context).textTheme.bodyMedium),
                 ],

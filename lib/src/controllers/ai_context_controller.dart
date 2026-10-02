@@ -75,8 +75,9 @@ class AiContextController extends ChangeNotifier {
   /// Get context data by category
   List<AiContextData> getContextByCategory(String category) {
     return _contextData.values
-        .where((context) =>
-            context.categories.contains(category) && context.isValid)
+        .where(
+          (context) => context.categories.contains(category) && context.isValid,
+        )
         .toList();
   }
 
@@ -110,11 +111,13 @@ class AiContextController extends ChangeNotifier {
         ? AiContextEventType.added
         : AiContextEventType.updated;
 
-    _emitEvent(AiContextEvent(
-      type: eventType,
-      contextData: contextData,
-      previousData: previousData,
-    ));
+    _emitEvent(
+      AiContextEvent(
+        type: eventType,
+        contextData: contextData,
+        previousData: previousData,
+      ),
+    );
 
     if (_config.enableLogging) {
       dev.log('Context ${eventType.name}: ${contextData.id}');
@@ -127,10 +130,12 @@ class AiContextController extends ChangeNotifier {
   bool removeContext(String id) {
     final contextData = _contextData.remove(id);
     if (contextData != null) {
-      _emitEvent(AiContextEvent(
-        type: AiContextEventType.removed,
-        contextData: contextData,
-      ));
+      _emitEvent(
+        AiContextEvent(
+          type: AiContextEventType.removed,
+          contextData: contextData,
+        ),
+      );
 
       if (_config.enableLogging) {
         dev.log('Context removed: $id');
@@ -160,9 +165,7 @@ class AiContextController extends ChangeNotifier {
   void clearContext() {
     _contextData.clear();
 
-    _emitEvent(AiContextEvent(
-      type: AiContextEventType.cleared,
-    ));
+    _emitEvent(AiContextEvent(type: AiContextEventType.cleared));
 
     if (_config.enableLogging) {
       dev.log('All context cleared');
@@ -209,8 +212,9 @@ class AiContextController extends ChangeNotifier {
         AiContextPriority.low: 3,
       };
 
-      final priorityComparison =
-          priorityOrder[a.priority]!.compareTo(priorityOrder[b.priority]!);
+      final priorityComparison = priorityOrder[a.priority]!.compareTo(
+        priorityOrder[b.priority]!,
+      );
 
       if (priorityComparison != 0) return priorityComparison;
 
@@ -279,16 +283,19 @@ class AiContextController extends ChangeNotifier {
     String Function(T value)? serializer,
   }) {
     return valueStream.listen((value) {
-      setContext(AiContextData(
-        id: contextId,
-        name: contextName,
-        type: type,
-        priority: priority,
-        data: value,
-        description: description ?? 'Watched value: $contextName',
-        categories: categories,
-        serializer: serializer != null ? (data) => serializer(data as T) : null,
-      ));
+      setContext(
+        AiContextData(
+          id: contextId,
+          name: contextName,
+          type: type,
+          priority: priority,
+          data: value,
+          description: description ?? 'Watched value: $contextName',
+          categories: categories,
+          serializer:
+              serializer != null ? (data) => serializer(data as T) : null,
+        ),
+      );
     });
   }
 
@@ -308,16 +315,19 @@ class AiContextController extends ChangeNotifier {
     String Function(T value)? serializer,
   }) {
     void updateContext() {
-      setContext(AiContextData(
-        id: contextId,
-        name: contextName,
-        type: type,
-        priority: priority,
-        data: notifier.value,
-        description: description ?? 'ValueNotifier: $contextName',
-        categories: categories,
-        serializer: serializer != null ? (data) => serializer(data as T) : null,
-      ));
+      setContext(
+        AiContextData(
+          id: contextId,
+          name: contextName,
+          type: type,
+          priority: priority,
+          data: notifier.value,
+          description: description ?? 'ValueNotifier: $contextName',
+          categories: categories,
+          serializer:
+              serializer != null ? (data) => serializer(data as T) : null,
+        ),
+      );
     }
 
     // Set initial context
@@ -373,8 +383,9 @@ class AiContextController extends ChangeNotifier {
           AiContextPriority.critical: 3,
         };
 
-        final priorityComparison =
-            priorityOrder[a.priority]!.compareTo(priorityOrder[b.priority]!);
+        final priorityComparison = priorityOrder[a.priority]!.compareTo(
+          priorityOrder[b.priority]!,
+        );
 
         if (priorityComparison != 0) return priorityComparison;
 

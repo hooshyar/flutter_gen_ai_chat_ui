@@ -85,10 +85,7 @@ class ExampleQuestionConfig {
 
 /// Model class for example questions
 class ExampleQuestion {
-  const ExampleQuestion({
-    required this.question,
-    this.config,
-  });
+  const ExampleQuestion({required this.question, this.config});
 
   /// The question text
   final String question;

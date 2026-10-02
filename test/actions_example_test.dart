@@ -9,42 +9,46 @@ void main() {
     setUp(() {
       actionController = ActionController();
 
-      actionController.registerAction(AiAction(
-        name: 'calculate',
-        description: 'Perform a math calculation',
-        parameters: [
-          ActionParameter.string(
-            name: 'expression',
-            description: 'Math expression',
-            required: true,
-          ),
-        ],
-        handler: (params) async {
-          return ActionResult.createSuccess({
-            'expression': params['expression'],
-            'result': 42,
-          });
-        },
-      ));
+      actionController.registerAction(
+        AiAction(
+          name: 'calculate',
+          description: 'Perform a math calculation',
+          parameters: [
+            ActionParameter.string(
+              name: 'expression',
+              description: 'Math expression',
+              required: true,
+            ),
+          ],
+          handler: (params) async {
+            return ActionResult.createSuccess({
+              'expression': params['expression'],
+              'result': 42,
+            });
+          },
+        ),
+      );
 
-      actionController.registerAction(AiAction(
-        name: 'get_weather',
-        description: 'Get weather for a city',
-        parameters: [
-          ActionParameter.string(
-            name: 'city',
-            description: 'City name',
-            required: true,
-          ),
-        ],
-        handler: (params) async {
-          return ActionResult.createSuccess({
-            'city': params['city'],
-            'temperature': 22,
-            'conditions': 'Sunny',
-          });
-        },
-      ));
+      actionController.registerAction(
+        AiAction(
+          name: 'get_weather',
+          description: 'Get weather for a city',
+          parameters: [
+            ActionParameter.string(
+              name: 'city',
+              description: 'City name',
+              required: true,
+            ),
+          ],
+          handler: (params) async {
+            return ActionResult.createSuccess({
+              'city': params['city'],
+              'temperature': 22,
+              'conditions': 'Sunny',
+            });
+          },
+        ),
+      );
     });
 
     tearDown(() {
@@ -58,20 +62,18 @@ void main() {
     });
 
     test('calculate action should return success', () async {
-      final result = await actionController.executeAction(
-        'calculate',
-        {'expression': '6 * 7'},
-      );
+      final result = await actionController.executeAction('calculate', {
+        'expression': '6 * 7',
+      });
 
       expect(result.success, isTrue);
       expect((result.data as Map)['result'], 42);
     });
 
     test('weather action should return success', () async {
-      final result = await actionController.executeAction(
-        'get_weather',
-        {'city': 'Paris'},
-      );
+      final result = await actionController.executeAction('get_weather', {
+        'city': 'Paris',
+      });
 
       expect(result.success, isTrue);
       expect((result.data as Map)['city'], 'Paris');
@@ -79,19 +81,13 @@ void main() {
     });
 
     test('unknown action should return failure', () async {
-      final result = await actionController.executeAction(
-        'unknown_action',
-        {},
-      );
+      final result = await actionController.executeAction('unknown_action', {});
 
       expect(result.success, isFalse);
     });
 
     test('action with missing required param should fail validation', () async {
-      final result = await actionController.executeAction(
-        'calculate',
-        {},
-      );
+      final result = await actionController.executeAction('calculate', {});
 
       expect(result.success, isFalse);
     });
@@ -100,10 +96,9 @@ void main() {
       final events = <ActionEvent>[];
       actionController.events.listen(events.add);
 
-      await actionController.executeAction(
-        'calculate',
-        {'expression': '1 + 1'},
-      );
+      await actionController.executeAction('calculate', {
+        'expression': '1 + 1',
+      });
 
       // Wait for events to be processed
       await Future.delayed(const Duration(milliseconds: 100));

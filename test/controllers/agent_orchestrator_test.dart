@@ -51,11 +51,9 @@ class _FakeAgent extends AIAgent {
 
   void setStatus(AgentStatus status) {
     _status = status;
-    _stateController.add(AgentState(
-      agentId: id,
-      status: _status,
-      lastUpdated: DateTime.now(),
-    ));
+    _stateController.add(
+      AgentState(agentId: id, status: _status, lastUpdated: DateTime.now()),
+    );
   }
 
   @override
@@ -123,11 +121,9 @@ class _EmitOnDisposeAgent extends AIAgent {
   @override
   Future<void> initialize(Map<String, dynamic> config) async {
     _status = AgentStatus.idle;
-    _stateController.add(AgentState(
-      agentId: id,
-      status: _status,
-      lastUpdated: DateTime.now(),
-    ));
+    _stateController.add(
+      AgentState(agentId: id, status: _status, lastUpdated: DateTime.now()),
+    );
   }
 
   @override
@@ -156,11 +152,9 @@ class _EmitOnDisposeAgent extends AIAgent {
     // pattern that the orchestrator's per-agent subscription tracking
     // protects against.
     if (!_stateController.isClosed) {
-      _stateController.add(AgentState(
-        agentId: id,
-        status: _status,
-        lastUpdated: DateTime.now(),
-      ));
+      _stateController.add(
+        AgentState(agentId: id, status: _status, lastUpdated: DateTime.now()),
+      );
     }
     await _stateController.close();
   }
@@ -186,16 +180,18 @@ void main() {
     });
 
     group('Agent registration', () {
-      test('registers an agent and calls initialize with orchestrator config',
-          () async {
-        final agent = _FakeAgent(id: 'a1', name: 'A1');
+      test(
+        'registers an agent and calls initialize with orchestrator config',
+        () async {
+          final agent = _FakeAgent(id: 'a1', name: 'A1');
 
-        await orchestrator.registerAgent(agent);
+          await orchestrator.registerAgent(agent);
 
-        expect(agent.initializeCalls, 1);
-        expect(orchestrator.agents, hasLength(1));
-        expect(orchestrator.getAgent('a1'), same(agent));
-      });
+          expect(agent.initializeCalls, 1);
+          expect(orchestrator.agents, hasLength(1));
+          expect(orchestrator.getAgent('a1'), same(agent));
+        },
+      );
 
       test('unregisterAgent disposes the agent and removes it', () async {
         final agent = _FakeAgent(id: 'a1', name: 'A1');
@@ -215,9 +211,15 @@ void main() {
 
       test('getAgentsByCapability filters on agent capabilities', () async {
         final a = _FakeAgent(
-            id: 'a', name: 'A', capabilities: const ['sentiment', 'summary']);
-        final b =
-            _FakeAgent(id: 'b', name: 'B', capabilities: const ['code_review']);
+          id: 'a',
+          name: 'A',
+          capabilities: const ['sentiment', 'summary'],
+        );
+        final b = _FakeAgent(
+          id: 'b',
+          name: 'B',
+          capabilities: const ['code_review'],
+        );
         await orchestrator.registerAgent(a);
         await orchestrator.registerAgent(b);
 
@@ -243,52 +245,65 @@ void main() {
     });
 
     group('processRequest happy path', () {
-      test('routes to the only registered agent and returns its response',
-          () async {
-        final agent = _FakeAgent(id: 'a1', name: 'A1');
-        await orchestrator.registerAgent(agent);
+      test(
+        'routes to the only registered agent and returns its response',
+        () async {
+          final agent = _FakeAgent(id: 'a1', name: 'A1');
+          await orchestrator.registerAgent(agent);
 
-        final response = await orchestrator.processRequest(_req('hello'));
+          final response = await orchestrator.processRequest(_req('hello'));
 
-        expect(agent.processCalls, 1);
-        expect(agent.receivedRequests.single.query, 'hello');
-        expect(response.agentId, 'a1');
-        expect(response.content, 'echo:hello');
-        expect(response.type, AgentResponseType.finalAnswer);
-      });
+          expect(agent.processCalls, 1);
+          expect(agent.receivedRequests.single.query, 'hello');
+          expect(response.agentId, 'a1');
+          expect(response.content, 'echo:hello');
+          expect(response.type, AgentResponseType.finalAnswer);
+        },
+      );
 
-      test('emits the agent response on the orchestrator response stream',
-          () async {
-        final agent = _FakeAgent(id: 'a1', name: 'A1');
-        await orchestrator.registerAgent(agent);
+      test(
+        'emits the agent response on the orchestrator response stream',
+        () async {
+          final agent = _FakeAgent(id: 'a1', name: 'A1');
+          await orchestrator.registerAgent(agent);
 
-        final streamed = orchestrator.responseStream.first;
-        final returned = await orchestrator.processRequest(_req('hi'));
-        final emitted = await streamed;
+          final streamed = orchestrator.responseStream.first;
+          final returned = await orchestrator.processRequest(_req('hi'));
+          final emitted = await streamed;
 
-        expect(emitted.id, returned.id);
-        expect(emitted.agentId, 'a1');
-      });
+          expect(emitted.id, returned.id);
+          expect(emitted.agentId, 'a1');
+        },
+      );
 
-      test('routes to the capability-matching agent when scores differ',
-          () async {
-        // Agent `code` has the matching capability "code review", agent
-        // `text` doesn't. canHandle is permissive on both, so routing comes
-        // down to the capability bonus inside _calculateRoutingScore.
-        final code = _FakeAgent(
-            id: 'code', name: 'Code', capabilities: const ['code review']);
-        final text = _FakeAgent(
-            id: 'text', name: 'Text', capabilities: const ['text analysis']);
-        await orchestrator.registerAgent(code);
-        await orchestrator.registerAgent(text);
+      test(
+        'routes to the capability-matching agent when scores differ',
+        () async {
+          // Agent `code` has the matching capability "code review", agent
+          // `text` doesn't. canHandle is permissive on both, so routing comes
+          // down to the capability bonus inside _calculateRoutingScore.
+          final code = _FakeAgent(
+            id: 'code',
+            name: 'Code',
+            capabilities: const ['code review'],
+          );
+          final text = _FakeAgent(
+            id: 'text',
+            name: 'Text',
+            capabilities: const ['text analysis'],
+          );
+          await orchestrator.registerAgent(code);
+          await orchestrator.registerAgent(text);
 
-        final response = await orchestrator
-            .processRequest(_req('please run a code review on this'));
+          final response = await orchestrator.processRequest(
+            _req('please run a code review on this'),
+          );
 
-        expect(response.agentId, 'code');
-        expect(code.processCalls, 1);
-        expect(text.processCalls, 0);
-      });
+          expect(response.agentId, 'code');
+          expect(code.processCalls, 1);
+          expect(text.processCalls, 0);
+        },
+      );
 
       test('throws AgentException when no agents are registered', () async {
         await expectLater(
@@ -300,8 +315,11 @@ void main() {
 
     group('processRequest error handling', () {
       test('wraps agent exceptions in an error AgentResponse', () async {
-        final agent =
-            _FakeAgent(id: 'a1', name: 'A1', shouldThrowOnProcess: true);
+        final agent = _FakeAgent(
+          id: 'a1',
+          name: 'A1',
+          shouldThrowOnProcess: true,
+        );
         await orchestrator.registerAgent(agent);
 
         final response = await orchestrator.processRequest(_req('boom'));
@@ -312,8 +330,11 @@ void main() {
       });
 
       test('error response is also emitted on the response stream', () async {
-        final agent =
-            _FakeAgent(id: 'a1', name: 'A1', shouldThrowOnProcess: true);
+        final agent = _FakeAgent(
+          id: 'a1',
+          name: 'A1',
+          shouldThrowOnProcess: true,
+        );
         await orchestrator.registerAgent(agent);
 
         final emittedFuture = orchestrator.responseStream.first;
@@ -347,8 +368,9 @@ void main() {
         await orchestrator.registerAgent(delegator);
         await orchestrator.registerAgent(specialist);
 
-        final response =
-            await orchestrator.processRequest(_req('please delegate-me'));
+        final response = await orchestrator.processRequest(
+          _req('please delegate-me'),
+        );
 
         expect(delegator.processCalls, 1);
         expect(specialist.processCalls, 1);
@@ -385,59 +407,68 @@ void main() {
     });
 
     group('Collaboration', () {
-      test('startCollaboration throws when collaboration is disabled',
-          () async {
-        final disabled = AgentOrchestrator(enableCollaboration: false);
-        addTearDown(disabled.dispose);
+      test(
+        'startCollaboration throws when collaboration is disabled',
+        () async {
+          final disabled = AgentOrchestrator(enableCollaboration: false);
+          addTearDown(disabled.dispose);
 
-        await expectLater(
-          () => disabled.startCollaboration(
-            participantAgentIds: const ['a'],
+          await expectLater(
+            () => disabled.startCollaboration(
+              participantAgentIds: const ['a'],
+              coordinatorAgentId: 'a',
+              topic: 't',
+            ),
+            throwsA(isA<UnsupportedError>()),
+          );
+        },
+      );
+
+      test(
+        'startCollaboration registers the session and notifies listeners',
+        () async {
+          var notified = 0;
+          orchestrator.addListener(() => notified++);
+
+          final collab = await orchestrator.startCollaboration(
+            participantAgentIds: const ['a', 'b'],
             coordinatorAgentId: 'a',
-            topic: 't',
-          ),
-          throwsA(isA<UnsupportedError>()),
-        );
-      });
+            topic: 'design review',
+          );
 
-      test('startCollaboration registers the session and notifies listeners',
-          () async {
-        var notified = 0;
-        orchestrator.addListener(() => notified++);
-
-        final collab = await orchestrator.startCollaboration(
-          participantAgentIds: const ['a', 'b'],
-          coordinatorAgentId: 'a',
-          topic: 'design review',
-        );
-
-        expect(collab.participantAgentIds, ['a', 'b']);
-        expect(collab.coordinatorAgentId, 'a');
-        expect(collab.topic, 'design review');
-        expect(orchestrator.activeCollaborations, contains(collab));
-        expect(notified, greaterThanOrEqualTo(1));
-      });
+          expect(collab.participantAgentIds, ['a', 'b']);
+          expect(collab.coordinatorAgentId, 'a');
+          expect(collab.topic, 'design review');
+          expect(orchestrator.activeCollaborations, contains(collab));
+          expect(notified, greaterThanOrEqualTo(1));
+        },
+      );
     });
 
     group('streamResponse', () {
-      test('yields a partial then the final response from the routed agent',
-          () async {
-        final agent = _FakeAgent(id: 'a1', name: 'A1');
-        await orchestrator.registerAgent(agent);
+      test(
+        'yields a partial then the final response from the routed agent',
+        () async {
+          final agent = _FakeAgent(id: 'a1', name: 'A1');
+          await orchestrator.registerAgent(agent);
 
-        final out =
-            await orchestrator.streamResponse(_req('stream me')).toList();
+          final out =
+              await orchestrator.streamResponse(_req('stream me')).toList();
 
-        expect(out, hasLength(2));
-        expect(out.first.type, AgentResponseType.partial);
-        expect(out.first.agentId, 'a1');
-        expect(out.last.type, AgentResponseType.finalAnswer);
-        expect(out.last.content, 'echo:stream me');
-      });
+          expect(out, hasLength(2));
+          expect(out.first.type, AgentResponseType.partial);
+          expect(out.first.agentId, 'a1');
+          expect(out.last.type, AgentResponseType.finalAnswer);
+          expect(out.last.content, 'echo:stream me');
+        },
+      );
 
       test('yields a single error response when the agent throws', () async {
-        final agent =
-            _FakeAgent(id: 'a1', name: 'A1', shouldThrowOnProcess: true);
+        final agent = _FakeAgent(
+          id: 'a1',
+          name: 'A1',
+          shouldThrowOnProcess: true,
+        );
         await orchestrator.registerAgent(agent);
 
         final out = await orchestrator.streamResponse(_req('boom')).toList();
@@ -452,29 +483,31 @@ void main() {
     });
 
     group('Disposal', () {
-      test('dispose() closes both stream controllers and disposes all agents',
-          () async {
-        final a = _FakeAgent(id: 'a', name: 'A');
-        final b = _FakeAgent(id: 'b', name: 'B');
-        await orchestrator.registerAgent(a);
-        await orchestrator.registerAgent(b);
+      test(
+        'dispose() closes both stream controllers and disposes all agents',
+        () async {
+          final a = _FakeAgent(id: 'a', name: 'A');
+          final b = _FakeAgent(id: 'b', name: 'B');
+          await orchestrator.registerAgent(a);
+          await orchestrator.registerAgent(b);
 
-        // Capture both streams before dispose closes them.
-        final responseDone = orchestrator.responseStream.drain<void>();
-        final stateDone = orchestrator.stateStream.drain<void>();
+          // Capture both streams before dispose closes them.
+          final responseDone = orchestrator.responseStream.drain<void>();
+          final stateDone = orchestrator.stateStream.drain<void>();
 
-        orchestrator.dispose();
-        // tearDown will call dispose() again — guard against double-dispose
-        // by swapping in a fresh orchestrator.
-        orchestrator = AgentOrchestrator();
+          orchestrator.dispose();
+          // tearDown will call dispose() again — guard against double-dispose
+          // by swapping in a fresh orchestrator.
+          orchestrator = AgentOrchestrator();
 
-        // Both broadcast streams should now be closed (drain completes).
-        await responseDone.timeout(const Duration(seconds: 2));
-        await stateDone.timeout(const Duration(seconds: 2));
+          // Both broadcast streams should now be closed (drain completes).
+          await responseDone.timeout(const Duration(seconds: 2));
+          await stateDone.timeout(const Duration(seconds: 2));
 
-        expect(a.disposeCalls, 1);
-        expect(b.disposeCalls, 1);
-      });
+          expect(a.disposeCalls, 1);
+          expect(b.disposeCalls, 1);
+        },
+      );
 
       test(
           'dispose() leaves no pending timers '
@@ -548,9 +581,12 @@ void main() {
         // Replace before tearDown re-disposes.
         orchestrator = AgentOrchestrator();
 
-        expect(thrown, isNull,
-            reason: 'orchestrator dispose must cancel agent state '
-                'subscriptions before closing its state stream');
+        expect(
+          thrown,
+          isNull,
+          reason: 'orchestrator dispose must cancel agent state '
+              'subscriptions before closing its state stream',
+        );
         expect(emitOnDispose.disposeCalls, 1);
       });
 
@@ -586,8 +622,11 @@ void main() {
         second.setStatus(AgentStatus.streaming);
         await Future<void>.delayed(Duration.zero);
 
-        expect(fromFirst, isEmpty,
-            reason: 'orphaned subscription should not forward');
+        expect(
+          fromFirst,
+          isEmpty,
+          reason: 'orphaned subscription should not forward',
+        );
         expect(fromSecond, hasLength(1));
 
         // Test owns `first`; orchestrator only knows about `second` now.

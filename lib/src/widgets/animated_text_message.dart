@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:flutter_streaming_text_markdown/flutter_streaming_text_markdown.dart';
+import 'package:flutter_streaming_text_markdown/flutter_streaming_text_markdown.dart'
+    hide CodeBlockView, CodeBlockTheme;
 
+import '../theme/code_block_theme.dart';
 import '../utils/color_extensions.dart';
+import 'code/code_block_view.dart';
 
 /// A widget that animates text appearing character by character
 class AnimatedTextMessage extends StatefulWidget {
@@ -80,11 +83,16 @@ class _AnimatedTextMessageState extends State<AnimatedTextMessage>
           (widget.isMarkdown
               ? MarkdownBody(
                   data: widget.text,
+                  builders: {'pre': CodeBlockMarkdownBuilder()},
                   styleSheet: MarkdownStyleSheet(
                     p: widget.style,
-                    code: widget.style.copyWith(
-                      fontFamily: 'monospace',
-                      backgroundColor: Colors.grey.withOpacityCompat(0.2),
+                    code: widget.style.merge(
+                      TextStyle(
+                        fontFamily: CodeBlockTheme.monoFontFamily,
+                        package: 'flutter_gen_ai_chat_ui',
+                        fontFamilyFallback: CodeBlockTheme.monoFontFallback,
+                        backgroundColor: Colors.grey.withOpacityCompat(0.2),
+                      ),
                     ),
                   ),
                 )

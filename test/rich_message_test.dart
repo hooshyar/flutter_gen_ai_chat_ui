@@ -37,11 +37,7 @@ void main() {
 
     test('uses current time when createdAt not provided', () {
       final before = DateTime.now();
-      final msg = ChatMessage.rich(
-        user: aiUser,
-        resultKind: 'test',
-        data: {},
-      );
+      final msg = ChatMessage.rich(user: aiUser, resultKind: 'test', data: {});
       final after = DateTime.now();
 
       expect(
@@ -93,9 +89,7 @@ void main() {
   group('ResultRendererRegistry', () {
     test('buildResult returns widget for registered kind', () {
       final registry = ResultRendererRegistry(
-        builders: {
-          'weather': (context, data) => Text('Temp: ${data['temp']}'),
-        },
+        builders: {'weather': (context, data) => Text('Temp: ${data['temp']}')},
         child: const SizedBox(),
       );
 
@@ -106,9 +100,7 @@ void main() {
 
     test('buildResult returns null for unregistered kind', () {
       final registry = ResultRendererRegistry(
-        builders: {
-          'weather': (context, data) => const Text('Weather'),
-        },
+        builders: {'weather': (context, data) => const Text('Weather')},
         child: const SizedBox(),
       );
 
@@ -117,9 +109,7 @@ void main() {
 
     test('extend merges builders', () {
       final base = ResultRendererRegistry(
-        builders: {
-          'weather': (context, data) => const Text('Weather'),
-        },
+        builders: {'weather': (context, data) => const Text('Weather')},
         child: const SizedBox(),
       );
 
@@ -143,28 +133,30 @@ void main() {
               controller: controller,
               onSendMessage: (_) {},
               resultRenderers: {
-                'weather': (context, data) => Text(
-                      'Weather: ${data['city']} ${data['temp']}°',
-                    ),
+                'weather': (context, data) =>
+                    Text('Weather: ${data['city']} ${data['temp']}°'),
               },
             ),
           ),
         ),
       );
 
-      controller.addMessage(ChatMessage.rich(
-        user: aiUser,
-        resultKind: 'weather',
-        data: {'city': 'Baghdad', 'temp': 42},
-      ));
+      controller.addMessage(
+        ChatMessage.rich(
+          user: aiUser,
+          resultKind: 'weather',
+          data: {'city': 'Baghdad', 'temp': 42},
+        ),
+      );
 
       await tester.pumpAndSettle();
 
       expect(find.text('Weather: Baghdad 42°'), findsOneWidget);
     });
 
-    testWidgets('falls through to text when no renderer matches',
-        (tester) async {
+    testWidgets('falls through to text when no renderer matches', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
@@ -183,12 +175,14 @@ void main() {
         ),
       );
 
-      controller.addMessage(ChatMessage.rich(
-        user: aiUser,
-        resultKind: 'unknown_kind',
-        data: {},
-        text: 'Fallback text here',
-      ));
+      controller.addMessage(
+        ChatMessage.rich(
+          user: aiUser,
+          resultKind: 'unknown_kind',
+          data: {},
+          text: 'Fallback text here',
+        ),
+      );
 
       await tester.pumpAndSettle();
 
@@ -213,15 +207,17 @@ void main() {
         ),
       );
 
-      controller.addMessage(ChatMessage.widget(
-        user: aiUser,
-        builder: (context) => const Card(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Text('Inline Widget Card'),
+      controller.addMessage(
+        ChatMessage.widget(
+          user: aiUser,
+          builder: (context) => const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Inline Widget Card'),
+            ),
           ),
         ),
-      ));
+      );
 
       await tester.pumpAndSettle();
 

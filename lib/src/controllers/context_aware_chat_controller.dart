@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+
 import '../models/ai_action.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_user.dart';
@@ -56,8 +57,9 @@ class ContextAwareChatController extends ChangeNotifier {
   Future<void> sendMessage(
     ChatMessage message, {
     required Future<String> Function(
-            String enhancedPrompt, List<AiAction> availableActions)
-        onAiResponse,
+      String enhancedPrompt,
+      List<AiAction> availableActions,
+    ) onAiResponse,
   }) async {
     // Add user message first
     _chatController.addMessage(message);
@@ -70,8 +72,10 @@ class ContextAwareChatController extends ChangeNotifier {
 
     try {
       // Get AI response with enhanced context
-      final aiResponseText =
-          await onAiResponse(enhancedPrompt, availableActions);
+      final aiResponseText = await onAiResponse(
+        enhancedPrompt,
+        availableActions,
+      );
 
       // Create AI response message
       final aiMessage = ChatMessage(
@@ -137,7 +141,8 @@ class ContextAwareChatController extends ChangeNotifier {
         }
 
         buffer.writeln(
-            '\\nTo use an action, simply mention it naturally in your response.');
+          '\\nTo use an action, simply mention it naturally in your response.',
+        );
       }
     }
 
@@ -145,7 +150,8 @@ class ContextAwareChatController extends ChangeNotifier {
     buffer
       ..writeln('\\n--- Instructions ---')
       ..writeln(
-          'Use the provided context to give more relevant and helpful responses.')
+        'Use the provided context to give more relevant and helpful responses.',
+      )
       ..writeln('If you can help by calling an action, do so naturally.')
       ..writeln('Always be conversational and helpful.');
 
@@ -156,8 +162,9 @@ class ContextAwareChatController extends ChangeNotifier {
   Stream<String> sendMessageStream(
     ChatMessage message, {
     required Stream<String> Function(
-            String enhancedPrompt, List<AiAction> availableActions)
-        onAiResponseStream,
+      String enhancedPrompt,
+      List<AiAction> availableActions,
+    ) onAiResponseStream,
   }) async* {
     // Add user message first
     _chatController.addMessage(message);
@@ -183,8 +190,10 @@ class ContextAwareChatController extends ChangeNotifier {
 
     try {
       // Stream AI response
-      await for (final chunk
-          in onAiResponseStream(enhancedPrompt, availableActions)) {
+      await for (final chunk in onAiResponseStream(
+        enhancedPrompt,
+        availableActions,
+      )) {
         buffer.write(chunk);
 
         // Update the message with accumulated text
@@ -227,7 +236,9 @@ class ContextAwareChatController extends ChangeNotifier {
 
   /// Execute an action by name
   Future<ActionResult> executeAction(
-      String actionName, Map<String, dynamic> parameters) {
+    String actionName,
+    Map<String, dynamic> parameters,
+  ) {
     return _actionController.executeAction(actionName, parameters);
   }
 
@@ -267,13 +278,15 @@ class ContextAwareChatController extends ChangeNotifier {
   void _onContextChanged() {
     // Context has changed - we could notify AI or take other actions
     debugPrint(
-        'Context updated: ${_readableController.contextKeys.length} items');
+      'Context updated: ${_readableController.contextKeys.length} items',
+    );
   }
 
   void _onActionsChanged() {
     // Actions have changed
     debugPrint(
-        'Actions updated: ${_actionController.registeredActions.length} actions');
+      'Actions updated: ${_actionController.registeredActions.length} actions',
+    );
   }
 
   @override

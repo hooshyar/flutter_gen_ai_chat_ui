@@ -14,10 +14,7 @@ void main() {
         text: '',
         user: testUser,
         createdAt: DateTime(2024, 1, 1, 12, 0),
-        customProperties: {
-          'id': 'test_message_123',
-          'isStreaming': true,
-        },
+        customProperties: {'id': 'test_message_123', 'isStreaming': true},
       );
     });
 
@@ -46,10 +43,7 @@ void main() {
       // Final update
       final updated3 = baseMessage.copyWith(
         text: 'Hello world!',
-        customProperties: {
-          'id': 'test_message_123',
-          'isStreaming': false,
-        },
+        customProperties: {'id': 'test_message_123', 'isStreaming': false},
       );
       controller.updateMessage(updated3);
       expect(controller.messages.length, 1);
@@ -110,8 +104,10 @@ void main() {
         expect(controller.messages[0].text, accumulated);
       }
 
-      expect(controller.messages[0].text,
-          'This is a test of streaming text functionality');
+      expect(
+        controller.messages[0].text,
+        'This is a test of streaming text functionality',
+      );
     });
 
     test('should preserve message properties during updates', () {

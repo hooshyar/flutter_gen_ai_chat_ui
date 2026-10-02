@@ -70,11 +70,7 @@ class AiFunctionCall {
   final Map<String, dynamic> arguments;
   final String? id;
 
-  const AiFunctionCall({
-    required this.name,
-    required this.arguments,
-    this.id,
-  });
+  const AiFunctionCall({required this.name, required this.arguments, this.id});
 
   factory AiFunctionCall.fromJson(Map<String, dynamic> json) {
     return AiFunctionCall(
@@ -192,9 +188,7 @@ class MockAiService extends AiService {
         ),
       );
     } else {
-      return AiFunctionCallResult(
-        textResponse: _generateMockResponse(message),
-      );
+      return AiFunctionCallResult(textResponse: _generateMockResponse(message));
     }
   }
 
@@ -272,11 +266,14 @@ class AiServiceIntegration {
     String message,
     List<AiAction> availableActions,
     Future<ActionResult> Function(
-            String actionName, Map<String, dynamic> parameters)
-        executeAction,
+      String actionName,
+      Map<String, dynamic> parameters,
+    ) executeAction,
   ) async {
-    final result =
-        await aiService.sendMessageWithFunctions(message, availableActions);
+    final result = await aiService.sendMessageWithFunctions(
+      message,
+      availableActions,
+    );
 
     if (result.functionCall != null) {
       final actionResult = await executeAction(
@@ -299,11 +296,14 @@ class AiServiceIntegration {
     String message,
     List<AiAction> availableActions,
     Future<ActionResult> Function(
-            String actionName, Map<String, dynamic> parameters)
-        executeAction,
+      String actionName,
+      Map<String, dynamic> parameters,
+    ) executeAction,
   ) async* {
     await for (final result in aiService.sendMessageWithFunctionsStream(
-        message, availableActions)) {
+      message,
+      availableActions,
+    )) {
       switch (result.type) {
         case AiFunctionCallResultType.textChunk:
           if (result.textChunk != null) {

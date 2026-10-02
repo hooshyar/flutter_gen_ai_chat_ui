@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
@@ -22,7 +23,9 @@ void main() {
         controller.setContext(contextData);
 
         expect(
-            controller.contextData, containsPair('test_context', contextData));
+          controller.contextData,
+          containsPair('test_context', contextData),
+        );
       });
 
       test('should get context by ID', () {
@@ -60,8 +63,9 @@ void main() {
         final contextData = _createTestContext();
         controller.setContext(contextData);
 
-        final updated =
-            controller.updateContext('test_context', {'updated': true});
+        final updated = controller.updateContext('test_context', {
+          'updated': true,
+        });
 
         expect(updated, isTrue);
         final retrieved = controller.getContext('test_context');
@@ -86,8 +90,9 @@ void main() {
       });
 
       test('should get context by type', () {
-        final userContexts =
-            controller.getContextByType(AiContextType.userProfile);
+        final userContexts = controller.getContextByType(
+          AiContextType.userProfile,
+        );
 
         expect(userContexts, hasLength(1));
         expect(userContexts.first.type, equals(AiContextType.userProfile));
@@ -101,12 +106,15 @@ void main() {
       });
 
       test('should get context by priority', () {
-        final highPriorityContexts =
-            controller.getContextByPriority(AiContextPriority.high);
+        final highPriorityContexts = controller.getContextByPriority(
+          AiContextPriority.high,
+        );
 
         expect(highPriorityContexts, isNotEmpty);
-        expect(highPriorityContexts.first.priority,
-            equals(AiContextPriority.high));
+        expect(
+          highPriorityContexts.first.priority,
+          equals(AiContextPriority.high),
+        );
       });
     });
 
@@ -218,7 +226,9 @@ void main() {
 
         expect(controller.getContext('stream_value'), isNotNull);
         expect(
-            controller.getContext('stream_value')?.data, equals('stream_data'));
+          controller.getContext('stream_value')?.data,
+          equals('stream_data'),
+        );
 
         streamController.close();
       });
@@ -364,10 +374,7 @@ AiContextData _createApplicationStateContext() {
   return AiContextData.applicationState(
     id: 'app_state',
     name: 'Application State',
-    stateData: {
-      'currentPage': 'dashboard',
-      'isLoggedIn': true,
-    },
+    stateData: {'currentPage': 'dashboard', 'isLoggedIn': true},
     priority: AiContextPriority.normal,
     categories: ['app', 'state'],
   );

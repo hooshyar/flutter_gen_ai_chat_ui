@@ -16,65 +16,67 @@ void main() {
     });
 
     testWidgets(
-        'Should disable streaming when enableMarkdownStreaming is false',
-        (WidgetTester tester) async {
-      // Arrange: Create chat widget with streaming disabled
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AiChatWidget(
-              currentUser: currentUser,
-              aiUser: aiUser,
-              controller: controller,
-              onSendMessage: (message) {},
-              enableAnimation: true, // Keep animation enabled
-              enableMarkdownStreaming: false, // But disable streaming
-              streamingWordByWord: false,
-              streamingDuration: const Duration(seconds: 0),
+      'Should disable streaming when enableMarkdownStreaming is false',
+      (WidgetTester tester) async {
+        // Arrange: Create chat widget with streaming disabled
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AiChatWidget(
+                currentUser: currentUser,
+                aiUser: aiUser,
+                controller: controller,
+                onSendMessage: (message) {},
+                enableAnimation: true, // Keep animation enabled
+                enableMarkdownStreaming: false, // But disable streaming
+                streamingWordByWord: false,
+                streamingDuration: const Duration(seconds: 0),
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Wait for initial build
-      await tester.pump();
+        // Wait for initial build
+        await tester.pump();
 
-      // Act: Add a markdown message that would normally stream
-      controller.addMessage(
-        ChatMessage(
-          text:
-              '# Hello World\n\nThis is **bold** text with streaming disabled.',
-          user: aiUser,
-          createdAt: DateTime.now(),
-          isMarkdown: true,
-          customProperties: {
-            'id': 'test_msg_1',
-            'isStreaming': true, // This would normally trigger streaming
-          },
-        ),
-      );
+        // Act: Add a markdown message that would normally stream
+        controller.addMessage(
+          ChatMessage(
+            text:
+                '# Hello World\n\nThis is **bold** text with streaming disabled.',
+            user: aiUser,
+            createdAt: DateTime.now(),
+            isMarkdown: true,
+            customProperties: {
+              'id': 'test_msg_1',
+              'isStreaming': true, // This would normally trigger streaming
+            },
+          ),
+        );
 
-      // Start streaming to simulate the typical flow
-      controller.setStreamingMessage('test_msg_1');
+        // Start streaming to simulate the typical flow
+        controller.setStreamingMessage('test_msg_1');
 
-      // Pump once - text should be immediately visible (no streaming)
-      await tester.pump();
+        // Pump once - text should be immediately visible (no streaming)
+        await tester.pump();
 
-      // Assert: The markdown should be rendered immediately without streaming
-      // Look for Markdown widget which indicates non-streaming rendering
-      expect(find.byType(Markdown), findsOneWidget);
+        // Assert: The markdown should be rendered immediately without streaming
+        // Look for Markdown widget which indicates non-streaming rendering
+        expect(find.byType(Markdown), findsOneWidget);
 
-      // The text should be immediately available
-      expect(find.textContaining('Hello World'), findsOneWidget);
-      expect(find.textContaining('bold'), findsOneWidget);
+        // The text should be immediately available
+        expect(find.textContaining('Hello World'), findsOneWidget);
+        expect(find.textContaining('bold'), findsOneWidget);
 
-      // Drain the post-render scroll timer (300ms) scheduled by addMessage.
-      // Without this, the test framework reports a pending Timer.
-      await tester.pump(const Duration(milliseconds: 350));
-    });
+        // Drain the post-render scroll timer (300ms) scheduled by addMessage.
+        // Without this, the test framework reports a pending Timer.
+        await tester.pump(const Duration(milliseconds: 350));
+      },
+    );
 
-    testWidgets('Should disable streaming when enableAnimation is false',
-        (WidgetTester tester) async {
+    testWidgets('Should disable streaming when enableAnimation is false', (
+      WidgetTester tester,
+    ) async {
       // Arrange: Create chat widget with animation disabled
       await tester.pumpWidget(
         MaterialApp(
@@ -103,10 +105,7 @@ void main() {
           user: aiUser,
           createdAt: DateTime.now(),
           isMarkdown: false,
-          customProperties: {
-            'id': 'test_msg_2',
-            'isStreaming': true,
-          },
+          customProperties: {'id': 'test_msg_2', 'isStreaming': true},
         ),
       );
 
@@ -125,8 +124,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 350));
     });
 
-    testWidgets('Should still stream when both flags are enabled',
-        (WidgetTester tester) async {
+    testWidgets('Should still stream when both flags are enabled', (
+      WidgetTester tester,
+    ) async {
       // Arrange: Create chat widget with both streaming and animation enabled
       await tester.pumpWidget(
         MaterialApp(
@@ -155,10 +155,7 @@ void main() {
           user: aiUser,
           createdAt: DateTime.now(),
           isMarkdown: true,
-          customProperties: {
-            'id': 'test_msg_3',
-            'isStreaming': true,
-          },
+          customProperties: {'id': 'test_msg_3', 'isStreaming': true},
         ),
       );
 
@@ -178,8 +175,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 350));
     });
 
-    testWidgets('Should handle streamingWordByWord false correctly',
-        (WidgetTester tester) async {
+    testWidgets('Should handle streamingWordByWord false correctly', (
+      WidgetTester tester,
+    ) async {
       // Arrange: Create chat widget with word-by-word disabled but streaming enabled
       await tester.pumpWidget(
         MaterialApp(
@@ -207,10 +205,7 @@ void main() {
           user: aiUser,
           createdAt: DateTime.now(),
           isMarkdown: false,
-          customProperties: {
-            'id': 'test_msg_4',
-            'isStreaming': true,
-          },
+          customProperties: {'id': 'test_msg_4', 'isStreaming': true},
         ),
       );
 
@@ -224,8 +219,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 350));
     });
 
-    testWidgets('Should respect zero duration streaming',
-        (WidgetTester tester) async {
+    testWidgets('Should respect zero duration streaming', (
+      WidgetTester tester,
+    ) async {
       // Arrange: Create chat widget with zero duration (instant streaming)
       await tester.pumpWidget(
         MaterialApp(
@@ -253,10 +249,7 @@ void main() {
           user: aiUser,
           createdAt: DateTime.now(),
           isMarkdown: false,
-          customProperties: {
-            'id': 'test_msg_5',
-            'isStreaming': true,
-          },
+          customProperties: {'id': 'test_msg_5', 'isStreaming': true},
         ),
       );
 

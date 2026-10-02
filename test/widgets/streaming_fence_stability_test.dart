@@ -50,9 +50,12 @@ void main() {
           // grows, the held output must only ever stay the same or extend
           // — never edit or shrink, or the append-continuation logic
           // restarts the whole animation from scratch.
-          expect(held.startsWith(previous!), isTrue,
-              reason: 'Held output was not a prefix-extension going from '
-                  '"$previous" to "$held"');
+          expect(
+            held.startsWith(previous!),
+            isTrue,
+            reason: 'Held output was not a prefix-extension going from '
+                '"$previous" to "$held"',
+          );
         }
         previous = held;
       }

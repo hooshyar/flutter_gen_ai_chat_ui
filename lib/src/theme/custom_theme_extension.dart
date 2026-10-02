@@ -61,24 +61,38 @@ class CustomThemeExtension extends ThemeExtension<CustomThemeExtension> {
 
   @override
   CustomThemeExtension lerp(
-      ThemeExtension<CustomThemeExtension>? other, double t) {
+    ThemeExtension<CustomThemeExtension>? other,
+    double t,
+  ) {
     if (other is! CustomThemeExtension) return this;
     return CustomThemeExtension(
       chatBackground: Color.lerp(chatBackground, other.chatBackground, t),
-      messageBubbleColor:
-          Color.lerp(messageBubbleColor, other.messageBubbleColor, t),
+      messageBubbleColor: Color.lerp(
+        messageBubbleColor,
+        other.messageBubbleColor,
+        t,
+      ),
       userBubbleColor: Color.lerp(userBubbleColor, other.userBubbleColor, t),
       messageTextColor: Color.lerp(messageTextColor, other.messageTextColor, t),
-      inputBackgroundColor:
-          Color.lerp(inputBackgroundColor, other.inputBackgroundColor, t),
+      inputBackgroundColor: Color.lerp(
+        inputBackgroundColor,
+        other.inputBackgroundColor,
+        t,
+      ),
       inputBorderColor: Color.lerp(inputBorderColor, other.inputBorderColor, t),
       inputTextColor: Color.lerp(inputTextColor, other.inputTextColor, t),
       hintTextColor: Color.lerp(hintTextColor, other.hintTextColor, t),
-      backToBottomButtonColor:
-          Color.lerp(backToBottomButtonColor, other.backToBottomButtonColor, t),
+      backToBottomButtonColor: Color.lerp(
+        backToBottomButtonColor,
+        other.backToBottomButtonColor,
+        t,
+      ),
       sendButtonColor: Color.lerp(sendButtonColor, other.sendButtonColor, t),
-      sendButtonIconColor:
-          Color.lerp(sendButtonIconColor, other.sendButtonIconColor, t),
+      sendButtonIconColor: Color.lerp(
+        sendButtonIconColor,
+        other.sendButtonIconColor,
+        t,
+      ),
     );
   }
 

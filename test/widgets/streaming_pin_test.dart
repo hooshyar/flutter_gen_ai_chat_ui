@@ -65,13 +65,17 @@ void main() {
 
   /// Step 1: the user's question.
   Future<void> askQuestion(
-      WidgetTester tester, ChatMessagesController controller) async {
-    controller.addMessage(ChatMessage(
-      text: 'Hi',
-      user: testUser,
-      createdAt: DateTime.now(),
-      customProperties: const {'id': 'u1', 'isUserMessage': true},
-    ));
+    WidgetTester tester,
+    ChatMessagesController controller,
+  ) async {
+    controller.addMessage(
+      ChatMessage(
+        text: 'Hi',
+        user: testUser,
+        createdAt: DateTime.now(),
+        customProperties: const {'id': 'u1', 'isUserMessage': true},
+      ),
+    );
     await tester.pump();
   }
 
@@ -84,23 +88,29 @@ void main() {
     int upTo = 6,
   }) async {
     if (!controller.messages.any((m) => m.customProperties?['id'] == 'resp1')) {
-      controller.addMessage(ChatMessage(
-        text: '',
-        user: aiUser,
-        createdAt: DateTime.now(),
-        customProperties: const {...responseProperties, 'isStreaming': true},
-      ));
+      controller.addMessage(
+        ChatMessage(
+          text: '',
+          user: aiUser,
+          createdAt: DateTime.now(),
+          customProperties: const {...responseProperties, 'isStreaming': true},
+        ),
+      );
       await tester.pump();
     }
     for (var i = from; i <= upTo; i++) {
-      final chunk =
-          longAnswer.substring(0, (longAnswer.length * i / chunks).floor());
-      controller.updateMessage(ChatMessage(
-        text: chunk,
-        user: aiUser,
-        createdAt: DateTime.now(),
-        customProperties: const {...responseProperties, 'isStreaming': true},
-      ));
+      final chunk = longAnswer.substring(
+        0,
+        (longAnswer.length * i / chunks).floor(),
+      );
+      controller.updateMessage(
+        ChatMessage(
+          text: chunk,
+          user: aiUser,
+          createdAt: DateTime.now(),
+          customProperties: const {...responseProperties, 'isStreaming': true},
+        ),
+      );
       // Two pumps: one frame for the rebuild, one for the post-frame /
       // scroll-metrics correction that the pin applies after layout.
       await tester.pump();
@@ -109,13 +119,17 @@ void main() {
   }
 
   Future<void> finishAnswer(
-      WidgetTester tester, ChatMessagesController controller) async {
-    controller.updateMessage(ChatMessage(
-      text: longAnswer,
-      user: aiUser,
-      createdAt: DateTime.now(),
-      customProperties: const {...responseProperties, 'isStreaming': false},
-    ));
+    WidgetTester tester,
+    ChatMessagesController controller,
+  ) async {
+    controller.updateMessage(
+      ChatMessage(
+        text: longAnswer,
+        user: aiUser,
+        createdAt: DateTime.now(),
+        customProperties: const {...responseProperties, 'isStreaming': false},
+      ),
+    );
     controller.stopStreamingMessage('resp1');
     await tester.pump();
     await tester.pump();
@@ -124,9 +138,21 @@ void main() {
   /// Drains every wall-clock Timer the controller's auto-scroll paths may
   /// have scheduled, so the assertion below sees the *settled* position and
   /// teardown never trips "Timer still pending".
+  ///
+  /// Not `pumpAndSettle()`: most callers here exercise `streamAnswer`
+  /// without a following `finishAnswer`, i.e. the message is *intentionally*
+  /// still mid-stream (`customProperties['isStreaming']` stays true) when
+  /// this runs — exactly the state the live `StreamingCaret` (`DESIGN.md`
+  /// §8.9/§8.13) is supposed to keep pulsing for. `pumpAndSettle()` requires
+  /// zero pending frames and times out against that still-repeating
+  /// animation; a bounded pump sequence settles every one-shot
+  /// timer/animation these scroll-position assertions actually care about
+  /// without demanding the repeating caret ever go quiet.
   Future<void> settle(WidgetTester tester) async {
     await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
   }
 
   double gapToViewportTop(WidgetTester tester, String messageId) {
@@ -140,23 +166,29 @@ void main() {
 
   group('pinDuringStreaming: none (default) — behaviour unchanged', () {
     testWidgets(
-        'the bottom of the list keeps following the growing answer, so the '
-        'top of a long answer scrolls out of view', (tester) async {
-      final controller =
-          await pumpChat(tester, scrollConfig: const ScrollBehaviorConfig());
-      await askQuestion(tester, controller);
-      await streamAnswer(tester, controller);
-      await settle(tester);
+      'the bottom of the list keeps following the growing answer, so the '
+      'top of a long answer scrolls out of view',
+      (tester) async {
+        final controller = await pumpChat(
+          tester,
+          scrollConfig: const ScrollBehaviorConfig(),
+        );
+        await askQuestion(tester, controller);
+        await streamAnswer(tester, controller);
+        await settle(tester);
 
-      // Sanity: the answer is far taller than the viewport.
-      expect(tester.getSize(find.byKey(const ValueKey('resp1'))).height,
-          greaterThan(tester.getSize(find.byType(ListView)).height * 5));
+        // Sanity: the answer is far taller than the viewport.
+        expect(
+          tester.getSize(find.byKey(const ValueKey('resp1'))).height,
+          greaterThan(tester.getSize(find.byType(ListView)).height * 5),
+        );
 
-      // Classic reverse-list behaviour: offset 0 == bottom visible.
-      expect(position(tester).pixels, 0.0);
-      expect(gapToViewportTop(tester, 'resp1'), lessThan(-100));
-      expect(controller.isStreamingPinActive, isFalse);
-    });
+        // Classic reverse-list behaviour: offset 0 == bottom visible.
+        expect(position(tester).pixels, 0.0);
+        expect(gapToViewportTop(tester, 'resp1'), lessThan(-100));
+        expect(controller.isStreamingPinActive, isFalse);
+      },
+    );
   });
 
   group('pinDuringStreaming: responseStart', () {
@@ -169,12 +201,14 @@ void main() {
         '(nothing is pinned prematurely)', (tester) async {
       final controller = await pumpChat(tester, scrollConfig: config);
       await askQuestion(tester, controller);
-      controller.addMessage(ChatMessage(
-        text: 'Short answer.',
-        user: aiUser,
-        createdAt: DateTime.now(),
-        customProperties: const {...responseProperties, 'isStreaming': true},
-      ));
+      controller.addMessage(
+        ChatMessage(
+          text: 'Short answer.',
+          user: aiUser,
+          createdAt: DateTime.now(),
+          customProperties: const {...responseProperties, 'isStreaming': true},
+        ),
+      );
       await tester.pump();
       await tester.pump();
       await settle(tester);
@@ -186,34 +220,37 @@ void main() {
     });
 
     testWidgets(
-        'once the answer outgrows the viewport its first line is held at '
-        'the top and new text arrives below the fold', (tester) async {
+      'once the answer outgrows the viewport its first line is held at '
+      'the top and new text arrives below the fold',
+      (tester) async {
+        final controller = await pumpChat(tester, scrollConfig: config);
+        await askQuestion(tester, controller);
+        await streamAnswer(tester, controller);
+        await settle(tester);
+
+        expect(controller.isStreamingPinActive, isTrue);
+        expect(controller.streamingPinAnchorMessageId, 'resp1');
+        // Top of the answer aligned with the top of the viewport (small
+        // tolerance for list padding / bubble chrome).
+        expect(gapToViewportTop(tester, 'resp1').abs(), lessThan(40));
+        // The reader is NOT at the bottom: the rest of the answer is below.
+        expect(position(tester).pixels, greaterThan(100));
+        final answerBottom =
+            tester.getBottomLeft(find.byKey(const ValueKey('resp1'))).dy;
+        final viewportBottom = tester.getBottomLeft(find.byType(ListView)).dy;
+        expect(answerBottom, greaterThan(viewportBottom));
+      },
+    );
+
+    testWidgets('the scroll-to-bottom button appears while pinned', (
+      tester,
+    ) async {
       final controller = await pumpChat(tester, scrollConfig: config);
       await askQuestion(tester, controller);
       await streamAnswer(tester, controller);
       await settle(tester);
 
-      expect(controller.isStreamingPinActive, isTrue);
-      expect(controller.streamingPinAnchorMessageId, 'resp1');
-      // Top of the answer aligned with the top of the viewport (small
-      // tolerance for list padding / bubble chrome).
-      expect(gapToViewportTop(tester, 'resp1').abs(), lessThan(40));
-      // The reader is NOT at the bottom: the rest of the answer is below.
-      expect(position(tester).pixels, greaterThan(100));
-      final answerBottom =
-          tester.getBottomLeft(find.byKey(const ValueKey('resp1'))).dy;
-      final viewportBottom = tester.getBottomLeft(find.byType(ListView)).dy;
-      expect(answerBottom, greaterThan(viewportBottom));
-    });
-
-    testWidgets('the scroll-to-bottom button appears while pinned',
-        (tester) async {
-      final controller = await pumpChat(tester, scrollConfig: config);
-      await askQuestion(tester, controller);
-      await streamAnswer(tester, controller);
-      await settle(tester);
-
-      expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_downward_rounded), findsOneWidget);
     });
 
     testWidgets('the pin keeps holding as more chunks arrive', (tester) async {
@@ -240,30 +277,45 @@ void main() {
       await settle(tester);
 
       expect(gapToViewportTop(tester, 'resp1').abs(), lessThan(40));
-      expect(position(tester).pixels, closeTo(pixelsBefore, 1.0));
+      // Tolerance widened from a strict 1.0px: ending the stream also
+      // removes the live StreamingCaret row (`DESIGN.md` §8.9) from the
+      // just-finished message, which shrinks its rendered height by that
+      // row's own size — a real, expected content-height change, not a
+      // pin/scroll regression. What this assertion actually guards is the
+      // pin: no LARGE jump to the bottom/top at end of stream.
+      expect(position(tester).pixels, closeTo(pixelsBefore, 40.0));
     });
 
     testWidgets(
-        'end of stream still does not jump when scrollToFirstResponseMessage '
-        'is also on (the pin already put the reader there)', (tester) async {
-      final controller = await pumpChat(
-        tester,
-        scrollConfig: config.copyWith(scrollToFirstResponseMessage: true),
-      );
-      await askQuestion(tester, controller);
-      await streamAnswer(tester, controller);
-      await settle(tester);
-      final pixelsBefore = position(tester).pixels;
+      'end of stream still does not jump when scrollToFirstResponseMessage '
+      'is also on (the pin already put the reader there)',
+      (tester) async {
+        final controller = await pumpChat(
+          tester,
+          scrollConfig: config.copyWith(scrollToFirstResponseMessage: true),
+        );
+        await askQuestion(tester, controller);
+        await streamAnswer(tester, controller);
+        await settle(tester);
+        final pixelsBefore = position(tester).pixels;
 
-      await finishAnswer(tester, controller);
-      await settle(tester);
+        await finishAnswer(tester, controller);
+        await settle(tester);
 
-      expect(position(tester).pixels, closeTo(pixelsBefore, 1.0));
-      expect(gapToViewportTop(tester, 'resp1').abs(), lessThan(40));
-    });
+        // Tolerance widened from a strict 1.0px: ending the stream also
+        // removes the live StreamingCaret row (`DESIGN.md` §8.9) from the
+        // just-finished message, which shrinks its rendered height by that
+        // row's own size — a real, expected content-height change, not a
+        // pin/scroll regression. What this assertion actually guards is the
+        // pin: no LARGE jump to the bottom/top at end of stream.
+        expect(position(tester).pixels, closeTo(pixelsBefore, 40.0));
+        expect(gapToViewportTop(tester, 'resp1').abs(), lessThan(40));
+      },
+    );
 
-    testWidgets('a user scroll gesture releases the pin for this answer',
-        (tester) async {
+    testWidgets('a user scroll gesture releases the pin for this answer', (
+      tester,
+    ) async {
       final controller = await pumpChat(tester, scrollConfig: config);
       await askQuestion(tester, controller);
       await streamAnswer(tester, controller, chunks: 6, upTo: 3);
@@ -293,40 +345,44 @@ void main() {
     });
 
     testWidgets(
-        'after a release at the very bottom the list keeps following the '
-        'answer (no compensation there)', (tester) async {
-      final controller = await pumpChat(tester, scrollConfig: config);
-      await askQuestion(tester, controller);
-      await streamAnswer(tester, controller, chunks: 6, upTo: 3);
-      await settle(tester);
+      'after a release at the very bottom the list keeps following the '
+      'answer (no compensation there)',
+      (tester) async {
+        final controller = await pumpChat(tester, scrollConfig: config);
+        await askQuestion(tester, controller);
+        await streamAnswer(tester, controller, chunks: 6, upTo: 3);
+        await settle(tester);
 
-      await tester.tap(find.byIcon(Icons.keyboard_arrow_down));
-      await settle(tester);
-      expect(controller.isStreamingPinActive, isFalse);
-      expect(position(tester).pixels, closeTo(0.0, 1.0));
+        await tester.tap(find.byIcon(Icons.arrow_downward_rounded));
+        await settle(tester);
+        expect(controller.isStreamingPinActive, isFalse);
+        expect(position(tester).pixels, closeTo(0.0, 1.0));
 
-      await streamAnswer(tester, controller, chunks: 6, from: 4, upTo: 6);
-      await settle(tester);
-      expect(position(tester).pixels, closeTo(0.0, 1.0));
-    });
+        await streamAnswer(tester, controller, chunks: 6, from: 4, upTo: 6);
+        await settle(tester);
+        expect(position(tester).pixels, closeTo(0.0, 1.0));
+      },
+    );
 
-    testWidgets('tapping the scroll-to-bottom button releases the pin',
-        (tester) async {
+    testWidgets('tapping the scroll-to-bottom button releases the pin', (
+      tester,
+    ) async {
       final controller = await pumpChat(tester, scrollConfig: config);
       await askQuestion(tester, controller);
       await streamAnswer(tester, controller);
       await settle(tester);
       expect(controller.isStreamingPinActive, isTrue);
 
-      await tester.tap(find.byIcon(Icons.keyboard_arrow_down));
+      await tester.tap(find.byIcon(Icons.arrow_downward_rounded));
       await settle(tester);
 
       expect(controller.isStreamingPinActive, isFalse);
       expect(position(tester).pixels, closeTo(0.0, 1.0));
     });
 
-    testWidgets('the next question re-arms the pin for the next answer',
-        (tester) async {
+    testWidgets('the next question re-arms the pin for the next answer', (
+      tester,
+    ) async {
       final controller = await pumpChat(tester, scrollConfig: config);
       await askQuestion(tester, controller);
       await streamAnswer(tester, controller);
@@ -335,12 +391,14 @@ void main() {
       controller.releaseStreamingPin();
       expect(controller.isStreamingPinActive, isFalse);
 
-      controller.addMessage(ChatMessage(
-        text: 'Second question',
-        user: testUser,
-        createdAt: DateTime.now(),
-        customProperties: const {'id': 'u2', 'isUserMessage': true},
-      ));
+      controller.addMessage(
+        ChatMessage(
+          text: 'Second question',
+          user: testUser,
+          createdAt: DateTime.now(),
+          customProperties: const {'id': 'u2', 'isUserMessage': true},
+        ),
+      );
       await tester.pump();
       await settle(tester);
       // (Whether the user message's own scroll-to-bottom fires here depends
@@ -349,26 +407,32 @@ void main() {
       // pin bookkeeping is asserted.)
       expect(controller.isStreamingPinActive, isFalse);
 
-      controller.addMessage(ChatMessage(
-        text: '',
-        user: aiUser,
-        createdAt: DateTime.now(),
-        customProperties: const {
-          'id': 'resp2',
-          'responseId': 'resp2',
-          'isStartOfResponse': true,
-          'isStreaming': true,
-        },
-      ));
+      controller.addMessage(
+        ChatMessage(
+          text: '',
+          user: aiUser,
+          createdAt: DateTime.now(),
+          customProperties: const {
+            'id': 'resp2',
+            'responseId': 'resp2',
+            'isStartOfResponse': true,
+            'isStreaming': true,
+          },
+        ),
+      );
       await tester.pump();
       expect(controller.isStreamingPinActive, isTrue);
       expect(controller.streamingPinAnchorMessageId, 'resp2');
     });
 
-    testWidgets('works for a chronological (reverseOrder: false) list too',
-        (tester) async {
-      final controller =
-          await pumpChat(tester, scrollConfig: config, reverseOrder: false);
+    testWidgets('works for a chronological (reverseOrder: false) list too', (
+      tester,
+    ) async {
+      final controller = await pumpChat(
+        tester,
+        scrollConfig: config,
+        reverseOrder: false,
+      );
       await askQuestion(tester, controller);
       await streamAnswer(tester, controller);
       await settle(tester);
@@ -384,44 +448,56 @@ void main() {
 
   group('pinDuringStreaming with the addStreamingMessage flow', () {
     testWidgets(
-        'arms and holds when the consumer streams via addStreamingMessage + '
-        'updateMessage(text) + stopStreamingMessage, with no isStreaming flag',
-        (tester) async {
-      final controller = await pumpChat(
-        tester,
-        scrollConfig: const ScrollBehaviorConfig(
-          pinDuringStreaming: StreamingPinAnchor.responseStart,
-        ),
-      );
-      await askQuestion(tester, controller);
+      'arms and holds when the consumer streams via addStreamingMessage + '
+      'updateMessage(text) + stopStreamingMessage, with no isStreaming flag',
+      (tester) async {
+        final controller = await pumpChat(
+          tester,
+          scrollConfig: const ScrollBehaviorConfig(
+            pinDuringStreaming: StreamingPinAnchor.responseStart,
+          ),
+        );
+        await askQuestion(tester, controller);
 
-      final aiMessage = ChatMessage(
-        text: '',
-        user: aiUser,
-        createdAt: DateTime.now(),
-        customProperties: const {'id': 'stream1'},
-      );
-      controller.addStreamingMessage(aiMessage);
-      await tester.pump();
-      expect(controller.isStreamingPinActive, isTrue);
-      expect(controller.streamingPinAnchorMessageId, 'stream1');
-
-      for (var i = 1; i <= 6; i++) {
-        controller.updateMessage(aiMessage.copyWith(
-          text: longAnswer.substring(0, (longAnswer.length * i / 6).floor()),
-        ));
+        final aiMessage = ChatMessage(
+          text: '',
+          user: aiUser,
+          createdAt: DateTime.now(),
+          customProperties: const {'id': 'stream1'},
+        );
+        controller.addStreamingMessage(aiMessage);
         await tester.pump();
-        await tester.pump();
-      }
-      await settle(tester);
-      expect(gapToViewportTop(tester, 'stream1').abs(), lessThan(40));
-      expect(position(tester).pixels, greaterThan(100));
+        expect(controller.isStreamingPinActive, isTrue);
+        expect(controller.streamingPinAnchorMessageId, 'stream1');
 
-      final pixelsBefore = position(tester).pixels;
-      controller.stopStreamingMessage('stream1');
-      await settle(tester);
-      expect(position(tester).pixels, closeTo(pixelsBefore, 1.0));
-    });
+        for (var i = 1; i <= 6; i++) {
+          controller.updateMessage(
+            aiMessage.copyWith(
+              text: longAnswer.substring(
+                0,
+                (longAnswer.length * i / 6).floor(),
+              ),
+            ),
+          );
+          await tester.pump();
+          await tester.pump();
+        }
+        await settle(tester);
+        expect(gapToViewportTop(tester, 'stream1').abs(), lessThan(40));
+        expect(position(tester).pixels, greaterThan(100));
+
+        final pixelsBefore = position(tester).pixels;
+        controller.stopStreamingMessage('stream1');
+        await settle(tester);
+        // Tolerance widened from a strict 1.0px: ending the stream also
+        // removes the live StreamingCaret row (`DESIGN.md` §8.9) from the
+        // just-finished message, which shrinks its rendered height by that
+        // row's own size — a real, expected content-height change, not a
+        // pin/scroll regression. What this assertion actually guards is the
+        // pin: no LARGE jump to the bottom/top at end of stream.
+        expect(position(tester).pixels, closeTo(pixelsBefore, 40.0));
+      },
+    );
   });
 
   group('pinDuringStreaming: userMessage', () {
@@ -429,8 +505,9 @@ void main() {
       pinDuringStreaming: StreamingPinAnchor.userMessage,
     );
 
-    testWidgets("the user's question is held at the top of the viewport",
-        (tester) async {
+    testWidgets("the user's question is held at the top of the viewport", (
+      tester,
+    ) async {
       final controller = await pumpChat(tester, scrollConfig: config);
       await askQuestion(tester, controller);
       await streamAnswer(tester, controller);
@@ -446,8 +523,9 @@ void main() {
       expect(answerTop, greaterThanOrEqualTo(questionBottom - 1));
     });
 
-    testWidgets('falls back to the answer start when there is no question',
-        (tester) async {
+    testWidgets('falls back to the answer start when there is no question', (
+      tester,
+    ) async {
       final controller = await pumpChat(tester, scrollConfig: config);
       await streamAnswer(tester, controller);
       await settle(tester);
@@ -459,35 +537,51 @@ void main() {
 
   group('ScrollBehaviorConfig API compatibility', () {
     test('every constructor defaults pinDuringStreaming to none', () {
-      expect(const ScrollBehaviorConfig().pinDuringStreaming,
-          StreamingPinAnchor.none);
-      expect(ScrollBehaviorConfig.smooth().pinDuringStreaming,
-          StreamingPinAnchor.none);
-      expect(ScrollBehaviorConfig.bouncy().pinDuringStreaming,
-          StreamingPinAnchor.none);
-      expect(ScrollBehaviorConfig.decelerate().pinDuringStreaming,
-          StreamingPinAnchor.none);
-      expect(ScrollBehaviorConfig.accelerate().pinDuringStreaming,
-          StreamingPinAnchor.none);
-      expect(ScrollBehaviorConfig.fast().pinDuringStreaming,
-          StreamingPinAnchor.none);
+      expect(
+        const ScrollBehaviorConfig().pinDuringStreaming,
+        StreamingPinAnchor.none,
+      );
+      expect(
+        ScrollBehaviorConfig.smooth().pinDuringStreaming,
+        StreamingPinAnchor.none,
+      );
+      expect(
+        ScrollBehaviorConfig.bouncy().pinDuringStreaming,
+        StreamingPinAnchor.none,
+      );
+      expect(
+        ScrollBehaviorConfig.decelerate().pinDuringStreaming,
+        StreamingPinAnchor.none,
+      );
+      expect(
+        ScrollBehaviorConfig.accelerate().pinDuringStreaming,
+        StreamingPinAnchor.none,
+      );
+      expect(
+        ScrollBehaviorConfig.fast().pinDuringStreaming,
+        StreamingPinAnchor.none,
+      );
     });
 
-    test('named constructors accept pinDuringStreaming and copyWith keeps it',
-        () {
-      final c = ScrollBehaviorConfig.smooth(
-          pinDuringStreaming: StreamingPinAnchor.userMessage);
-      expect(c.pinDuringStreaming, StreamingPinAnchor.userMessage);
-      expect(c.scrollAnimationCurve, Curves.easeInOutCubic);
-      final copy = c.copyWith(scrollToFirstResponseMessage: true);
-      expect(copy.pinDuringStreaming, StreamingPinAnchor.userMessage);
-      expect(copy.scrollToFirstResponseMessage, isTrue);
-      expect(
+    test(
+      'named constructors accept pinDuringStreaming and copyWith keeps it',
+      () {
+        final c = ScrollBehaviorConfig.smooth(
+          pinDuringStreaming: StreamingPinAnchor.userMessage,
+        );
+        expect(c.pinDuringStreaming, StreamingPinAnchor.userMessage);
+        expect(c.scrollAnimationCurve, Curves.easeInOutCubic);
+        final copy = c.copyWith(scrollToFirstResponseMessage: true);
+        expect(copy.pinDuringStreaming, StreamingPinAnchor.userMessage);
+        expect(copy.scrollToFirstResponseMessage, isTrue);
+        expect(
           copy
               .copyWith(pinDuringStreaming: StreamingPinAnchor.none)
               .pinDuringStreaming,
-          StreamingPinAnchor.none);
-    });
+          StreamingPinAnchor.none,
+        );
+      },
+    );
 
     test('controller pin API is a safe no-op without a pin', () {
       final controller = ChatMessagesController();

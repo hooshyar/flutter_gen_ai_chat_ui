@@ -78,21 +78,13 @@ class _ActionResultWidgetState extends State<ActionResultWidget>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutBack,
-    ));
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+    );
   }
 
   @override
@@ -199,8 +191,10 @@ class _ActionResultWidgetState extends State<ActionResultWidget>
                 if (config.showDuration &&
                     execution.status != ActionStatus.idle)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
@@ -239,7 +233,10 @@ class _ActionResultWidgetState extends State<ActionResultWidget>
   }
 
   Widget _buildStatusIcon(
-      ActionStatus status, ActionResultConfig config, ThemeData theme) {
+    ActionStatus status,
+    ActionResultConfig config,
+    ThemeData theme,
+  ) {
     final defaultIcons = {
       ActionStatus.idle: Icons.radio_button_unchecked,
       ActionStatus.executing: Icons.hourglass_empty,
@@ -351,17 +348,11 @@ class _ActionResultWidgetState extends State<ActionResultWidget>
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(
-                Icons.check,
-                color: Colors.green,
-                size: 16,
-              ),
+              const Icon(Icons.check, color: Colors.green, size: 16),
               const SizedBox(width: 8),
               Text(
                 'Completed successfully',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.green,
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(color: Colors.green),
               ),
             ],
           ),
@@ -446,15 +437,17 @@ class _ActionResultWidgetState extends State<ActionResultWidget>
             ),
           ),
           const SizedBox(height: 4),
-          ...parameters.entries.map((entry) => Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Text(
-                  '${entry.key}: ${entry.value}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontFamily: 'monospace',
-                  ),
+          ...parameters.entries.map(
+            (entry) => Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                '${entry.key}: ${entry.value}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontFamily: 'monospace',
                 ),
-              )),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -499,9 +492,7 @@ class _ActionResultWidgetState extends State<ActionResultWidget>
           const SizedBox(height: 4),
           Text(
             data.toString(),
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontFamily: 'monospace',
-            ),
+            style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
           ),
         ],
       ),

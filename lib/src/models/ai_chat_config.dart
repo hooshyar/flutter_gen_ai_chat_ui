@@ -55,15 +55,17 @@ class PaginationConfig {
 
   /// Offset from the top at which to show the loading indicator
   @Deprecated(
-      'Has no effect — the loading indicator\'s visibility is driven by '
-      'MessageListOptions.isLoadingMore, not a scroll offset. Will be '
-      'removed in v3.0.0.')
+    'Has no effect — the loading indicator\'s visibility is driven by '
+    'MessageListOptions.isLoadingMore, not a scroll offset. Will be '
+    'removed in v3.0.0.',
+  )
   final double loadingIndicatorOffset;
 
   /// Custom loading indicator widget for pagination
   @Deprecated(
-      'Has no effect — use loadingBuilder instead, which is actually used. '
-      'Will be removed in v3.0.0.')
+    'Has no effect — use loadingBuilder instead, which is actually used. '
+    'Will be removed in v3.0.0.',
+  )
   final Widget Function({required bool isLoading})? loadMoreIndicator;
 
   /// Reverse order of messages (newest at bottom)
@@ -83,9 +85,10 @@ class PaginationConfig {
 
   /// Scroll position threshold to trigger loading (0.0 to 1.0)
   @Deprecated(
-      'Has no effect — the auto-load-on-scroll trigger is driven entirely '
-      'by distanceToTriggerLoadPixels (a pixel distance from the edge), not '
-      'a proportional 0.0-1.0 threshold. Will be removed in v3.0.0.')
+    'Has no effect — the auto-load-on-scroll trigger is driven entirely '
+    'by distanceToTriggerLoadPixels (a pixel distance from the edge), not '
+    'a proportional 0.0-1.0 threshold. Will be removed in v3.0.0.',
+  )
   final double scrollThreshold;
 
   /// Whether to enable haptic feedback when loading more messages
@@ -109,13 +112,15 @@ class PaginationConfig {
   const PaginationConfig({
     this.enabled = false,
     @Deprecated(
-        'Has no effect — the loading indicator\'s visibility is driven by '
-        'MessageListOptions.isLoadingMore, not a scroll offset. Will be '
-        'removed in v3.0.0.')
+      'Has no effect — the loading indicator\'s visibility is driven by '
+      'MessageListOptions.isLoadingMore, not a scroll offset. Will be '
+      'removed in v3.0.0.',
+    )
     this.loadingIndicatorOffset = 100.0,
     @Deprecated(
-        'Has no effect — use loadingBuilder instead, which is actually used. '
-        'Will be removed in v3.0.0.')
+      'Has no effect — use loadingBuilder instead, which is actually used. '
+      'Will be removed in v3.0.0.',
+    )
     this.loadMoreIndicator,
     this.reverseOrder = true,
     this.loadingDelay = const Duration(milliseconds: 500),
@@ -123,9 +128,10 @@ class PaginationConfig {
     this.autoLoadOnScroll = true,
     this.distanceToTriggerLoadPixels = 100.0,
     @Deprecated(
-        'Has no effect — the auto-load-on-scroll trigger is driven entirely '
-        'by distanceToTriggerLoadPixels (a pixel distance from the edge), '
-        'not a proportional 0.0-1.0 threshold. Will be removed in v3.0.0.')
+      'Has no effect — the auto-load-on-scroll trigger is driven entirely '
+      'by distanceToTriggerLoadPixels (a pixel distance from the edge), '
+      'not a proportional 0.0-1.0 threshold. Will be removed in v3.0.0.',
+    )
     this.scrollThreshold = 0.1,
     this.enableHapticFeedback = true,
     this.loadingBuilder,
@@ -400,7 +406,7 @@ enum AutoScrollBehavior {
 
   /// Never automatically scroll.
   /// The user is fully responsible for scrolling the chat view.
-  never
+  never,
 }
 
 /// Which message [ScrollBehaviorConfig.pinDuringStreaming] holds at the top of
@@ -426,7 +432,8 @@ enum StreamingPinAnchor {
 /// For new code, pass configuration options directly to AiChatWidget constructor.
 /// Aggregated configuration for the AI chat widget (deprecated in favor of direct parameters).
 @Deprecated(
-    'Use direct parameters in AiChatWidget instead. This class will be removed in a future version.')
+  'Use direct parameters in AiChatWidget instead. This class will be removed in a future version.',
+)
 class AiChatConfig {
   const AiChatConfig({
     // Basic settings

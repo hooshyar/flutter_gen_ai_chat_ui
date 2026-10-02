@@ -315,9 +315,7 @@ class ChatTypography {
   }
 
   TextStyle _scaleTextStyle(TextStyle style, double scaleFactor) {
-    return style.copyWith(
-      fontSize: (style.fontSize ?? 14) * scaleFactor,
-    );
+    return style.copyWith(fontSize: (style.fontSize ?? 14) * scaleFactor);
   }
 
   /// Lerp between two typography instances

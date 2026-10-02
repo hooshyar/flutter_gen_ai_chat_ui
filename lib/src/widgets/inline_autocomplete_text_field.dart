@@ -75,8 +75,9 @@ class _InlineAutocompleteTextFieldState
     if (ghost.isEmpty) return;
     final current = widget.controller.text;
     widget.controller.text = '$current$ghost';
-    widget.controller.selection =
-        TextSelection.collapsed(offset: widget.controller.text.length);
+    widget.controller.selection = TextSelection.collapsed(
+      offset: widget.controller.text.length,
+    );
     widget.onAcceptGhost?.call();
     widget.onChanged?.call(widget.controller.text);
   }
@@ -178,8 +179,9 @@ class _GhostOverlay extends StatelessWidget {
       top: topPad,
       child: Text(
         ghostText,
-        style:
-            (effectiveStyle ?? const TextStyle()).copyWith(color: ghostColor),
+        style: (effectiveStyle ?? const TextStyle()).copyWith(
+          color: ghostColor,
+        ),
       ),
     );
   }

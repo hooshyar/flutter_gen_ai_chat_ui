@@ -1,11 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
+import '../../theme/code_block_theme.dart';
+import '../../theme/custom_theme_extension.dart';
 import '../ai_chat_config.dart';
 import 'chat_message.dart';
 import 'chat_user.dart';
 import 'citation.dart';
 import 'media.dart';
+
+/// The two AI-message presentations a [MessageOptions.aiMessageLayout] can
+/// resolve to (`DESIGN.md` §8.1).
+enum AiMessageLayout {
+  /// No card, no border, no shadow: the reading-column default. The AI's
+  /// answer reads like prose, with the action row underneath it.
+  document,
+
+  /// The legacy-compatible bordered/filled bubble, restyled per the design
+  /// tokens. Chosen automatically when the consumer has opted into bubble
+  /// colors via [BubbleStyle], [MessageOptions.decoration]/
+  /// [MessageOptions.effectiveDecoration], or a themed bubble color.
+  bubble,
+}
 
 /// Class for customizing chat bubble appearance
 class BubbleStyle {
@@ -98,15 +114,18 @@ class BubbleStyle {
     this.userAvatarWidgetBuilder,
   });
 
-  /// Default style for message bubbles
+  /// Default style for message bubbles, per `DESIGN.md` §5-§6: no shadow
+  /// (elevation is expressed by space and a hairline, never blur), the user
+  /// bubble uses a uniform 20 radius, and the (opt-in) AI bubble keeps a
+  /// small leading-top corner to read as "coming from the left".
   static const BubbleStyle defaultStyle = BubbleStyle(
-    userBubbleTopLeftRadius: 18,
-    userBubbleTopRightRadius: 4,
-    aiBubbleTopLeftRadius: 4,
-    aiBubbleTopRightRadius: 18,
-    bottomLeftRadius: 18,
-    bottomRightRadius: 18,
-    enableShadow: true,
+    userBubbleTopLeftRadius: 20,
+    userBubbleTopRightRadius: 20,
+    aiBubbleTopLeftRadius: 6,
+    aiBubbleTopRightRadius: 20,
+    bottomLeftRadius: 20,
+    bottomRightRadius: 20,
+    enableShadow: false,
     shadowOpacity: 0.08,
     shadowBlurRadius: 10,
     shadowOffset: Offset(0, 3),
@@ -212,27 +231,33 @@ class MessageOptions {
   /// No effect: the footer's top padding is actually controlled by
   /// `ChatSpacingConfig.messageFooterTopPadding`. Will be removed in v3.0.0.
   @Deprecated(
-      'Has no effect — use ChatSpacingConfig.messageFooterTopPadding instead. '
-      'Will be removed in v3.0.0.')
+    'Has no effect — use ChatSpacingConfig.messageFooterTopPadding instead. '
+    'Will be removed in v3.0.0.',
+  )
   final double? timestampSpacing;
 
   /// No effect: no reaction UI is implemented anywhere in the widget tree.
   /// Will be removed in v3.0.0.
-  @Deprecated('Has no effect — no reaction UI exists to apply it to. '
-      'Will be removed in v3.0.0.')
+  @Deprecated(
+    'Has no effect — no reaction UI exists to apply it to. '
+    'Will be removed in v3.0.0.',
+  )
   final int maxReactions;
 
   /// No effect: no reaction UI is implemented anywhere in the widget tree.
   /// Will be removed in v3.0.0.
-  @Deprecated('Has no effect — no reaction UI exists to apply it to. '
-      'Will be removed in v3.0.0.')
+  @Deprecated(
+    'Has no effect — no reaction UI exists to apply it to. '
+    'Will be removed in v3.0.0.',
+  )
   final double reactionSize;
 
   /// No effect: quick replies are actually driven by the separate
   /// `QuickReplyOptions` passed to `AiChatWidget`. Will be removed in v3.0.0.
   @Deprecated(
-      'Has no effect — quick replies are controlled by QuickReplyOptions '
-      'on AiChatWidget instead. Will be removed in v3.0.0.')
+    'Has no effect — quick replies are controlled by QuickReplyOptions '
+    'on AiChatWidget instead. Will be removed in v3.0.0.',
+  )
   final bool enableQuickReply;
 
   /// Style options for message bubbles
@@ -248,8 +273,19 @@ class MessageOptions {
   /// 2. Provide a custom decoration or containerDecoration
   final BubbleStyle? bubbleStyle;
 
-  /// Whether to show user name
+  /// Whether to show user name.
+  ///
+  /// Defaults to `null`, which resolves per [resolveShowUserName]: `false`
+  /// for the document AI layout (the default — no name row, no avatar),
+  /// `true` for the bubble layout. An explicit `true`/`false` always wins
+  /// over that resolution, for both the user's own messages and the AI's.
   final bool? showUserName;
+
+  /// Chooses between the document (default) and bubble AI message
+  /// presentations. Leave `null` to let [resolveAiMessageLayout] pick
+  /// automatically from whether bubble colors/decoration are in play (see
+  /// [AiMessageLayout]).
+  final AiMessageLayout? aiMessageLayout;
 
   /// Style for user names
   final TextStyle? userNameStyle;
@@ -302,6 +338,25 @@ class MessageOptions {
   /// Callback when an image in markdown content is tapped
   /// Provides the image URL, title, and alt text
   final void Function(String url, String? title, String? alt)? onImageTap;
+
+  /// Whether fenced code blocks are syntax-highlighted.
+  ///
+  /// When false, code renders as a single unhighlighted span in
+  /// [CodeBlockTheme.baseStyle] — useful for very large blocks or languages
+  /// the highlighter doesn't know. Defaults to true.
+  final bool enableSyntaxHighlighting;
+
+  /// Visual theme for fenced code blocks (background, border, header and
+  /// token colours).
+  ///
+  /// When null, [CodeBlockTheme.of] resolves a light or dark palette from the
+  /// ambient [Brightness]. Inline `code` chips are unaffected — they keep
+  /// using `markdownStyleSheet.code`.
+  final CodeBlockTheme? codeBlockTheme;
+
+  /// Whether fenced code blocks show a header copy button that copies the
+  /// raw code (without fences) to the clipboard. Defaults to true.
+  final bool showCodeBlockCopyButton;
 
   /// Custom builder for plain text content inside the bubble
   ///
@@ -417,12 +472,13 @@ class MessageOptions {
     this.reactionSize = 24.0,
     this.enableQuickReply = true,
     this.bubbleStyle,
-    this.showUserName = true,
+    this.showUserName,
+    this.aiMessageLayout,
     this.userNameStyle,
     this.markdownStyleSheet,
     this.onTapLink,
     this.aiNameIcon,
-    this.showCopyButton = false,
+    this.showCopyButton = true,
     this.copyButtonLabel,
     this.copiedToClipboardText,
     this.onCopy,
@@ -432,6 +488,9 @@ class MessageOptions {
     this.enableImageTaps = false,
     this.enableAttachmentLightbox = false,
     this.onImageTap,
+    this.enableSyntaxHighlighting = true,
+    this.codeBlockTheme,
+    this.showCodeBlockCopyButton = true,
     this.textBuilder,
     this.markdownBuilder,
     this.customBubbleBuilder,
@@ -458,6 +517,7 @@ class MessageOptions {
     bool? enableQuickReply,
     BubbleStyle? bubbleStyle,
     bool? showUserName,
+    AiMessageLayout? aiMessageLayout,
     TextStyle? userNameStyle,
     MarkdownStyleSheet? markdownStyleSheet,
     MarkdownTapLinkCallback? onTapLink,
@@ -472,6 +532,9 @@ class MessageOptions {
     bool? enableImageTaps,
     bool? enableAttachmentLightbox,
     void Function(String url, String? title, String? alt)? onImageTap,
+    bool? enableSyntaxHighlighting,
+    CodeBlockTheme? codeBlockTheme,
+    bool? showCodeBlockCopyButton,
     Widget Function(BuildContext, String, TextStyle, bool)? textBuilder,
     Widget Function(BuildContext, String, MarkdownStyleSheet, bool)?
         markdownBuilder,
@@ -498,6 +561,7 @@ class MessageOptions {
         enableQuickReply: enableQuickReply ?? this.enableQuickReply,
         bubbleStyle: bubbleStyle ?? this.bubbleStyle,
         showUserName: showUserName ?? this.showUserName,
+        aiMessageLayout: aiMessageLayout ?? this.aiMessageLayout,
         userNameStyle: userNameStyle ?? this.userNameStyle,
         markdownStyleSheet: markdownStyleSheet ?? this.markdownStyleSheet,
         onTapLink: onTapLink ?? this.onTapLink,
@@ -514,6 +578,11 @@ class MessageOptions {
         enableAttachmentLightbox:
             enableAttachmentLightbox ?? this.enableAttachmentLightbox,
         onImageTap: onImageTap ?? this.onImageTap,
+        enableSyntaxHighlighting:
+            enableSyntaxHighlighting ?? this.enableSyntaxHighlighting,
+        codeBlockTheme: codeBlockTheme ?? this.codeBlockTheme,
+        showCodeBlockCopyButton:
+            showCodeBlockCopyButton ?? this.showCodeBlockCopyButton,
         textBuilder: textBuilder ?? this.textBuilder,
         markdownBuilder: markdownBuilder ?? this.markdownBuilder,
         customBubbleBuilder: customBubbleBuilder ?? this.customBubbleBuilder,
@@ -538,6 +607,29 @@ class MessageOptions {
     }
     return null;
   }
+
+  /// Resolves [aiMessageLayout] when explicitly set; otherwise infers it
+  /// from whether the consumer has opted into bubble colors/decoration
+  /// (`DESIGN.md` §8.1): a non-null [BubbleStyle.aiBubbleColor],
+  /// [effectiveDecoration], or [themeExt]'s `messageBubbleColor` all resolve
+  /// to [AiMessageLayout.bubble] so existing customized apps keep their
+  /// bubbles; otherwise [AiMessageLayout.document].
+  AiMessageLayout resolveAiMessageLayout(CustomThemeExtension? themeExt) {
+    if (aiMessageLayout != null) return aiMessageLayout!;
+    final hasBubbleColor = bubbleStyle?.aiBubbleColor != null;
+    final hasDecoration = effectiveDecoration != null;
+    final hasThemedBubble = themeExt?.messageBubbleColor != null;
+    if (hasBubbleColor || hasDecoration || hasThemedBubble) {
+      return AiMessageLayout.bubble;
+    }
+    return AiMessageLayout.document;
+  }
+
+  /// Resolves [showUserName]: an explicit value always wins, otherwise the
+  /// name row is hidden in [AiMessageLayout.document] and shown in
+  /// [AiMessageLayout.bubble].
+  bool resolveShowUserName(AiMessageLayout layout) =>
+      showUserName ?? (layout == AiMessageLayout.bubble);
 }
 
 /// Options for customizing the message list
@@ -664,10 +756,20 @@ class ScrollToBottomOptions {
   /// Custom builder for scroll to bottom button
   final Widget Function(ScrollController)? scrollToBottomBuilder;
 
-  /// Distance from bottom of the screen (default is 72)
+  /// Distance from the bottom of the MESSAGE LIST (not the whole chat
+  /// surface, and not the viewport/screen bottom despite the field's name)
+  /// this button floats over, to the button's 48x48 hit area. Default is 6,
+  /// chosen so the painted 36px disc, centred within that hit area, lands
+  /// ~12px above whatever sits directly below the list — the composer's own
+  /// visible container (its rounded, bordered `ChatInput` box) when there
+  /// are no quick replies, or the quick-replies row when there are — per
+  /// `DESIGN.md` §8.10.
   final double bottomOffset;
 
-  /// Distance from right of the screen (default is 16)
+  /// Distance from right of the screen (default is 16). Only applied when
+  /// [position] is [ScrollToBottomPosition.end] — the package default
+  /// ([ScrollToBottomPosition.center]) horizontally centers the button on
+  /// the reading column instead (`DESIGN.md` §8.10).
   final double rightOffset;
 
   /// Whether to show text next to the icon (default is false)
@@ -676,15 +778,23 @@ class ScrollToBottomOptions {
   /// Custom text to display next to the icon (default is "Scroll to bottom")
   final String buttonText;
 
+  /// Where the button sits relative to the reading column. Defaults to
+  /// [ScrollToBottomPosition.center] (`DESIGN.md` §8.10): a floating button
+  /// must never park over code in the bottom-right. Set to
+  /// [ScrollToBottomPosition.end] to restore the legacy trailing-edge
+  /// placement, which honors [rightOffset].
+  final ScrollToBottomPosition position;
+
   const ScrollToBottomOptions({
     this.disabled = false,
     this.alwaysVisible = false,
     this.onScrollToBottomPress,
     this.scrollToBottomBuilder,
-    this.bottomOffset = 72,
+    this.bottomOffset = 6,
     this.rightOffset = 16,
     this.showText = false,
     this.buttonText = 'Scroll to bottom',
+    this.position = ScrollToBottomPosition.center,
   });
 
   ScrollToBottomOptions copyWith({
@@ -696,6 +806,7 @@ class ScrollToBottomOptions {
     double? rightOffset,
     bool? showText,
     String? buttonText,
+    ScrollToBottomPosition? position,
   }) =>
       ScrollToBottomOptions(
         disabled: disabled ?? this.disabled,
@@ -708,5 +819,18 @@ class ScrollToBottomOptions {
         rightOffset: rightOffset ?? this.rightOffset,
         showText: showText ?? this.showText,
         buttonText: buttonText ?? this.buttonText,
+        position: position ?? this.position,
       );
+}
+
+/// Where a [ScrollToBottomOptions]-configured button sits relative to the
+/// reading column (`DESIGN.md` §8.10).
+enum ScrollToBottomPosition {
+  /// Horizontally centered on the reading column, just above the composer.
+  /// The package default.
+  center,
+
+  /// Pinned to the trailing edge of the column, honoring
+  /// [ScrollToBottomOptions.rightOffset]. Legacy placement.
+  end,
 }

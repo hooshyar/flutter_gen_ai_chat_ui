@@ -6,7 +6,7 @@ void main() {
   testWidgets('tapping the attach button adds a file attachment message',
       (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(home: AttachmentsChatExample()),
+      MaterialApp(home: AttachmentsChatExample(onToggleTheme: () {})),
     );
     await tester.pump();
 
@@ -34,7 +34,7 @@ void main() {
     // Ocean/Sunset/Default themes above", even though this screen has no
     // theme selector at all.
     await tester.pumpWidget(
-      const MaterialApp(home: AttachmentsChatExample()),
+      MaterialApp(home: AttachmentsChatExample(onToggleTheme: () {})),
     );
     await tester.pump();
 

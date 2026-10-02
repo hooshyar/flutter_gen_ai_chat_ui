@@ -185,7 +185,10 @@ class ChatSpacing {
       xxl: lerpDouble(xxl, other.xxl, t) ?? xxl,
       xxxl: lerpDouble(xxxl, other.xxxl, t) ?? xxxl,
       messageBubblePadding: EdgeInsets.lerp(
-              messageBubblePadding, other.messageBubblePadding, t) ??
+            messageBubblePadding,
+            other.messageBubblePadding,
+            t,
+          ) ??
           messageBubblePadding,
       userBubblePadding:
           EdgeInsets.lerp(userBubblePadding, other.userBubblePadding, t) ??
@@ -220,10 +223,7 @@ class ChatSpacing {
   static final ChatSpacing desktop = const ChatSpacing().scale(1.2);
 
   static const ChatSpacing compact = ChatSpacing(
-    messageBubblePadding: EdgeInsets.symmetric(
-      horizontal: 12.0,
-      vertical: 8.0,
-    ),
+    messageBubblePadding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
     messageSpacing: 6.0,
     messageGroupSpacing: 12.0,
   );

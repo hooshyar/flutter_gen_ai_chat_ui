@@ -35,41 +35,42 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('inputLeadingBuilder', () {
-    testWidgets('renders widget to the left of the text field in the input row',
-        (tester) async {
-      final controller = ChatMessagesController();
+    testWidgets(
+      'renders widget to the left of the text field in the input row',
+      (tester) async {
+        final controller = ChatMessagesController();
 
-      await tester.pumpWidget(
-        buildChat(
-          controller: controller,
-          inputOptions: InputOptions(
-            inputLeadingBuilder: (context) => IconButton(
-              key: const Key('leading_icon_button'),
-              icon: const Icon(Icons.attach_file),
-              onPressed: () {},
+        await tester.pumpWidget(
+          buildChat(
+            controller: controller,
+            inputOptions: InputOptions(
+              inputLeadingBuilder: (context) => IconButton(
+                key: const Key('leading_icon_button'),
+                icon: const Icon(Icons.attach_file),
+                onPressed: () {},
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
+        await tester.pump();
 
-      // The IconButton supplied by inputLeadingBuilder must be present.
-      expect(find.byKey(const Key('leading_icon_button')), findsOneWidget);
-    });
+        // The IconButton supplied by inputLeadingBuilder must be present.
+        expect(find.byKey(const Key('leading_icon_button')), findsOneWidget);
+      },
+    );
 
-    testWidgets('rendered leading widget is inside the same Row as TextField',
-        (tester) async {
+    testWidgets('rendered leading widget is inside the same Row as TextField', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
         buildChat(
           controller: controller,
           inputOptions: InputOptions(
-            inputLeadingBuilder: (context) => const Icon(
-              Icons.mic,
-              key: Key('leading_mic_icon'),
-            ),
+            inputLeadingBuilder: (context) =>
+                const Icon(Icons.mic, key: Key('leading_mic_icon')),
           ),
         ),
       );
@@ -89,8 +90,9 @@ void main() {
       expect(rowAncestor, findsWidgets);
     });
 
-    testWidgets('leading widget taps are handled correctly (onPressed fires)',
-        (tester) async {
+    testWidgets('leading widget taps are handled correctly (onPressed fires)', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
       var tapped = false;
 
@@ -114,15 +116,13 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('no leading widget when inputLeadingBuilder is null',
-        (tester) async {
+    testWidgets('no leading widget when inputLeadingBuilder is null', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
-        buildChat(
-          controller: controller,
-          inputOptions: const InputOptions(),
-        ),
+        buildChat(controller: controller, inputOptions: const InputOptions()),
       );
 
       await tester.pump();
@@ -160,33 +160,35 @@ void main() {
     });
 
     testWidgets(
-        'preview widget is placed above (higher y-offset than) the TextField',
-        (tester) async {
-      final controller = ChatMessagesController();
+      'preview widget is placed above (higher y-offset than) the TextField',
+      (tester) async {
+        final controller = ChatMessagesController();
 
-      await tester.pumpWidget(
-        buildChat(
-          controller: controller,
-          inputOptions: InputOptions(
-            attachmentPreviewBuilder: (context) => Container(
-              key: const Key('preview_container'),
-              color: Colors.blue,
-              height: 40,
-              child: const Text('Preview'),
+        await tester.pumpWidget(
+          buildChat(
+            controller: controller,
+            inputOptions: InputOptions(
+              attachmentPreviewBuilder: (context) => Container(
+                key: const Key('preview_container'),
+                color: Colors.blue,
+                height: 40,
+                child: const Text('Preview'),
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
+        await tester.pump();
 
-      final previewCenter =
-          tester.getCenter(find.byKey(const Key('preview_container')));
-      final textFieldCenter = tester.getCenter(find.byType(TextField));
+        final previewCenter = tester.getCenter(
+          find.byKey(const Key('preview_container')),
+        );
+        final textFieldCenter = tester.getCenter(find.byType(TextField));
 
-      // Preview should be above (smaller y coordinate) the TextField.
-      expect(previewCenter.dy, lessThan(textFieldCenter.dy));
-    });
+        // Preview should be above (smaller y coordinate) the TextField.
+        expect(previewCenter.dy, lessThan(textFieldCenter.dy));
+      },
+    );
 
     testWidgets('preview and leading builder can coexist', (tester) async {
       final controller = ChatMessagesController();
@@ -195,10 +197,8 @@ void main() {
         buildChat(
           controller: controller,
           inputOptions: InputOptions(
-            inputLeadingBuilder: (context) => const Icon(
-              Icons.attach_file,
-              key: Key('coexist_leading'),
-            ),
+            inputLeadingBuilder: (context) =>
+                const Icon(Icons.attach_file, key: Key('coexist_leading')),
             attachmentPreviewBuilder: (context) => Container(
               key: const Key('coexist_preview'),
               child: const Text('File preview'),
@@ -213,15 +213,13 @@ void main() {
       expect(find.byKey(const Key('coexist_preview')), findsOneWidget);
     });
 
-    testWidgets('no preview widget rendered when builder is null',
-        (tester) async {
+    testWidgets('no preview widget rendered when builder is null', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
-        buildChat(
-          controller: controller,
-          inputOptions: const InputOptions(),
-        ),
+        buildChat(controller: controller, inputOptions: const InputOptions()),
       );
 
       await tester.pump();
@@ -302,8 +300,9 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('ResultRendererRegistry integration — edge cases', () {
-    testWidgets('rich message with empty data map renders without error',
-        (tester) async {
+    testWidgets('rich message with empty data map renders without error', (
+      tester,
+    ) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
@@ -315,11 +314,9 @@ void main() {
         ),
       );
 
-      controller.addMessage(ChatMessage.rich(
-        user: aiUser,
-        resultKind: 'empty_kind',
-        data: {},
-      ));
+      controller.addMessage(
+        ChatMessage.rich(user: aiUser, resultKind: 'empty_kind', data: {}),
+      );
 
       await tester.pumpAndSettle();
 
@@ -327,134 +324,150 @@ void main() {
     });
 
     testWidgets(
-        'multiple rich messages of different kinds all render their widgets',
-        (tester) async {
-      final controller = ChatMessagesController();
+      'multiple rich messages of different kinds all render their widgets',
+      (tester) async {
+        final controller = ChatMessagesController();
 
-      await tester.pumpWidget(
-        buildChat(
-          controller: controller,
-          resultRenderers: {
-            'kind_a': (context, data) => Text('Kind A: ${data['val']}'),
-            'kind_b': (context, data) => Text('Kind B: ${data['val']}'),
-            'kind_c': (context, data) => Text('Kind C: ${data['val']}'),
-          },
-        ),
-      );
+        await tester.pumpWidget(
+          buildChat(
+            controller: controller,
+            resultRenderers: {
+              'kind_a': (context, data) => Text('Kind A: ${data['val']}'),
+              'kind_b': (context, data) => Text('Kind B: ${data['val']}'),
+              'kind_c': (context, data) => Text('Kind C: ${data['val']}'),
+            },
+          ),
+        );
 
-      // Add messages with slight time separation so the streaming controller
-      // marks each one as a finished response before the next arrives.
-      controller.addMessage(ChatMessage.rich(
-        user: aiUser,
-        resultKind: 'kind_a',
-        data: {'val': 'alpha'},
-        createdAt: DateTime(2026, 1, 1, 10, 0, 0),
-      ));
-      await tester.pumpAndSettle();
+        // Add messages with slight time separation so the streaming controller
+        // marks each one as a finished response before the next arrives.
+        controller.addMessage(
+          ChatMessage.rich(
+            user: aiUser,
+            resultKind: 'kind_a',
+            data: {'val': 'alpha'},
+            createdAt: DateTime(2026, 1, 1, 10, 0, 0),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      controller.addMessage(ChatMessage.rich(
-        user: aiUser,
-        resultKind: 'kind_b',
-        data: {'val': 'beta'},
-        createdAt: DateTime(2026, 1, 1, 10, 0, 1),
-      ));
-      await tester.pumpAndSettle();
+        controller.addMessage(
+          ChatMessage.rich(
+            user: aiUser,
+            resultKind: 'kind_b',
+            data: {'val': 'beta'},
+            createdAt: DateTime(2026, 1, 1, 10, 0, 1),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      controller.addMessage(ChatMessage.rich(
-        user: aiUser,
-        resultKind: 'kind_c',
-        data: {'val': 'gamma'},
-        createdAt: DateTime(2026, 1, 1, 10, 0, 2),
-      ));
-      await tester.pumpAndSettle();
+        controller.addMessage(
+          ChatMessage.rich(
+            user: aiUser,
+            resultKind: 'kind_c',
+            data: {'val': 'gamma'},
+            createdAt: DateTime(2026, 1, 1, 10, 0, 2),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Kind A: alpha'), findsOneWidget);
-      expect(find.text('Kind B: beta'), findsOneWidget);
-      expect(find.text('Kind C: gamma'), findsOneWidget);
-    });
-
-    testWidgets(
-        'rich message interleaved with text messages all render correctly',
-        (tester) async {
-      final controller = ChatMessagesController();
-
-      await tester.pumpWidget(
-        buildChat(
-          controller: controller,
-          resultRenderers: {
-            'card': (context, data) => Text('Card: ${data['title']}'),
-          },
-        ),
-      );
-
-      controller.addMessage(ChatMessage(
-        text: 'Hello there',
-        user: humanUser,
-        createdAt: DateTime.now(),
-      ));
-      await tester.pumpAndSettle();
-
-      controller.addMessage(ChatMessage.rich(
-        user: aiUser,
-        resultKind: 'card',
-        data: {'title': 'Legal Answer'},
-      ));
-      await tester.pumpAndSettle();
-
-      controller.addMessage(ChatMessage(
-        text: 'Thank you',
-        user: humanUser,
-        createdAt: DateTime.now(),
-      ));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Hello there'), findsOneWidget);
-      expect(find.text('Card: Legal Answer'), findsOneWidget);
-      expect(find.text('Thank you'), findsOneWidget);
-    });
+        expect(find.text('Kind A: alpha'), findsOneWidget);
+        expect(find.text('Kind B: beta'), findsOneWidget);
+        expect(find.text('Kind C: gamma'), findsOneWidget);
+      },
+    );
 
     testWidgets(
-        'rich message with unregistered kind falls through to text fallback',
-        (tester) async {
-      final controller = ChatMessagesController();
+      'rich message interleaved with text messages all render correctly',
+      (tester) async {
+        final controller = ChatMessagesController();
 
-      await tester.pumpWidget(
-        buildChat(
-          controller: controller,
-          resultRenderers: {
-            'known': (context, data) => const Text('KnownRenderer'),
-          },
-        ),
-      );
+        await tester.pumpWidget(
+          buildChat(
+            controller: controller,
+            resultRenderers: {
+              'card': (context, data) => Text('Card: ${data['title']}'),
+            },
+          ),
+        );
 
-      controller.addMessage(ChatMessage.rich(
-        user: aiUser,
-        resultKind: 'totally_unknown',
-        data: {},
-        text: 'Fallback for unknown kind',
-      ));
+        controller.addMessage(
+          ChatMessage(
+            text: 'Hello there',
+            user: humanUser,
+            createdAt: DateTime.now(),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      await tester.pumpAndSettle();
+        controller.addMessage(
+          ChatMessage.rich(
+            user: aiUser,
+            resultKind: 'card',
+            data: {'title': 'Legal Answer'},
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.textContaining('Fallback'), findsOneWidget);
-    });
+        controller.addMessage(
+          ChatMessage(
+            text: 'Thank you',
+            user: humanUser,
+            createdAt: DateTime.now(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Hello there'), findsOneWidget);
+        expect(find.text('Card: Legal Answer'), findsOneWidget);
+        expect(find.text('Thank you'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'rich message with unregistered kind falls through to text fallback',
+      (tester) async {
+        final controller = ChatMessagesController();
+
+        await tester.pumpWidget(
+          buildChat(
+            controller: controller,
+            resultRenderers: {
+              'known': (context, data) => const Text('KnownRenderer'),
+            },
+          ),
+        );
+
+        controller.addMessage(
+          ChatMessage.rich(
+            user: aiUser,
+            resultKind: 'totally_unknown',
+            data: {},
+            text: 'Fallback for unknown kind',
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('Fallback'), findsOneWidget);
+      },
+    );
 
     testWidgets('registry with no renderers does not crash', (tester) async {
       final controller = ChatMessagesController();
 
       await tester.pumpWidget(
-        buildChat(
-          controller: controller,
-          resultRenderers: const {},
-        ),
+        buildChat(controller: controller, resultRenderers: const {}),
       );
 
-      controller.addMessage(ChatMessage.rich(
-        user: aiUser,
-        resultKind: 'anything',
-        data: {'x': 1},
-        text: 'No renderer fallback',
-      ));
+      controller.addMessage(
+        ChatMessage.rich(
+          user: aiUser,
+          resultKind: 'anything',
+          data: {'x': 1},
+          text: 'No renderer fallback',
+        ),
+      );
 
       await tester.pumpAndSettle();
 
@@ -463,37 +476,42 @@ void main() {
     });
 
     testWidgets(
-        'same kind rendered consecutively produces multiple widget instances',
-        (tester) async {
-      final controller = ChatMessagesController();
+      'same kind rendered consecutively produces multiple widget instances',
+      (tester) async {
+        final controller = ChatMessagesController();
 
-      await tester.pumpWidget(
-        buildChat(
-          controller: controller,
-          resultRenderers: {
-            'weather': (context, data) => Text('City: ${data['city']}'),
-          },
-        ),
-      );
+        await tester.pumpWidget(
+          buildChat(
+            controller: controller,
+            resultRenderers: {
+              'weather': (context, data) => Text('City: ${data['city']}'),
+            },
+          ),
+        );
 
-      controller.addMessage(ChatMessage.rich(
-        user: aiUser,
-        resultKind: 'weather',
-        data: {'city': 'Baghdad'},
-        createdAt: DateTime(2026, 1, 1, 10, 0, 0),
-      ));
-      await tester.pumpAndSettle();
+        controller.addMessage(
+          ChatMessage.rich(
+            user: aiUser,
+            resultKind: 'weather',
+            data: {'city': 'Baghdad'},
+            createdAt: DateTime(2026, 1, 1, 10, 0, 0),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      controller.addMessage(ChatMessage.rich(
-        user: aiUser,
-        resultKind: 'weather',
-        data: {'city': 'Erbil'},
-        createdAt: DateTime(2026, 1, 1, 10, 0, 1),
-      ));
-      await tester.pumpAndSettle();
+        controller.addMessage(
+          ChatMessage.rich(
+            user: aiUser,
+            resultKind: 'weather',
+            data: {'city': 'Erbil'},
+            createdAt: DateTime(2026, 1, 1, 10, 0, 1),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('City: Baghdad'), findsOneWidget);
-      expect(find.text('City: Erbil'), findsOneWidget);
-    });
+        expect(find.text('City: Baghdad'), findsOneWidget);
+        expect(find.text('City: Erbil'), findsOneWidget);
+      },
+    );
   });
 }

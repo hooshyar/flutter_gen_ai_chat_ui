@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+
 import '../models/ai_suggestion.dart';
 
 /// Controller for AI-enhanced text input similar to CopilotKit's useCopilotTextarea
@@ -11,9 +13,7 @@ class AiTextInputController extends ChangeNotifier {
   final StreamController<AiSuggestion> _suggestionStreamController =
       StreamController<AiSuggestion>.broadcast();
 
-  AiTextInputController({
-    this.config = const AiTextInputConfig(),
-  });
+  AiTextInputController({this.config = const AiTextInputConfig()});
 
   // Getters
   AiTextInputState get state => _state;
@@ -50,20 +50,19 @@ class AiTextInputController extends ChangeNotifier {
 
     try {
       final suggestions = await _fetchAiSuggestions(text);
-      _updateState(_state.copyWith(
-        suggestions: suggestions,
-        isLoading: false,
-      ));
+      _updateState(_state.copyWith(suggestions: suggestions, isLoading: false));
 
       // Notify about new suggestions
       if (suggestions.isNotEmpty) {
         _suggestionStreamController.add(suggestions.first);
       }
     } catch (e) {
-      _updateState(_state.copyWith(
-        error: 'Failed to generate suggestions: $e',
-        isLoading: false,
-      ));
+      _updateState(
+        _state.copyWith(
+          error: 'Failed to generate suggestions: $e',
+          isLoading: false,
+        ),
+      );
     }
   }
 
@@ -76,11 +75,9 @@ class AiTextInputController extends ChangeNotifier {
       suggestion.replacementText,
     );
 
-    _updateState(_state.copyWith(
-      text: newText,
-      suggestions: [],
-      activeSuggestion: null,
-    ));
+    _updateState(
+      _state.copyWith(text: newText, suggestions: [], activeSuggestion: null),
+    );
   }
 
   /// Accept the currently active suggestion
@@ -92,12 +89,14 @@ class AiTextInputController extends ChangeNotifier {
 
   /// Reject the currently active suggestion
   void rejectSuggestion() {
-    _updateState(_state.copyWith(
-      activeSuggestion: null,
-      suggestions: _state.suggestions
-          .where((s) => s != _state.activeSuggestion)
-          .toList(),
-    ));
+    _updateState(
+      _state.copyWith(
+        activeSuggestion: null,
+        suggestions: _state.suggestions
+            .where((s) => s != _state.activeSuggestion)
+            .toList(),
+      ),
+    );
   }
 
   /// Set active suggestion for preview
@@ -115,16 +114,15 @@ class AiTextInputController extends ChangeNotifier {
 
     try {
       final draft = await _fetchFirstDraft(prompt);
-      _updateState(_state.copyWith(
-        text: draft,
-        isLoading: false,
-      ));
+      _updateState(_state.copyWith(text: draft, isLoading: false));
       return draft;
     } catch (e) {
-      _updateState(_state.copyWith(
-        error: 'Failed to generate draft: $e',
-        isLoading: false,
-      ));
+      _updateState(
+        _state.copyWith(
+          error: 'Failed to generate draft: $e',
+          isLoading: false,
+        ),
+      );
       rethrow;
     }
   }
@@ -147,11 +145,9 @@ class AiTextInputController extends ChangeNotifier {
 
   /// Clear all suggestions and reset state
   void clearSuggestions() {
-    _updateState(_state.copyWith(
-      suggestions: [],
-      activeSuggestion: null,
-      error: null,
-    ));
+    _updateState(
+      _state.copyWith(suggestions: [], activeSuggestion: null, error: null),
+    );
   }
 
   /// Reset the entire input state
@@ -200,25 +196,29 @@ class AiTextInputController extends ChangeNotifier {
   }
 
   List<AiSuggestion> _generateCompletionSuggestions(
-      String text, String lastWord) {
+    String text,
+    String lastWord,
+  ) {
     final completions = [
       'intelligence',
       'interactive',
       'innovative',
       'implementation',
-      'integration'
+      'integration',
     ].where((word) => word.startsWith(lastWord.toLowerCase())).take(2);
 
     return completions
-        .map((completion) => AiSuggestion(
-              id: 'completion_${completion}_${DateTime.now().millisecondsSinceEpoch}',
-              text: lastWord,
-              replacementText: completion,
-              startIndex: text.length - lastWord.length,
-              endIndex: text.length,
-              type: AiSuggestionType.completion,
-              confidence: 0.8,
-            ))
+        .map(
+          (completion) => AiSuggestion(
+            id: 'completion_${completion}_${DateTime.now().millisecondsSinceEpoch}',
+            text: lastWord,
+            replacementText: completion,
+            startIndex: text.length - lastWord.length,
+            endIndex: text.length,
+            type: AiSuggestionType.completion,
+            confidence: 0.8,
+          ),
+        )
         .toList();
   }
 
@@ -228,15 +228,17 @@ class AiTextInputController extends ChangeNotifier {
     // Simple grammar check for common mistakes
     if (text.contains('teh')) {
       final index = text.indexOf('teh');
-      suggestions.add(AiSuggestion(
-        id: 'grammar_the_${DateTime.now().millisecondsSinceEpoch}',
-        text: 'teh',
-        replacementText: 'the',
-        startIndex: index,
-        endIndex: index + 3,
-        type: AiSuggestionType.grammar,
-        confidence: 0.95,
-      ));
+      suggestions.add(
+        AiSuggestion(
+          id: 'grammar_the_${DateTime.now().millisecondsSinceEpoch}',
+          text: 'teh',
+          replacementText: 'the',
+          startIndex: index,
+          endIndex: index + 3,
+          type: AiSuggestionType.grammar,
+          confidence: 0.95,
+        ),
+      );
     }
 
     return suggestions;
@@ -248,15 +250,17 @@ class AiTextInputController extends ChangeNotifier {
     // Simple enhancement: replace "good" with "excellent"
     if (text.contains('good')) {
       final index = text.indexOf('good');
-      suggestions.add(AiSuggestion(
-        id: 'enhance_good_${DateTime.now().millisecondsSinceEpoch}',
-        text: 'good',
-        replacementText: 'excellent',
-        startIndex: index,
-        endIndex: index + 4,
-        type: AiSuggestionType.enhancement,
-        confidence: 0.7,
-      ));
+      suggestions.add(
+        AiSuggestion(
+          id: 'enhance_good_${DateTime.now().millisecondsSinceEpoch}',
+          text: 'good',
+          replacementText: 'excellent',
+          startIndex: index,
+          endIndex: index + 4,
+          type: AiSuggestionType.enhancement,
+          confidence: 0.7,
+        ),
+      );
     }
 
     return suggestions;

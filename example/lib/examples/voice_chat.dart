@@ -1,8 +1,8 @@
-// Voice input — mic/send toggle using the package's VoiceSendButton.
+// Voice input - mic/send toggle using the package's VoiceSendButton.
 //
 // The package ships the mic UI + state machine (VoiceSendButton) but not
 // speech recognition itself (kept out of core, same reasoning as file
-// picking — see FileUploadOptions). A real app wires a package like
+// picking - see FileUploadOptions). A real app wires a package like
 // `speech_to_text` at onToggle/onHoldStart/onHoldEnd; this demo simulates a
 // short "listening" then "recognized" cycle so the toggle flow can be shown
 // without microphone permissions or a running device.
@@ -12,9 +12,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
 import '../services/mock_ai_service.dart';
+import '../shell/app_theme.dart';
+import '../shell/demo_scaffold.dart';
 
 class VoiceChatExample extends StatefulWidget {
-  const VoiceChatExample({super.key});
+  const VoiceChatExample({super.key, required this.onToggleTheme});
+
+  final VoidCallback onToggleTheme;
 
   @override
   State<VoiceChatExample> createState() => _VoiceChatExampleState();
@@ -81,10 +85,15 @@ class _VoiceChatExampleState extends State<VoiceChatExample> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Voice Input')),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.appColors;
+
+    return DemoScaffold(
+      title: 'Voice',
+      route: '/voice',
+      isDark: isDark,
+      onToggleTheme: widget.onToggleTheme,
       body: AiChatWidget(
-        maxWidth: 720,
         currentUser: _currentUser,
         aiUser: _aiUser,
         controller: _controller,
@@ -92,11 +101,7 @@ class _VoiceChatExampleState extends State<VoiceChatExample> {
         loadingConfig: LoadingConfig(isLoading: _isLoading),
         inputOptions: InputOptions(
           textController: _textController,
-          decoration: const InputDecoration(
-            hintText: 'Type, or tap the mic to speak...',
-            border: InputBorder.none,
-          ),
-          // Mic when the field is empty, send button once there's text —
+          // Mic when the field is empty, send button once there's text -
           // the same toggle pattern ChatGPT's mobile app uses.
           sendOrMicBuilder: (onSend, isEmpty) => isEmpty
               ? VoiceSendButton(
@@ -105,13 +110,28 @@ class _VoiceChatExampleState extends State<VoiceChatExample> {
                   onToggle: _handleMicToggle,
                 )
               : IconButton(
-                  icon: const Icon(Icons.send),
+                  tooltip: 'Send',
+                  icon: Icon(
+                    Icons.arrow_upward_rounded,
+                    size: 20,
+                    color: colors.onAccent,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: colors.accent,
+                    padding: const EdgeInsets.all(6),
+                    minimumSize: const Size(44, 44),
+                  ),
                   onPressed: onSend,
                 ),
         ),
         welcomeMessageConfig: const WelcomeMessageConfig(
           title: 'Tap the mic to speak (simulated)',
         ),
+        exampleQuestions: const [
+          ExampleQuestion(question: 'What is the weather like today?'),
+          ExampleQuestion(question: 'Tell me a fun fact about Flutter'),
+          ExampleQuestion(question: 'Summarize this in one sentence'),
+        ],
       ),
     );
   }

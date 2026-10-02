@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:clock/clock.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 
@@ -48,6 +49,19 @@ import '../models/chat/models.dart';
 /// Always call [dispose] when the owning widget is removed; pending scroll
 /// and streaming-simulation timers are cancelled in `dispose`.
 class ChatMessagesController extends ChangeNotifier {
+  /// Internal verbose scroll/streaming-pin logging, gated to debug builds.
+  ///
+  /// `debugPrint` itself is NOT stripped in profile/release builds — it
+  /// prints in every build mode unless the host app overrides it — so the
+  /// dozens of scroll/pin trace lines in this file (`"STREAMING PIN: ..."`,
+  /// `"SCROLL TO BOTTOM: ..."`, etc.) were reaching a shipped release web
+  /// build's browser console. Routing them through this helper instead of
+  /// calling `debugPrint` directly keeps the same trace for local
+  /// development while silencing it in profile/release.
+  static void _debugLog(String message) {
+    if (kDebugMode) debugPrint(message);
+  }
+
   // Track if the controller is still mounted to prevent race conditions
   bool _mounted = true;
 
@@ -181,31 +195,96 @@ class ChatMessagesController extends ChangeNotifier {
   /// Set the scroll behavior configuration
   set scrollBehaviorConfig(ScrollBehaviorConfig? config) {
     _scrollBehaviorConfig = config;
-    debugPrint('ChatMessagesController: Scroll behavior updated to: '
+    _debugLog('ChatMessagesController: Scroll behavior updated to: '
         '${config?.autoScrollBehavior.toString() ?? "null"}, '
         'scrollToFirstResponseMessage: ${config?.scrollToFirstResponseMessage ?? false}');
   }
 
-  /// Sets which message is currently being streamed
-  void setStreamingMessage(String? messageId) {
+  /// Ids with an explicitly open stream, per the documented streaming
+  /// contract. This is the source of truth for [isMessageStreaming] — unlike
+  /// [_currentlyStreamingMessageId] (which the one-shot reveal/typewriter
+  /// effect in [addMessage] also sets for a plain, already-complete message),
+  /// an id only ever enters this set via [addStreamingMessage], the public
+  /// [setStreamingMessage], or an explicit `customProperties['isStreaming']
+  /// == true` on [addMessage]/[updateMessage] — and only ever leaves it via
+  /// [stopStreamingMessage] or an explicit `isStreaming == false`. A missing
+  /// `isStreaming` key on an [updateMessage] call never removes it, so a
+  /// stream driven purely by `addStreamingMessage` + bare `updateMessage` +
+  /// `stopStreamingMessage` (no flag on any call) stays open the whole time.
+  final Set<String> _openStreamIds = {};
+
+  /// Whether [id] currently has an explicitly open stream.
+  ///
+  /// See [_openStreamIds] for exactly which calls open/close an id. This is
+  /// the precise, contract-driven signal `CustomChatWidget` uses to decide
+  /// whether to show the live streaming caret and hide the message action
+  /// row, independent of `enableMarkdownStreaming` and of the reveal
+  /// ticker's own backlog bookkeeping.
+  bool isMessageStreaming(String id) => _openStreamIds.contains(id);
+
+  /// Marks [messageId] as the message that should play the one-shot
+  /// reveal/typewriter animation, without affecting [_openStreamIds].
+  ///
+  /// This is the old body of [setStreamingMessage] before it started also
+  /// tracking [_openStreamIds]. [addMessage] calls this (instead of the
+  /// public [setStreamingMessage]) for every fresh AI message — streaming or
+  /// not — purely to kick off the reveal animation; it must never mark an
+  /// ordinary, already-complete message as having an open stream.
+  void _markDeliveredForReveal(String? messageId) {
     if (_currentlyStreamingMessageId != messageId) {
       _currentlyStreamingMessageId = messageId;
       _isCurrentlyStreaming = messageId != null;
       notifyListeners();
-      debugPrint(
-          'ChatMessagesController: Streaming message set to: $messageId');
+      _debugLog('ChatMessagesController: Streaming message set to: $messageId');
     }
   }
 
-  /// Stops streaming for a specific message (marks it as complete)
+  /// Sets which message is currently being streamed.
+  ///
+  /// Also marks [messageId] as having an explicitly open stream (see
+  /// [isMessageStreaming]) — this is a consumer-facing API for a caller
+  /// driving streaming manually, so it always registers the open stream,
+  /// even when [_currentlyStreamingMessageId] happens not to change.
+  void setStreamingMessage(String? messageId) {
+    if (messageId != null) {
+      _openStreamIds.add(messageId);
+    }
+    _markDeliveredForReveal(messageId);
+  }
+
+  /// Stops streaming for a specific message (marks it as complete).
+  ///
+  /// Unconditional: always clears [messageId] from [_openStreamIds], always
+  /// rewrites a stored message whose `isStreaming` is still `true` to
+  /// `false` (in both [_messages] and [_messageCache]), and always notifies
+  /// listeners — regardless of whether [messageId] happens to be
+  /// [_currentlyStreamingMessageId] right now (a consumer may legitimately
+  /// call this after a newer AI message already replaced it there).
   void stopStreamingMessage(String messageId) {
+    _openStreamIds.remove(messageId);
+
     if (_currentlyStreamingMessageId == messageId) {
       _currentlyStreamingMessageId = null;
       _isCurrentlyStreaming = false;
-      notifyListeners();
-      debugPrint(
-          'ChatMessagesController: Streaming stopped for message: $messageId');
     }
+
+    final index =
+        _messages.indexWhere((msg) => _getMessageId(msg) == messageId);
+    if (index != -1 &&
+        _messages[index].customProperties?['isStreaming'] == true) {
+      final updatedProperties = <String, dynamic>{
+        ...?_messages[index].customProperties,
+        'isStreaming': false,
+      };
+      final updatedMessage =
+          _messages[index].copyWith(customProperties: updatedProperties);
+      _messages[index] = updatedMessage;
+      _messageCache[messageId] = updatedMessage;
+    }
+
+    notifyListeners();
+    _debugLog(
+        'ChatMessagesController: Streaming stopped for message: $messageId');
   }
 
   /// Adds a new message with streaming enabled
@@ -218,6 +297,7 @@ class ChatMessagesController extends ChangeNotifier {
         message.customProperties?['isUserMessage'] as bool? ?? false;
     if (!isFromUser) {
       final messageId = _getMessageId(message);
+      _openStreamIds.add(messageId);
       setStreamingMessage(messageId);
       _armStreamingPin(messageId);
     }
@@ -368,7 +448,7 @@ class ChatMessagesController extends ChangeNotifier {
         if (_scrollController!.position.isScrollingNotifier.value) {
           _isManuallyScrolling = true;
           _lastManualScrollTime = DateTime.now();
-          debugPrint('USER SCROLL: Manual scrolling detected');
+          _debugLog('USER SCROLL: Manual scrolling detected');
         } else if (_isManuallyScrolling) {
           // Reset after a short delay to allow animations to complete.
           // Tracked via _manualScrollResetTimer so dispose() can cancel it
@@ -383,7 +463,7 @@ class ChatMessagesController extends ChangeNotifier {
                     .inMilliseconds >=
                 300) {
               _isManuallyScrolling = false;
-              debugPrint('USER SCROLL: Manual scrolling ended');
+              _debugLog('USER SCROLL: Manual scrolling ended');
             }
           });
         }
@@ -518,7 +598,7 @@ class ChatMessagesController extends ChangeNotifier {
         updatedProperties['isFirstResponseMessage'] = true;
         updatedProperties['isStartOfResponse'] = true;
 
-        debugPrint(
+        _debugLog(
             'NEW RESPONSE: First message ID: $messageId from user: $userId responseId: $responseId');
       }
 
@@ -527,7 +607,7 @@ class ChatMessagesController extends ChangeNotifier {
         // Clear the first response message ID whenever a user sends a message
         // This way, the next AI message will become the first of a new response
         _currentResponseFirstMessageId = null;
-        debugPrint('USER MESSAGE: Reset response tracking for user: $userId');
+        _debugLog('USER MESSAGE: Reset response tracking for user: $userId');
       }
 
       // For related messages with the same responseId, we want to keep the first message
@@ -549,7 +629,7 @@ class ChatMessagesController extends ChangeNotifier {
                 responseId) {
           final existingFirstId = _getMessageId(existingFirstMessage);
           _currentResponseFirstMessageId = existingFirstId;
-          debugPrint(
+          _debugLog(
               'CHAIN MESSAGE: Using existing first message ID: $existingFirstId for responseId: $responseId');
         }
       }
@@ -558,7 +638,7 @@ class ChatMessagesController extends ChangeNotifier {
       if (!updatedProperties.containsKey('isUserMessage') &&
           !updatedProperties.containsKey('source')) {
         updatedProperties['isUserMessage'] = isFromUser;
-        debugPrint(
+        _debugLog(
             'MESSAGE TYPE: userId=${message.user.id}, isUserMessage=$isFromUser');
       }
 
@@ -577,9 +657,19 @@ class ChatMessagesController extends ChangeNotifier {
       }
       _messageCache[messageId] = updatedMessage;
 
-      // If this is an AI message, set it as the currently streaming message
+      // If this is an AI message, mark it for the one-shot reveal/typewriter
+      // animation. Deliberately not the public setStreamingMessage: that also
+      // opens an explicit stream (see _openStreamIds), and an ordinary,
+      // already-complete AI message must not be reported as streaming by
+      // isMessageStreaming.
       if (!isFromUser) {
-        setStreamingMessage(messageId);
+        _markDeliveredForReveal(messageId);
+      }
+
+      // An incoming message explicitly flagged as streaming opens the id in
+      // _openStreamIds, per the documented contract.
+      if (updatedProperties['isStreaming'] == true) {
+        _openStreamIds.add(messageId);
       }
 
       // Streaming pin bookkeeping: a user message starts a new turn (any pin
@@ -609,10 +699,10 @@ class ChatMessagesController extends ChangeNotifier {
           _determineShouldScroll(config, isUserMessage, isFirstResponse);
 
       if (shouldScroll) {
-        debugPrint('SCROLLING: After render for isUserMessage=$isUserMessage');
+        _debugLog('SCROLLING: After render for isUserMessage=$isUserMessage');
         _scrollAfterRender(isUserMessage, isStartOfResponse, config);
       } else {
-        debugPrint('NOT SCROLLING: Message doesn\'t meet scroll criteria');
+        _debugLog('NOT SCROLLING: Message doesn\'t meet scroll criteria');
       }
     }
   }
@@ -622,25 +712,25 @@ class ChatMessagesController extends ChangeNotifier {
       ScrollBehaviorConfig config, bool isUserMessage, bool isFirstResponse) {
     // If this is a user message, always scroll (user messages should be visible)
     if (isUserMessage) {
-      debugPrint('SCROLL DECISION: User message - will scroll');
+      _debugLog('SCROLL DECISION: User message - will scroll');
       return true;
     }
 
     switch (config.autoScrollBehavior) {
       case AutoScrollBehavior.always:
-        debugPrint('SCROLL DECISION: Always mode - will scroll');
+        _debugLog('SCROLL DECISION: Always mode - will scroll');
         return true;
       case AutoScrollBehavior.onNewMessage:
         final shouldScroll = isFirstResponse;
-        debugPrint(
+        _debugLog(
             'SCROLL DECISION: onNewMessage mode - ${shouldScroll ? "will scroll (first response)" : "will NOT scroll (continuation)"}');
         return shouldScroll;
       case AutoScrollBehavior.onUserMessageOnly:
-        debugPrint(
+        _debugLog(
             'SCROLL DECISION: onUserMessageOnly mode - will NOT scroll (AI message)');
         return false;
       case AutoScrollBehavior.never:
-        debugPrint('SCROLL DECISION: Never scroll mode - will NOT scroll');
+        _debugLog('SCROLL DECISION: Never scroll mode - will NOT scroll');
         return false;
     }
   }
@@ -654,7 +744,7 @@ class ChatMessagesController extends ChangeNotifier {
     // the rest of this answer. User messages still scroll as usual (they end
     // the pin in addMessage before reaching here).
     if (!isUserMessage && isStreamingPinActive) {
-      debugPrint('NOT SCROLLING: streaming pin active');
+      _debugLog('NOT SCROLLING: streaming pin active');
       return;
     }
 
@@ -724,13 +814,13 @@ class ChatMessagesController extends ChangeNotifier {
       _scrollAfterRenderTimer = null;
       // Check if the controller is still mounted (prevents race conditions)
       if (!mounted) {
-        debugPrint('SCROLL ABORTED: Controller disposed');
+        _debugLog('SCROLL ABORTED: Controller disposed');
         return;
       }
 
       // Check if this operation is still the current one (prevents race conditions)
       if (_lastScrollOperation != operationId) {
-        debugPrint('SCROLL ABORTED: Newer scroll operation in progress');
+        _debugLog('SCROLL ABORTED: Newer scroll operation in progress');
         return;
       }
 
@@ -740,20 +830,20 @@ class ChatMessagesController extends ChangeNotifier {
       // elapses the pin is active and this scroll would tear the reader away
       // from the anchor (and, worse, count as an explicit scroll-to-bottom).
       if (!isUserMessage && isStreamingPinActive) {
-        debugPrint('SCROLL ABORTED: streaming pin active');
+        _debugLog('SCROLL ABORTED: streaming pin active');
         return;
       }
 
       // Make sure the widget is still mounted and the response ID hasn't changed
       if (_scrollController?.hasClients != true) {
-        debugPrint('SCROLL ABORTED: Scroll controller no longer has clients');
+        _debugLog('SCROLL ABORTED: Scroll controller no longer has clients');
         return;
       }
 
       // Update last scroll time for debouncing
       _lastScrollTime = clock.now();
 
-      debugPrint('SCROLL EXECUTION: isUserMessage=$isUserMessage, '
+      _debugLog('SCROLL EXECUTION: isUserMessage=$isUserMessage, '
           'scrollToFirstResponseMessage=${config.scrollToFirstResponseMessage}, '
           'isStartOfResponse=$isStartOfResponse, '
           'currentResponseFirstMessageId=$currentResponseId, '
@@ -768,7 +858,7 @@ class ChatMessagesController extends ChangeNotifier {
           isStartOfResponse) {
         // Only scroll to first message if this is the START of a response
         // This prevents later messages in the chain from overriding the scroll position
-        debugPrint(
+        _debugLog(
             'AUTO SCROLL TO FIRST: responseId=$latestResponseId, isStartOfResponse=$isStartOfResponse');
 
         // Use longer debounce for response chains to prevent conflicts
@@ -784,7 +874,7 @@ class ChatMessagesController extends ChangeNotifier {
           isPartOfResponseChain &&
           !isStartOfResponse) {
         // For continuation messages, also scroll to first to maintain position
-        debugPrint(
+        _debugLog(
             'MAINTAIN SCROLL TO FIRST: responseId=$latestResponseId, maintaining first message position');
 
         forceScrollToFirstMessageInChain(latestResponseId);
@@ -801,12 +891,12 @@ class ChatMessagesController extends ChangeNotifier {
             currentMsg.customProperties?['responseId'] as String?;
 
         if (responseId != null) {
-          debugPrint(
+          _debugLog(
               'USING DIRECT FORCE SCROLL to first message responseId: $responseId');
           forceScrollToFirstMessageInChain(responseId);
         } else {
           // Legacy support for older message format
-          debugPrint('SCROLLING TO FIRST RESPONSE BY ID: $currentResponseId');
+          _debugLog('SCROLLING TO FIRST RESPONSE BY ID: $currentResponseId');
           scrollToMessage(currentResponseId);
         }
         hasScrolled = true;
@@ -816,17 +906,17 @@ class ChatMessagesController extends ChangeNotifier {
       else if (!hasScrolled && !config.scrollToFirstResponseMessage) {
         // Standard behavior - scroll to bottom
         if (isUserMessage) {
-          debugPrint('SCROLLING TO BOTTOM: User message');
+          _debugLog('SCROLLING TO BOTTOM: User message');
         } else if (config.autoScrollBehavior == AutoScrollBehavior.always) {
-          debugPrint('SCROLLING TO BOTTOM: Always mode');
+          _debugLog('SCROLLING TO BOTTOM: Always mode');
         } else {
-          debugPrint('SCROLLING TO BOTTOM: Default behavior');
+          _debugLog('SCROLLING TO BOTTOM: Default behavior');
         }
 
         _scrollToBottomInternal(
             config.scrollAnimationDuration, config.scrollAnimationCurve);
       } else if (!hasScrolled) {
-        debugPrint('SKIPPING DEFAULT SCROLL: Custom scroll behavior is active');
+        _debugLog('SKIPPING DEFAULT SCROLL: Custom scroll behavior is active');
       }
     });
   }
@@ -837,7 +927,7 @@ class ChatMessagesController extends ChangeNotifier {
 
     // Don't interrupt user's manual scrolling
     if (_isManuallyScrolling) {
-      debugPrint('SCROLL CANCELED: User is manually scrolling');
+      _debugLog('SCROLL CANCELED: User is manually scrolling');
       return;
     }
 
@@ -846,11 +936,11 @@ class ChatMessagesController extends ChangeNotifier {
       final index =
           _messages.indexWhere((msg) => _getMessageId(msg) == messageId);
       if (index == -1) {
-        debugPrint('MESSAGE NOT FOUND: Cannot scroll to message $messageId');
+        _debugLog('MESSAGE NOT FOUND: Cannot scroll to message $messageId');
         return;
       }
 
-      debugPrint(
+      _debugLog(
           'SCROLLING: To message at index $index with ID $messageId, reverseOrder: ${paginationConfig.reverseOrder}');
 
       // Get configuration for animation timing
@@ -861,7 +951,7 @@ class ChatMessagesController extends ChangeNotifier {
       // badly when one message dominates the list's total height (#42).
       final resolvedContext = _messageContextResolver?.call(messageId);
       if (resolvedContext != null && resolvedContext.mounted) {
-        debugPrint('SCROLLING (measured): To message ID $messageId');
+        _debugLog('SCROLLING (measured): To message ID $messageId');
         Scrollable.ensureVisible(
           resolvedContext,
           duration: config.scrollAnimationDuration,
@@ -881,7 +971,7 @@ class ChatMessagesController extends ChangeNotifier {
       final maxExtent = _scrollController!.position.maxScrollExtent;
       final itemCount = _messages.length;
 
-      debugPrint(
+      _debugLog(
           'SCROLL INFO: maxExtent=$maxExtent, itemCount=$itemCount, messageIndex=$index');
 
       double targetPosition;
@@ -909,7 +999,7 @@ class ChatMessagesController extends ChangeNotifier {
       // Clamp to valid range
       targetPosition = targetPosition.clamp(0.0, maxExtent);
 
-      debugPrint('SCROLLING: To position $targetPosition');
+      _debugLog('SCROLLING: To position $targetPosition');
 
       _scrollController!.animateTo(
         targetPosition,
@@ -917,7 +1007,7 @@ class ChatMessagesController extends ChangeNotifier {
         curve: config.scrollAnimationCurve,
       );
     } catch (e) {
-      debugPrint('ERROR SCROLLING: $e');
+      _debugLog('ERROR SCROLLING: $e');
       // Do not scroll to bottom as fallback - this causes the double-scroll issue
     }
   }
@@ -948,7 +1038,7 @@ class ChatMessagesController extends ChangeNotifier {
 
     // Don't interrupt user's manual scrolling
     if (_isManuallyScrolling) {
-      debugPrint('SCROLL BOTTOM CANCELED: User is manually scrolling');
+      _debugLog('SCROLL BOTTOM CANCELED: User is manually scrolling');
       return;
     }
 
@@ -967,7 +1057,7 @@ class ChatMessagesController extends ChangeNotifier {
     final effectiveCurve = curve ?? scrollBehaviorConfig.scrollAnimationCurve;
 
     // Log the animation being used
-    debugPrint(
+    _debugLog(
         'SCROLL TO BOTTOM: Using duration=${effectiveDuration.inMilliseconds}ms, curve=${effectiveCurve.runtimeType}');
 
     try {
@@ -989,7 +1079,7 @@ class ChatMessagesController extends ChangeNotifier {
     } catch (e) {
       // If we get an error (eg. because widget is disposing), just ignore it
       // This prevents errors when scrolling during state changes
-      debugPrint('SCROLL TO BOTTOM ERROR: $e');
+      _debugLog('SCROLL TO BOTTOM ERROR: $e');
     }
   }
 
@@ -1038,6 +1128,20 @@ class ChatMessagesController extends ChangeNotifier {
 
       final isStreaming =
           message.customProperties?['isStreaming'] as bool? ?? false;
+
+      // Open-stream bookkeeping (see _openStreamIds): only an EXPLICIT
+      // isStreaming key moves the id in or out. A missing key (the
+      // addStreamingMessage + bare updateMessage + stopStreamingMessage
+      // recipe) must never close a stream that's still open.
+      final hasIsStreamingKey =
+          message.customProperties?.containsKey('isStreaming') ?? false;
+      if (hasIsStreamingKey) {
+        if (message.customProperties!['isStreaming'] == true) {
+          _openStreamIds.add(messageId);
+        } else if (message.customProperties!['isStreaming'] == false) {
+          _openStreamIds.remove(messageId);
+        }
+      }
 
       // Check if this is a user message
       final isUserMessage =
@@ -1188,7 +1292,7 @@ class ChatMessagesController extends ChangeNotifier {
           // The reader is already where they want to be (the pinned anchor);
           // an end-of-stream scroll — to the bottom or back to the first
           // message — is exactly the jump the pin exists to prevent.
-          debugPrint('NOT SCROLLING: end of stream with streaming pin active');
+          _debugLog('NOT SCROLLING: end of stream with streaming pin active');
         } else if (shouldScroll && wasStreaming) {
           // For streaming end, use a longer delay to prevent assertion errors
           // Cancel any pending scroll timer first
@@ -1204,7 +1308,7 @@ class ChatMessagesController extends ChangeNotifier {
         }
       }
     } catch (e) {
-      debugPrint('Error updating message: $e');
+      _debugLog('Error updating message: $e');
       // If updating fails, try to add as a new message instead
       try {
         final newId =
@@ -1256,10 +1360,10 @@ class ChatMessagesController extends ChangeNotifier {
         if (shouldScroll) {
           _scrollAfterRender(false, false, config);
         } else if (isUserMessage && isFirstResponse) {
-          debugPrint('SKIPPING SCROLL: Custom scroll behavior is active');
+          _debugLog('SKIPPING SCROLL: Custom scroll behavior is active');
         }
       } catch (fallbackError) {
-        debugPrint('Failed to add message as fallback: $fallbackError');
+        _debugLog('Failed to add message as fallback: $fallbackError');
       }
     }
   }
@@ -1399,9 +1503,9 @@ class ChatMessagesController extends ChangeNotifier {
     try {
       // Force scroll to the very top first (0.0)
       _scrollController!.jumpTo(0.0);
-      debugPrint('FORCE SCROLL: Jumped to absolute top position');
+      _debugLog('FORCE SCROLL: Jumped to absolute top position');
     } catch (e) {
-      debugPrint('ERROR FORCE SCROLLING: $e');
+      _debugLog('ERROR FORCE SCROLLING: $e');
     }
   }
 
@@ -1431,7 +1535,7 @@ class ChatMessagesController extends ChangeNotifier {
     final animationInfo =
         'Animation: duration=${scrollBehaviorConfig.scrollAnimationDuration.inMilliseconds}ms, '
         'curve=${scrollBehaviorConfig.scrollAnimationCurve.runtimeType}';
-    debugPrint('SCROLL ANIMATION INFO: $animationInfo');
+    _debugLog('SCROLL ANIMATION INFO: $animationInfo');
 
     try {
       // Find the first message with this responseId
@@ -1450,18 +1554,18 @@ class ChatMessagesController extends ChangeNotifier {
       // Find the index of this message
       final index = _messages.indexOf(firstMessageInChain);
       if (index < 0) {
-        debugPrint('FORCE SCROLL: Message not found in list');
+        _debugLog('FORCE SCROLL: Message not found in list');
         return;
       }
 
-      debugPrint(
+      _debugLog(
           'FORCE SCROLL: Found first message in chain at index $index with responseId: $responseId, reverseOrder: ${paginationConfig.reverseOrder}');
 
       // Always use animation when testing different animation curves
       final scrollDuration = scrollBehaviorConfig.scrollAnimationDuration;
       final scrollCurve = scrollBehaviorConfig.scrollAnimationCurve;
 
-      debugPrint(
+      _debugLog(
           'APPLYING ANIMATION: duration=${scrollDuration.inMilliseconds}ms, curve=$scrollCurve');
 
       // Prefer an exact, measured scroll over the index/itemCount heuristic
@@ -1469,7 +1573,7 @@ class ChatMessagesController extends ChangeNotifier {
       final chainMessageId = _getMessageId(firstMessageInChain);
       final resolvedContext = _messageContextResolver?.call(chainMessageId);
       if (resolvedContext != null && resolvedContext.mounted) {
-        debugPrint(
+        _debugLog(
             'FORCE SCROLL (measured): To first message in chain ID $chainMessageId');
         Scrollable.ensureVisible(
           resolvedContext,
@@ -1487,7 +1591,7 @@ class ChatMessagesController extends ChangeNotifier {
       final maxExtent = _scrollController!.position.maxScrollExtent;
       final itemCount = _messages.length;
 
-      debugPrint(
+      _debugLog(
           'SCROLL INFO: maxExtent=$maxExtent, itemCount=$itemCount, messageIndex=$index');
 
       double targetPosition;
@@ -1522,7 +1626,7 @@ class ChatMessagesController extends ChangeNotifier {
       // Clamp to valid range
       targetPosition = targetPosition.clamp(0.0, maxExtent);
 
-      debugPrint(
+      _debugLog(
           'FORCE SCROLL: Scrolling to position $targetPosition (reverse: ${paginationConfig.reverseOrder})');
 
       _scrollController!.animateTo(
@@ -1531,10 +1635,10 @@ class ChatMessagesController extends ChangeNotifier {
         curve: scrollCurve,
       );
 
-      debugPrint(
+      _debugLog(
           'FORCE SCROLL: Animation started to first message in chain using ${scrollCurve.runtimeType}');
     } catch (e) {
-      debugPrint('ERROR FORCE SCROLLING TO CHAIN: $e');
+      _debugLog('ERROR FORCE SCROLLING TO CHAIN: $e');
       // Fallback: just scroll to top to show the beginning of messages
       try {
         _scrollController!.animateTo(
@@ -1542,9 +1646,9 @@ class ChatMessagesController extends ChangeNotifier {
           duration: scrollBehaviorConfig.scrollAnimationDuration,
           curve: scrollBehaviorConfig.scrollAnimationCurve,
         );
-        debugPrint('FALLBACK SCROLL: Scrolled to top as fallback');
+        _debugLog('FALLBACK SCROLL: Scrolled to top as fallback');
       } catch (fallbackError) {
-        debugPrint('FALLBACK SCROLL ERROR: $fallbackError');
+        _debugLog('FALLBACK SCROLL ERROR: $fallbackError');
       }
     }
   }
@@ -1580,7 +1684,7 @@ class ChatMessagesController extends ChangeNotifier {
     _pinReleased = false;
     _pinLastResponseHeight = null;
     _pinContextCache.clear();
-    debugPrint('STREAMING PIN: armed for $responseMessageId, '
+    _debugLog('STREAMING PIN: armed for $responseMessageId, '
         'anchor=$_pinAnchorMessageId');
   }
 
@@ -1599,7 +1703,7 @@ class ChatMessagesController extends ChangeNotifier {
   void releaseStreamingPin() {
     if (_pinnedResponseId == null || _pinReleased) return;
     _pinReleased = true;
-    debugPrint('STREAMING PIN: released by the user');
+    _debugLog('STREAMING PIN: released by the user');
   }
 
   /// Re-applies the streaming pin after the list's content changed.
@@ -1684,7 +1788,7 @@ class ChatMessagesController extends ChangeNotifier {
         });
       }
     } catch (e) {
-      debugPrint('STREAMING PIN: could not maintain pin: $e');
+      _debugLog('STREAMING PIN: could not maintain pin: $e');
     }
   }
 
@@ -1763,6 +1867,7 @@ class ChatMessagesController extends ChangeNotifier {
 
     _messages.clear();
     _messageCache.clear();
+    _openStreamIds.clear();
     super.dispose();
   }
 }

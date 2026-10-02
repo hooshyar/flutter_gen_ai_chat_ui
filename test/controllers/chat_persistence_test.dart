@@ -52,14 +52,16 @@ void main() {
     expect(controller.messages.first.text, 'previously saved');
   });
 
-  test('restoreFromPersistence is a no-op without a persistence hook',
-      () async {
-    final controller = ChatMessagesController();
-    addTearDown(controller.dispose);
+  test(
+    'restoreFromPersistence is a no-op without a persistence hook',
+    () async {
+      final controller = ChatMessagesController();
+      addTearDown(controller.dispose);
 
-    await controller.restoreFromPersistence(); // Must not throw.
-    expect(controller.messages, isEmpty);
-  });
+      await controller.restoreFromPersistence(); // Must not throw.
+      expect(controller.messages, isEmpty);
+    },
+  );
 
   test('a controller with no persistence never calls saveMessages', () async {
     // Regression guard: persistence must be entirely opt-in. Exercise the
@@ -97,8 +99,11 @@ void main() {
         );
         async.elapse(const Duration(milliseconds: 50));
       }
-      expect(persistence.saveCalls, 0,
-          reason: 'debounce should not have fired yet');
+      expect(
+        persistence.saveCalls,
+        0,
+        reason: 'debounce should not have fired yet',
+      );
 
       async.elapse(const Duration(milliseconds: 500));
       expect(persistence.saveCalls, 1);

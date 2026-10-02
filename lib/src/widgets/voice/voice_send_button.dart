@@ -12,7 +12,7 @@ enum VoiceState {
   recording,
   sending,
   error,
-  disabled
+  disabled,
 }
 
 /// Microphone button that handles push-to-talk and toggle voice recording.
@@ -53,10 +53,7 @@ class VoiceSendButton extends StatelessWidget {
       button: true,
       enabled: !_isDisabled,
       label: semanticsLabel ?? 'Voice button: ${_stateLabel(state)}',
-      child: _buildGestureWrapper(
-        context,
-        _buildVisual(icon, color),
-      ),
+      child: _buildGestureWrapper(context, _buildVisual(icon, color)),
     );
 
     return button;
@@ -82,8 +79,10 @@ class VoiceSendButton extends StatelessWidget {
     );
 
     return ConstrainedBox(
-      constraints:
-          BoxConstraints(minWidth: minTapTarget, minHeight: minTapTarget),
+      constraints: BoxConstraints(
+        minWidth: minTapTarget,
+        minHeight: minTapTarget,
+      ),
       child: inner,
     );
   }
@@ -98,8 +97,9 @@ class VoiceSendButton extends StatelessWidget {
       ActivateIntent: CallbackAction<ActivateIntent>(
         onInvoke: (_) {
           if (mode == VoiceSendMode.toggle) {
-            onToggle?.call(!(state == VoiceState.listening ||
-                state == VoiceState.recording));
+            onToggle?.call(
+              !(state == VoiceState.listening || state == VoiceState.recording),
+            );
           } else {
             onHoldStart?.call();
             onHoldEnd?.call();
@@ -133,8 +133,10 @@ class VoiceSendButton extends StatelessWidget {
             actions: actions,
             child: InkWell(
               borderRadius: borderRadius ?? BorderRadius.circular(diameter),
-              onTap: () => onToggle?.call(!(state == VoiceState.listening ||
-                  state == VoiceState.recording)),
+              onTap: () => onToggle?.call(
+                !(state == VoiceState.listening ||
+                    state == VoiceState.recording),
+              ),
               child: Focus(autofocus: false, child: child),
             ),
           ),

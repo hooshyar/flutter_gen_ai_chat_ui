@@ -13,8 +13,9 @@ void main() {
   const testUser = ChatUser(id: 'user', name: 'Test User');
   const aiUser = ChatUser(id: 'ai', name: 'AI Assistant');
 
-  testWidgets('InputOptions.autocorrect reaches the underlying TextField',
-      (tester) async {
+  testWidgets('InputOptions.autocorrect reaches the underlying TextField', (
+    tester,
+  ) async {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 
@@ -37,8 +38,9 @@ void main() {
     expect(field.autocorrect, isFalse);
   });
 
-  testWidgets('InputOptions.autocorrect defaults to true (unchanged)',
-      (tester) async {
+  testWidgets('InputOptions.autocorrect defaults to true (unchanged)', (
+    tester,
+  ) async {
     final controller = ChatMessagesController();
     addTearDown(controller.dispose);
 

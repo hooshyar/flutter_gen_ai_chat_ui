@@ -166,8 +166,9 @@ class AdvancedChatTheme extends ThemeExtension<AdvancedChatTheme> {
     ],
 
     // Border radius system
-    this.messageBubbleBorderRadius =
-        const BorderRadius.all(Radius.circular(18)),
+    this.messageBubbleBorderRadius = const BorderRadius.all(
+      Radius.circular(18),
+    ),
     this.userBubbleBorderRadius = const BorderRadius.all(Radius.circular(18)),
     this.inputFieldBorderRadius = const BorderRadius.all(Radius.circular(24)),
     this.attachmentBorderRadius = const BorderRadius.all(Radius.circular(12)),
@@ -420,41 +421,75 @@ class AdvancedChatTheme extends ThemeExtension<AdvancedChatTheme> {
 
     return AdvancedChatTheme(
       // Background gradient
-      backgroundGradient:
-          _lerpColorList(backgroundGradient, other.backgroundGradient, t),
+      backgroundGradient: _lerpColorList(
+        backgroundGradient,
+        other.backgroundGradient,
+        t,
+      ),
       backgroundGradientBegin: AlignmentGeometry.lerp(
-              backgroundGradientBegin, other.backgroundGradientBegin, t) ??
+            backgroundGradientBegin,
+            other.backgroundGradientBegin,
+            t,
+          ) ??
           backgroundGradientBegin,
       backgroundGradientEnd: AlignmentGeometry.lerp(
-              backgroundGradientEnd, other.backgroundGradientEnd, t) ??
+            backgroundGradientEnd,
+            other.backgroundGradientEnd,
+            t,
+          ) ??
           backgroundGradientEnd,
       backgroundGradientStops: _lerpDoubleList(
-          backgroundGradientStops, other.backgroundGradientStops, t),
+        backgroundGradientStops,
+        other.backgroundGradientStops,
+        t,
+      ),
 
       // Message gradients
-      messageBubbleGradient:
-          _lerpColorList(messageBubbleGradient, other.messageBubbleGradient, t),
-      userBubbleGradient:
-          _lerpColorList(userBubbleGradient, other.userBubbleGradient, t),
-      aiResponseGradient:
-          _lerpColorList(aiResponseGradient, other.aiResponseGradient, t),
-      systemMessageGradient:
-          _lerpColorList(systemMessageGradient, other.systemMessageGradient, t),
+      messageBubbleGradient: _lerpColorList(
+        messageBubbleGradient,
+        other.messageBubbleGradient,
+        t,
+      ),
+      userBubbleGradient: _lerpColorList(
+        userBubbleGradient,
+        other.userBubbleGradient,
+        t,
+      ),
+      aiResponseGradient: _lerpColorList(
+        aiResponseGradient,
+        other.aiResponseGradient,
+        t,
+      ),
+      systemMessageGradient: _lerpColorList(
+        systemMessageGradient,
+        other.systemMessageGradient,
+        t,
+      ),
 
       // Gradient alignments
       messageBubbleGradientBegin: AlignmentGeometry.lerp(
-              messageBubbleGradientBegin,
-              other.messageBubbleGradientBegin,
-              t) ??
+            messageBubbleGradientBegin,
+            other.messageBubbleGradientBegin,
+            t,
+          ) ??
           messageBubbleGradientBegin,
       messageBubbleGradientEnd: AlignmentGeometry.lerp(
-              messageBubbleGradientEnd, other.messageBubbleGradientEnd, t) ??
+            messageBubbleGradientEnd,
+            other.messageBubbleGradientEnd,
+            t,
+          ) ??
           messageBubbleGradientEnd,
       userBubbleGradientBegin: AlignmentGeometry.lerp(
-              userBubbleGradientBegin, other.userBubbleGradientBegin, t) ??
+            userBubbleGradientBegin,
+            other.userBubbleGradientBegin,
+            t,
+          ) ??
           userBubbleGradientBegin,
       userBubbleGradientEnd: AlignmentGeometry.lerp(
-              userBubbleGradientEnd, other.userBubbleGradientEnd, t) ??
+            userBubbleGradientEnd,
+            other.userBubbleGradientEnd,
+            t,
+          ) ??
           userBubbleGradientEnd,
 
       // Core systems
@@ -465,7 +500,10 @@ class AdvancedChatTheme extends ThemeExtension<AdvancedChatTheme> {
 
       // Shadows
       messageBubbleShadows: BoxShadow.lerpList(
-              messageBubbleShadows, other.messageBubbleShadows, t) ??
+            messageBubbleShadows,
+            other.messageBubbleShadows,
+            t,
+          ) ??
           messageBubbleShadows,
       userBubbleShadows:
           BoxShadow.lerpList(userBubbleShadows, other.userBubbleShadows, t) ??
@@ -474,21 +512,36 @@ class AdvancedChatTheme extends ThemeExtension<AdvancedChatTheme> {
           BoxShadow.lerpList(inputFieldShadows, other.inputFieldShadows, t) ??
               inputFieldShadows,
       floatingActionShadows: BoxShadow.lerpList(
-              floatingActionShadows, other.floatingActionShadows, t) ??
+            floatingActionShadows,
+            other.floatingActionShadows,
+            t,
+          ) ??
           floatingActionShadows,
 
       // Border radius
       messageBubbleBorderRadius: BorderRadiusGeometry.lerp(
-              messageBubbleBorderRadius, other.messageBubbleBorderRadius, t) ??
+            messageBubbleBorderRadius,
+            other.messageBubbleBorderRadius,
+            t,
+          ) ??
           messageBubbleBorderRadius,
       userBubbleBorderRadius: BorderRadiusGeometry.lerp(
-              userBubbleBorderRadius, other.userBubbleBorderRadius, t) ??
+            userBubbleBorderRadius,
+            other.userBubbleBorderRadius,
+            t,
+          ) ??
           userBubbleBorderRadius,
       inputFieldBorderRadius: BorderRadiusGeometry.lerp(
-              inputFieldBorderRadius, other.inputFieldBorderRadius, t) ??
+            inputFieldBorderRadius,
+            other.inputFieldBorderRadius,
+            t,
+          ) ??
           inputFieldBorderRadius,
       attachmentBorderRadius: BorderRadiusGeometry.lerp(
-              attachmentBorderRadius, other.attachmentBorderRadius, t) ??
+            attachmentBorderRadius,
+            other.attachmentBorderRadius,
+            t,
+          ) ??
           attachmentBorderRadius,
 
       // Interactive states
@@ -521,33 +574,51 @@ class AdvancedChatTheme extends ThemeExtension<AdvancedChatTheme> {
               errorStatusColor,
 
       // Input field
-      inputFieldGradient:
-          _lerpColorList(inputFieldGradient, other.inputFieldGradient, t),
+      inputFieldGradient: _lerpColorList(
+        inputFieldGradient,
+        other.inputFieldGradient,
+        t,
+      ),
       inputFieldBorderColor:
           Color.lerp(inputFieldBorderColor, other.inputFieldBorderColor, t) ??
               inputFieldBorderColor,
-      inputFieldFocusedBorderColor: Color.lerp(inputFieldFocusedBorderColor,
-              other.inputFieldFocusedBorderColor, t) ??
+      inputFieldFocusedBorderColor: Color.lerp(
+            inputFieldFocusedBorderColor,
+            other.inputFieldFocusedBorderColor,
+            t,
+          ) ??
           inputFieldFocusedBorderColor,
-      inputFieldErrorBorderColor: Color.lerp(inputFieldErrorBorderColor,
-              other.inputFieldErrorBorderColor, t) ??
+      inputFieldErrorBorderColor: Color.lerp(
+            inputFieldErrorBorderColor,
+            other.inputFieldErrorBorderColor,
+            t,
+          ) ??
           inputFieldErrorBorderColor,
       inputFieldBorderWidth:
           lerpDouble(inputFieldBorderWidth, other.inputFieldBorderWidth, t) ??
               inputFieldBorderWidth,
-      inputFieldFocusedBorderWidth: lerpDouble(inputFieldFocusedBorderWidth,
-              other.inputFieldFocusedBorderWidth, t) ??
+      inputFieldFocusedBorderWidth: lerpDouble(
+            inputFieldFocusedBorderWidth,
+            other.inputFieldFocusedBorderWidth,
+            t,
+          ) ??
           inputFieldFocusedBorderWidth,
 
       // Loading states
       streamingIndicatorColor: Color.lerp(
-              streamingIndicatorColor, other.streamingIndicatorColor, t) ??
+            streamingIndicatorColor,
+            other.streamingIndicatorColor,
+            t,
+          ) ??
           streamingIndicatorColor,
       typingIndicatorColor:
           Color.lerp(typingIndicatorColor, other.typingIndicatorColor, t) ??
               typingIndicatorColor,
       loadingShimmerGradient: _lerpColorList(
-          loadingShimmerGradient, other.loadingShimmerGradient, t),
+        loadingShimmerGradient,
+        other.loadingShimmerGradient,
+        t,
+      ),
       skeletonColor:
           Color.lerp(skeletonColor, other.skeletonColor, t) ?? skeletonColor,
       skeletonHighlightColor:
@@ -556,10 +627,16 @@ class AdvancedChatTheme extends ThemeExtension<AdvancedChatTheme> {
 
       // Accessibility
       highContrastBorderColor: Color.lerp(
-              highContrastBorderColor, other.highContrastBorderColor, t) ??
+            highContrastBorderColor,
+            other.highContrastBorderColor,
+            t,
+          ) ??
           highContrastBorderColor,
-      highContrastBackgroundColor: Color.lerp(highContrastBackgroundColor,
-              other.highContrastBackgroundColor, t) ??
+      highContrastBackgroundColor: Color.lerp(
+            highContrastBackgroundColor,
+            other.highContrastBackgroundColor,
+            t,
+          ) ??
           highContrastBackgroundColor,
       selectionColor:
           Color.lerp(selectionColor, other.selectionColor, t) ?? selectionColor,
@@ -624,7 +701,9 @@ class AdvancedChatTheme extends ThemeExtension<AdvancedChatTheme> {
             backgroundGradientBegin == other.backgroundGradientBegin &&
             backgroundGradientEnd == other.backgroundGradientEnd &&
             listEquals(
-                backgroundGradientStops, other.backgroundGradientStops) &&
+              backgroundGradientStops,
+              other.backgroundGradientStops,
+            ) &&
             listEquals(messageBubbleGradient, other.messageBubbleGradient) &&
             listEquals(userBubbleGradient, other.userBubbleGradient) &&
             listEquals(aiResponseGradient, other.aiResponseGradient) &&

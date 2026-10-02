@@ -1,7 +1,7 @@
-// Attachments — file upload button + rendering an attached file in a message.
+// Attachments - file upload button + rendering an attached file in a message.
 //
 // The package doesn't bundle a file picker (kept out of core to stay
-// dependency-light — see FileUploadOptions.onFilesSelected docs). A real app
+// dependency-light - see FileUploadOptions.onFilesSelected docs). A real app
 // wires a package like `file_picker` there; this demo simulates picking one
 // file so the attachment button + message rendering can be shown without a
 // platform file-picker dependency.
@@ -9,9 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
 import '../services/mock_ai_service.dart';
+import '../shell/demo_scaffold.dart';
 
 class AttachmentsChatExample extends StatefulWidget {
-  const AttachmentsChatExample({super.key});
+  const AttachmentsChatExample({super.key, required this.onToggleTheme});
+
+  final VoidCallback onToggleTheme;
 
   @override
   State<AttachmentsChatExample> createState() => _AttachmentsChatExampleState();
@@ -40,13 +43,13 @@ class _AttachmentsChatExampleState extends State<AttachmentsChatExample> {
   }
 
   /// Stands in for a real file picker. `onFilesSelected` receives whatever
-  /// the picker returns — here just a marker — and this method builds the
+  /// the picker returns - here just a marker - and this method builds the
   /// actual message the same way a real picker's result would be handled.
   ///
   /// Attaches two files at once (a document + a photo) to demonstrate
   /// multi-file messages, simulates the photo uploading via
   /// `ChatMedia.uploadProgress` (task-008), then settles it at its final
-  /// URL — tap the photo afterward to see the built-in `AttachmentLightbox`
+  /// URL - tap the photo afterward to see the built-in `AttachmentLightbox`
   /// (`MessageOptions.enableAttachmentLightbox`, also task-008).
   Future<void> _simulateAttachFile() async {
     const attachmentId = 'attachment-demo';
@@ -106,7 +109,7 @@ class _AttachmentsChatExampleState extends State<AttachmentsChatExample> {
     _controller.addMessage(
       ChatMessage(
         text:
-            "Got it — I can see quarterly-report.pdf and the photo. $response",
+            "Got it - I can see quarterly-report.pdf and the photo. $response",
         user: _aiUser,
         createdAt: DateTime.now(),
       ),
@@ -122,10 +125,14 @@ class _AttachmentsChatExampleState extends State<AttachmentsChatExample> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Attachments')),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return DemoScaffold(
+      title: 'Attachments',
+      route: '/attachments',
+      isDark: isDark,
+      onToggleTheme: widget.onToggleTheme,
       body: AiChatWidget(
-        maxWidth: 720,
         currentUser: _currentUser,
         aiUser: _aiUser,
         controller: _controller,
@@ -143,7 +150,13 @@ class _AttachmentsChatExampleState extends State<AttachmentsChatExample> {
         ),
         welcomeMessageConfig: const WelcomeMessageConfig(
           title: 'Tap the paperclip below to attach a file',
+          questionsSectionTitle: 'Try asking:',
         ),
+        exampleQuestions: const [
+          ExampleQuestion(question: 'Tell me a fun fact about Flutter'),
+          ExampleQuestion(question: 'What is the weather like today?'),
+          ExampleQuestion(question: 'Summarize this report'),
+        ],
       ),
     );
   }

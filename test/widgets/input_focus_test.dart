@@ -14,8 +14,9 @@ void main() {
       aiUser = ChatUser(id: 'ai', firstName: 'AI');
     });
 
-    testWidgets('Should support autofocus when enabled in InputOptions',
-        (WidgetTester tester) async {
+    testWidgets('Should support autofocus when enabled in InputOptions', (
+      WidgetTester tester,
+    ) async {
       // Arrange
       await tester.pumpWidget(
         MaterialApp(
@@ -25,9 +26,7 @@ void main() {
               aiUser: aiUser,
               controller: controller,
               onSendMessage: (message) {},
-              inputOptions: const InputOptions(
-                autofocus: true,
-              ),
+              inputOptions: const InputOptions(autofocus: true),
             ),
           ),
         ),
@@ -72,8 +71,9 @@ void main() {
       expect(textFieldWidget.autofocus, isFalse);
     });
 
-    testWidgets('Should use custom FocusNode when provided',
-        (WidgetTester tester) async {
+    testWidgets('Should use custom FocusNode when provided', (
+      WidgetTester tester,
+    ) async {
       // Arrange
       final customFocusNode = FocusNode();
 
@@ -85,9 +85,7 @@ void main() {
               aiUser: aiUser,
               controller: controller,
               onSendMessage: (message) {},
-              inputOptions: InputOptions(
-                focusNode: customFocusNode,
-              ),
+              inputOptions: InputOptions(focusNode: customFocusNode),
             ),
           ),
         ),
@@ -107,8 +105,9 @@ void main() {
       customFocusNode.dispose();
     });
 
-    testWidgets('Should support autofocus in minimal InputOptions',
-        (WidgetTester tester) async {
+    testWidgets('Should support autofocus in minimal InputOptions', (
+      WidgetTester tester,
+    ) async {
       // Arrange
       await tester.pumpWidget(
         MaterialApp(
@@ -138,8 +137,9 @@ void main() {
       expect(textFieldWidget.autofocus, isTrue);
     });
 
-    testWidgets('Should support autofocus in glassmorphic InputOptions',
-        (WidgetTester tester) async {
+    testWidgets('Should support autofocus in glassmorphic InputOptions', (
+      WidgetTester tester,
+    ) async {
       // Arrange
       await tester.pumpWidget(
         MaterialApp(
@@ -169,8 +169,9 @@ void main() {
       expect(textFieldWidget.autofocus, isTrue);
     });
 
-    testWidgets('Should support custom FocusNode in factory constructors',
-        (WidgetTester tester) async {
+    testWidgets('Should support custom FocusNode in factory constructors', (
+      WidgetTester tester,
+    ) async {
       // Arrange
       final customFocusNode = FocusNode();
 
