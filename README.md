@@ -28,20 +28,11 @@ A modern, high-performance Flutter chat UI kit for building beautiful messaging 
 - [Advanced Features](#advanced-features)
 - [Showcase](#-showcase)
 
-<table>
-  <tr>
-    <td align="center">
-      <img src="https://raw.githubusercontent.com/hooshyar/flutter_gen_ai_chat_ui/main/screenshots/detailed_dark.png" alt="Dark Mode" width="300px">
-      <br>
-      <em>Dark Mode</em>
-    </td>
-    <td align="center">
-      <img src="https://raw.githubusercontent.com/hooshyar/flutter_gen_ai_chat_ui/main/screenshots/detailed.gif" alt="Chat Demo" width="300px">
-      <br>
-      <em>Chat Demo</em>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/hooshyar/flutter_gen_ai_chat_ui/main/doc/demo/demo.gif" alt="The 2.20.0 example app: live preview, streaming markdown with syntax-highlighted code, theme presets and RTL" width="720">
+</p>
+
+Full-quality video: [doc/demo/demo.mp4](https://github.com/hooshyar/flutter_gen_ai_chat_ui/raw/main/doc/demo/demo.mp4)
 
 ## Installation
 

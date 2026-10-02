@@ -64,3 +64,6 @@ backlog/
 
 # Design direction (repo doc, not package content)
 DESIGN.md
+
+# Demo video and GIF (README links them by absolute URL)
+doc/demo/
