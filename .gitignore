@@ -102,3 +102,8 @@ example/.flutter-plugins-dependencies
 .playwright-mcp
 .memory
 .memory/*
+
+# Claude Code local state
+.claude/agent-memory/
+.claude/settings.local.json
+.claude/scheduled_tasks.lock

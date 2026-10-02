@@ -1,3 +1,11 @@
+## 2.20.1 - unreleased
+
+### Fixed
+- Two different id-less messages from the same user added in the same millisecond (common on web, where `DateTime.now()` has millisecond resolution) no longer collapse into one: the controller assigns the second a unique suffixed id and stores it. Identical re-adds still dedupe. `addStreamingMessage` now tracks the stored id. (task-035)
+
+### Housekeeping
+- Backlog task files that Windows cannot check out were renamed (issue #43) and a `portable-filenames` CI job now rejects such paths.
+
 ## 2.20.0 - 2026-10-02
 
 Zero breaking changes: the public API only gains additions. **The default look changed a lot**, per the new [DESIGN.md](DESIGN.md). Apps that pass their own `BubbleStyle`, `markdownStyleSheet`, `InputOptions.decoration`/`containerDecoration`, `sendButtonIcon` or a `CustomThemeExtension` preset keep their look. Apps on the defaults get the new design:

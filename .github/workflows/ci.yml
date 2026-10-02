@@ -53,6 +53,27 @@ jobs:
           fi
           echo "README install snippet matches."
 
+  portable-filenames:
+    name: Windows-safe tracked file names
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fail on paths Windows cannot check out
+        # Issue #43: a backlog file with `"` and `:` in its name made
+        # `git pull` fail for every Windows user. Reject <>:"\|?* , a trailing
+        # space or dot, and reserved device names in any tracked path.
+        run: |
+          bad="$(git -c core.quotepath=off ls-files | grep -E '[<>:"\\|?*]|[ .]$|(^|/)(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.[^/]*)?(/|$)' || true)"
+          if [ -n "$bad" ]; then
+            echo "::error::Tracked paths that Windows cannot create:"
+            echo "$bad"
+            exit 1
+          fi
+          echo "All tracked paths are Windows-safe."
+
   analyze-format-test:
     name: Analyze, format, and test
     runs-on: ubuntu-latest

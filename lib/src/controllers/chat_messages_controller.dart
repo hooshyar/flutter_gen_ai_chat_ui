@@ -296,7 +296,7 @@ class ChatMessagesController extends ChangeNotifier {
     final isFromUser =
         message.customProperties?['isUserMessage'] as bool? ?? false;
     if (!isFromUser) {
-      final messageId = _getMessageId(message);
+      final messageId = _lastStoredMessageId ?? _getMessageId(message);
       _openStreamIds.add(messageId);
       setStreamingMessage(messageId);
       _armStreamingPin(messageId);
@@ -551,14 +551,64 @@ class ChatMessagesController extends ChangeNotifier {
     }
   }
 
+  /// Monotonic counter used to disambiguate generated ids that collide
+  /// within the same millisecond (see [addMessage]).
+  int _idCollisionCounter = 0;
+
+  /// The id the most recent [addMessage] call stored (or deduped) its message
+  /// under. Lets [addStreamingMessage] address the stored message instead of
+  /// re-deriving an id from the original, id-less object.
+  String? _lastStoredMessageId;
+
+  /// Whether [a] and [b] carry the same content, ignoring the generated id and
+  /// controller bookkeeping properties.
+  bool _sameContent(ChatMessage a, ChatMessage b) {
+    if (a.text != b.text || a.user.id != b.user.id) return false;
+    if (a.media?.length != b.media?.length) return false;
+    final ma = a.media ?? const <ChatMedia>[];
+    final mb = b.media ?? const <ChatMedia>[];
+    for (var i = 0; i < ma.length; i++) {
+      if (ma[i].url != mb[i].url) return false;
+    }
+    Map<String, dynamic> strip(ChatMessage m) => {
+          for (final e
+              in (m.customProperties ?? const <String, dynamic>{}).entries)
+            if (e.key != 'id' &&
+                e.key != 'isUserMessage' &&
+                e.key != 'isFirstResponseMessage' &&
+                e.key != 'isStartOfResponse')
+              e.key: e.value,
+        };
+    final pa = strip(a);
+    final pb = strip(b);
+    if (pa.length != pb.length) return false;
+    for (final k in pa.keys) {
+      if (!pb.containsKey(k) || pa[k] != pb[k]) return false;
+    }
+    return true;
+  }
+
   /// Adds a new message to the chat.
   void addMessage(ChatMessage message) {
     // Ensure message has a stable id; if missing, generate and persist it
     var messageId = _getMessageId(message);
     if (message.customProperties == null ||
         message.customProperties!['id'] == null) {
-      final generatedId =
+      var generatedId =
           '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}';
+      final existing = _messageCache[generatedId];
+      if (existing != null && !_sameContent(existing, message)) {
+        // Two genuinely different id-less messages from the same user landed
+        // in the same millisecond (common on web, where DateTime.now() has
+        // millisecond resolution). Disambiguate with a process-local counter
+        // and persist the result into the stored copy so every later lookup
+        // reads the stored id instead of re-deriving it.
+        do {
+          generatedId =
+              '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}'
+              '_${++_idCollisionCounter}';
+        } while (_messageCache.containsKey(generatedId));
+      }
       message = message.copyWith(
         customProperties: {
           ...?message.customProperties,
@@ -567,6 +617,7 @@ class ChatMessagesController extends ChangeNotifier {
       );
       messageId = generatedId;
     }
+    _lastStoredMessageId = messageId;
     if (!_messageCache.containsKey(messageId)) {
       // Determine if this is a user message using the ID and properties
       final isFromUser =

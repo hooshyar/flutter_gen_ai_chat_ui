@@ -1,7 +1,7 @@
 ---
 id: TASK-025
 title: 'Fix #43: rename backlog files with Windows-invalid characters and add a CI guard'
-status: To Do
+status: Done
 priority: high
 labels:
   - P0
@@ -30,3 +30,7 @@ This is the cheapest high-impact fix in the plan. See docs/IMPROVEMENT-PLAN-2026
 - [ ] Update the conductor/backlog tooling note so new task filenames are slugified. The backlog CLI
       titles with quotes and colons produced these names.
 - [ ] Reply on #43 and close it once merged to main.
+
+## Final Summary
+
+Renamed task-023 and task-024 to slug names, added the `portable-filenames` CI job that rejects tracked paths Windows cannot create (2026-10-02). Replying on and closing issue #43 is left to Hooshyar once this is on main and he has confirmed.

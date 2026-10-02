@@ -1,7 +1,7 @@
 ---
 id: TASK-035
 title: Controller auto-id collision on web (same-ms id-less messages dedupe)
-status: To Do
+status: Done
 priority: medium
 labels:
   - bug
@@ -76,3 +76,7 @@ Either design needs the same regression coverage rounds 10/11 wrote (same-millis
 with distinct messages must not drop one; an identical re-added id-less message must still dedupe;
 streaming/update calls after a collision must target the correct message) plus new coverage for
 whatever identity/return-value contract the fix introduces.
+
+## Final Summary
+
+Fixed in the controller (2026-10-02). `addMessage` now checks the generated `user_millis` id against the cache; when it is already taken by a message with different content (text, media or non-bookkeeping properties) it picks a unique `user_millis_<n>` id from a process-local counter and persists it into the stored copy's `customProperties['id']`, so every later lookup reads the stored id. An identical re-add still dedupes. `addStreamingMessage` addresses the id that `addMessage` actually stored instead of re-deriving it from the original id-less object (the flaw that sank rounds 10/11). `addMessage` keeps its `void` return. Regression tests: `test/controllers/id_collision_test.dart`. Callers that keep the original id-less object and call `updateMessage` with it still resolve to the first colliding message, so the documented advice (give related messages explicit ids) stays.
