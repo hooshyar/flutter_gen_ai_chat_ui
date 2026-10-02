@@ -1,6 +1,6 @@
-## Unreleased
+## 2.20.0 - 2026-10-02
 
-No breaking API changes: every public change is additive. **The default look changed a lot**, per the new [DESIGN.md](DESIGN.md). Apps that pass their own `BubbleStyle`, `markdownStyleSheet`, `InputOptions.decoration`/`containerDecoration`, `sendButtonIcon` or a `CustomThemeExtension` preset keep their look. Apps on the defaults get the new design:
+Zero breaking changes: the public API only gains additions. **The default look changed a lot**, per the new [DESIGN.md](DESIGN.md). Apps that pass their own `BubbleStyle`, `markdownStyleSheet`, `InputOptions.decoration`/`containerDecoration`, `sendButtonIcon` or a `CustomThemeExtension` preset keep their look. Apps on the defaults get the new design:
 
 ### Changed (default visuals)
 - **AI messages read like a document.** They have no card, border, shadow, robot icon or name by default (`MessageOptions.aiMessageLayout`: `document`/`bubble`). The layout falls back to `bubble` automatically when you set an AI bubble colour or decoration. `showUserName` now defaults to `null`, meaning hidden in document layout and shown in bubble layout.
@@ -41,6 +41,11 @@ No breaking API changes: every public change is additive. **The default look cha
 - **Built-in lightweight syntax highlighting (on by default).** A pure-Dart regex tokenizer — no extra dependency — covering Dart, JavaScript/TypeScript, Python, Java, Kotlin, Swift, Go, Rust, C/C++/C#, JSON, YAML, Bash, SQL, and HTML/XML, with a generic fallback for other language tags. Light and dark palettes via the new `CodeBlockTheme` (`CodeBlockTheme.of(brightness)`).
 - **Per-block copy button + language label header, horizontal scroll for long lines, and LTR code inside RTL chats** via the new `CodeBlockView` widget and `CodeBlockMarkdownBuilder` for `pre` elements.
 - **New `MessageOptions` fields:** `enableSyntaxHighlighting` (default `true`), `codeBlockTheme` (`CodeBlockTheme?`, defaults to ambient brightness palette), and `showCodeBlockCopyButton` (default `true`).
+
+### Migration and dependency notes
+- **Default visuals changed.** To keep the old look, pass your own `BubbleStyle`, `markdownStyleSheet`, `InputOptions.decoration`/`containerDecoration` or a `CustomThemeExtension` preset, set `MessageOptions.aiMessageLayout` to `bubble`, and set `enableSyntaxHighlighting: false` if you do not want highlighted code.
+- **Bumped `flutter_streaming_text_markdown` to `^1.11.0`.** That release exports `CodeBlockView` and `CodeBlockTheme`, and so does this package. If you import both packages, add `hide CodeBlockView, CodeBlockTheme` to one of the imports to avoid an ambiguous-name error.
+- **Example app:** raised the `google_fonts` floor to `^8.1.0` so it resolves at the declared SDK floor.
 
 ## 2.19.1 - 2026-09-03
 
