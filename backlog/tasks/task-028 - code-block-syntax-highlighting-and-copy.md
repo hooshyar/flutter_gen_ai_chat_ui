@@ -1,7 +1,7 @@
 ---
 id: TASK-028
 title: 'Real syntax highlighting + per-block copy/language label for code blocks (wire the dead enableSyntaxHighlighting knob)'
-status: To Do
+status: Done
 priority: medium
 labels:
   - P1
@@ -43,3 +43,7 @@ code blocks are plain monochrome text, with no highlighting. **Also:** every lin
 gets its own grey inline-code background box, so inline `code` styling is leaking into block code.
 Fix both together. Acceptance: a fenced ```dart block renders with token colours and a single block
 background, with no per-line boxes.
+
+## Final Summary
+
+Shipped in 2.20.0: built-in `CodeBlockView` with bundled JetBrains Mono, syntax highlighting, language header and copy button, via flutter_streaming_text_markdown 1.11.0.
