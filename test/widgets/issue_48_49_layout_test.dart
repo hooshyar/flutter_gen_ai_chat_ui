@@ -62,17 +62,22 @@ void main() {
       );
       final centeredTop = tester.getTopLeft(find.text('Hi')).dy;
 
-      // Default: the greeting sits ~38% down the 600px test viewport.
+      // Default: the greeting sits ~38% down the 800px test viewport.
       expect(defaultTop, greaterThan(200));
       // Centred: the chat list centres it, so no extra offset is added.
       expect(centeredTop, lessThan(1));
     });
 
     testWidgets('singleColumnQuestions stacks tiles', (tester) async {
+      // flutter_test_config.dart uses a 400x800 view; the two-column grid
+      // needs a reading column of at least 600px.
+      tester.view.physicalSize = const Size(1000, 800);
+      addTearDown(() => tester.view.physicalSize = const Size(400, 800));
+
       await tester.pumpWidget(emptyState(const WelcomeMessageConfig()));
       final gridQ1 = tester.getTopLeft(find.text('Q1')).dy;
       final gridQ2 = tester.getTopLeft(find.text('Q2')).dy;
-      // An 800px-wide viewport gives the two-column grid by default.
+      // A 1000px-wide view gives the two-column grid by default.
       expect(gridQ2, closeTo(gridQ1, 0.5));
 
       await tester.pumpWidget(
