@@ -189,7 +189,6 @@ void main() {
       expect(attach.center.dy, closeTo(field.center.dy, 2));
       expect(attach.center.dx, greaterThan(field.right));
     });
-
   });
 
   group('custom AI user id', () {
