@@ -25,7 +25,6 @@ A Flutter chat UI kit for AI apps. Stream ChatGPT, Claude or Gemini replies as l
 - [RTL & Bidirectional Languages](#rtl--bidirectional-languages)
 - [Configuration Options](#configuration-options)
 - [AI Actions System](#-ai-actions-system)
-- [Advanced Features](#advanced-features)
 - [Community & Support](#community--support)
 
 <p align="center">
@@ -89,9 +88,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
         // Optional parameters
         loadingConfig: LoadingConfig(isLoading: _isLoading),
-        inputOptions: const InputOptions(
-          decoration: InputDecoration(hintText: 'Ask me anything...'),
-        ),
         welcomeMessageConfig: const WelcomeMessageConfig(
           title: 'Welcome to AI Chat',
         ),

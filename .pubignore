@@ -69,6 +69,6 @@ DESIGN.md
 # Demo video and GIF (README links them by absolute URL)
 doc/demo/
 
-# Stale duplicate of example/integration_test (not run in CI). The leading
-# slash keeps example/integration_test in the archive.
+# Device-only integration tests at the repo root (not run in CI). The
+# leading slash keeps example/integration_test in the archive.
 /integration_test/

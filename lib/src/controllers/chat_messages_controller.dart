@@ -359,20 +359,21 @@ class ChatMessagesController extends ChangeNotifier {
   /// The user of the last message added (to track response chains)
   String? _lastMessageUserId;
 
-  /// The id of the person typing in this chat (`AiChatWidget.currentUser`).
+  /// The id of the AI participant (`AiChatWidget.aiUser`).
   ///
-  /// `AiChatWidget` sets this automatically. It decides which messages are
-  /// the user's own when tracking where an AI response starts (used by
-  /// `ScrollBehaviorConfig.scrollToFirstResponseMessage`). When null, only
-  /// messages from the ids `ai`, `bot` and `assistant` count as AI replies.
-  String? currentUserId;
+  /// `AiChatWidget` sets this automatically. Messages from this id count as
+  /// AI replies, as do messages from the legacy ids `ai`, `bot` and
+  /// `assistant`; every other id counts as a human. That decides the
+  /// `isUserMessage` flag stored on each added message, which drives the
+  /// reveal animation, the streaming pin and
+  /// `ScrollBehaviorConfig.scrollToFirstResponseMessage`.
+  String? aiUserId;
 
-  /// Whether [id] belongs to the human side of the chat: compared against
-  /// [currentUserId] when known, otherwise against the legacy AI ids.
-  bool _isUserId(String id) {
-    final userId = currentUserId;
-    if (userId != null) return id == userId;
-    return id != 'ai' && id != 'bot' && id != 'assistant';
+  /// Whether [id] belongs to an AI participant: [aiUserId] or one of the
+  /// legacy AI ids.
+  bool _isAiUserId(String id) {
+    if (id == aiUserId) return true;
+    return id == 'ai' || id == 'bot' || id == 'assistant';
   }
 
   /// The ID of the message currently being streamed
@@ -639,7 +640,7 @@ class ChatMessagesController extends ChangeNotifier {
       final isFromUser =
           ((message.customProperties?['isUserMessage'] as bool?) == true) ||
               (message.customProperties?['source'] == 'user') ||
-              _isUserId(message.user.id);
+              !_isAiUserId(message.user.id);
 
       // Get the user ID for response tracking
       final userId = message.user.id;

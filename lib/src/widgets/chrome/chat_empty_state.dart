@@ -22,6 +22,7 @@ class ChatEmptyState extends StatelessWidget {
     required this.exampleQuestions,
     required this.onQuestionTap,
     this.welcomeMessageConfig,
+    this.applyTopOffset = true,
   });
 
   /// Suggested questions rendered as tappable tiles below the greeting.
@@ -33,6 +34,11 @@ class ChatEmptyState extends StatelessWidget {
   /// Optional legacy/override configuration. When null, every value falls
   /// back to the package default described in `DESIGN.md` §8.6.
   final WelcomeMessageConfig? welcomeMessageConfig;
+
+  /// Whether to push the greeting down to 38% of the available height.
+  /// Pass false when the parent already centres this widget (the chat list
+  /// does for [WelcomeMessageConfig.centerVertically]).
+  final bool applyTopOffset;
 
   @override
   Widget build(BuildContext context) {
@@ -125,11 +131,10 @@ class ChatEmptyState extends StatelessWidget {
           );
         }
 
-        // With centerVertically the chat list already centres this widget in
-        // the viewport; adding the 38% offset on top pushed the greeting
-        // well below the middle (issue #48).
-        final centered = config?.centerVertically ?? false;
-        final topOffset = centered ? 0.0 : availableHeight * 0.38;
+        // Skipped when the parent centres this widget: adding the offset on
+        // top of the centring pushed the greeting well below the middle
+        // (issue #48).
+        final topOffset = applyTopOffset ? availableHeight * 0.38 : 0.0;
 
         return Padding(
           padding: EdgeInsets.only(top: topOffset),
