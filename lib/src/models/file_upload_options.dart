@@ -2,6 +2,15 @@ import 'package:flutter/material.dart';
 
 import 'chat/media.dart'; // Add import for ChatMedia
 
+/// Which side of the composer the attach button sits on.
+enum AttachmentButtonPosition {
+  /// At the start of the composer row, before any other leading content.
+  leading,
+
+  /// At the end of the composer row, right before the send button.
+  trailing,
+}
+
 /// Options for customizing the file upload functionality
 class FileUploadOptions {
   /// Whether file uploading is enabled
@@ -46,6 +55,10 @@ class FileUploadOptions {
   /// Custom text for the upload button
   final String? uploadButtonText;
 
+  /// Which side of the composer the attach button sits on. Defaults to
+  /// [AttachmentButtonPosition.leading].
+  final AttachmentButtonPosition buttonPosition;
+
   const FileUploadOptions({
     this.enabled = true,
     this.uploadIcon = Icons.attach_file,
@@ -61,6 +74,7 @@ class FileUploadOptions {
     this.fileDisplayBuilder,
     this.confirmBeforeSend = false,
     this.uploadButtonText,
+    this.buttonPosition = AttachmentButtonPosition.leading,
   });
 
   /// Creates a copy of this FileUploadOptions with the given fields replaced with new values
@@ -79,6 +93,7 @@ class FileUploadOptions {
     Widget Function(BuildContext, ChatMedia)? fileDisplayBuilder,
     bool? confirmBeforeSend,
     String? uploadButtonText,
+    AttachmentButtonPosition? buttonPosition,
   }) =>
       FileUploadOptions(
         enabled: enabled ?? this.enabled,
@@ -96,5 +111,6 @@ class FileUploadOptions {
         fileDisplayBuilder: fileDisplayBuilder ?? this.fileDisplayBuilder,
         confirmBeforeSend: confirmBeforeSend ?? this.confirmBeforeSend,
         uploadButtonText: uploadButtonText ?? this.uploadButtonText,
+        buttonPosition: buttonPosition ?? this.buttonPosition,
       );
 }

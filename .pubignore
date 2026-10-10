@@ -9,6 +9,7 @@ build/
 AGENTS.md
 WORK_LOG.md
 CLAUDE.md
+PROJECT.md
 PR_HANDLING_ULTRATHINK.md
 ULTRATHINK_ENABLE_INTERACTIVE_SELECTION.md
 
@@ -67,3 +68,7 @@ DESIGN.md
 
 # Demo video and GIF (README links them by absolute URL)
 doc/demo/
+
+# Stale duplicate of example/integration_test (not run in CI). The leading
+# slash keeps example/integration_test in the archive.
+/integration_test/

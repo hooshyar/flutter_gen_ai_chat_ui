@@ -38,13 +38,16 @@ AiChatWidget(
 );
 
 Future<void> _handleSend(ChatMessage message) async {
-  const id = 'reply';
+  controller.addMessage(message); // show the user's own message first
+
+  // A new id per reply: reusing one id would overwrite the last answer.
+  final id = 'reply-${DateTime.now().microsecondsSinceEpoch}';
   controller.addMessage(ChatMessage(
     text: '',
     user: aiUser,
     createdAt: DateTime.now(),
     isMarkdown: true,
-    customProperties: const {'id': id},
+    customProperties: {'id': id},
   ));
 
   final buffer = StringBuffer();
@@ -55,9 +58,10 @@ Future<void> _handleSend(ChatMessage message) async {
       user: aiUser,
       createdAt: DateTime.now(),
       isMarkdown: true,
-      customProperties: const {'id': id},
+      customProperties: {'id': id},
     ));
   }
+  controller.stopStreamingMessage(id); // hide the caret, show copy/time
 }
 ```
 
@@ -344,10 +348,11 @@ Future<void> streamFromOpenAi(ChatMessage userMessage) async {
       'stream': true,
     });
 
-  const id = 'reply';
+  // A new id per reply: reusing one id would overwrite the last answer.
+  final id = 'reply-${DateTime.now().microsecondsSinceEpoch}';
   controller.addMessage(ChatMessage(
     text: '', user: aiUser, createdAt: DateTime.now(),
-    customProperties: const {'id': id},
+    customProperties: {'id': id},
   ));
 
   final buffer = StringBuffer();
@@ -359,7 +364,7 @@ Future<void> streamFromOpenAi(ChatMessage userMessage) async {
     buffer.write(delta);
     controller.updateMessage(ChatMessage(
       text: buffer.toString(), user: aiUser, createdAt: DateTime.now(),
-      customProperties: const {'id': id},
+      customProperties: {'id': id},
     ));
   }
 }
@@ -384,10 +389,11 @@ Future<void> streamFromAnthropic(ChatMessage userMessage) async {
       'stream': true,
     });
 
-  const id = 'reply';
+  // A new id per reply: reusing one id would overwrite the last answer.
+  final id = 'reply-${DateTime.now().microsecondsSinceEpoch}';
   controller.addMessage(ChatMessage(
     text: '', user: aiUser, createdAt: DateTime.now(),
-    customProperties: const {'id': id},
+    customProperties: {'id': id},
   ));
 
   final buffer = StringBuffer();
@@ -399,7 +405,7 @@ Future<void> streamFromAnthropic(ChatMessage userMessage) async {
     buffer.write(event['delta']['text'] as String);
     controller.updateMessage(ChatMessage(
       text: buffer.toString(), user: aiUser, createdAt: DateTime.now(),
-      customProperties: const {'id': id},
+      customProperties: {'id': id},
     ));
   }
 }
@@ -426,10 +432,11 @@ Future<void> streamFromGemini(ChatMessage userMessage) async {
       ],
     });
 
-  const id = 'reply';
+  // A new id per reply: reusing one id would overwrite the last answer.
+  final id = 'reply-${DateTime.now().microsecondsSinceEpoch}';
   controller.addMessage(ChatMessage(
     text: '', user: aiUser, createdAt: DateTime.now(),
-    customProperties: const {'id': id},
+    customProperties: {'id': id},
   ));
 
   final buffer = StringBuffer();
@@ -441,7 +448,7 @@ Future<void> streamFromGemini(ChatMessage userMessage) async {
     buffer.write(delta);
     controller.updateMessage(ChatMessage(
       text: buffer.toString(), user: aiUser, createdAt: DateTime.now(),
-      customProperties: const {'id': id},
+      customProperties: {'id': id},
     ));
   }
 }
@@ -462,10 +469,11 @@ Future<void> streamFromOllama(ChatMessage userMessage) async {
       ],
     });
 
-  const id = 'reply';
+  // A new id per reply: reusing one id would overwrite the last answer.
+  final id = 'reply-${DateTime.now().microsecondsSinceEpoch}';
   controller.addMessage(ChatMessage(
     text: '', user: aiUser, createdAt: DateTime.now(),
-    customProperties: const {'id': id},
+    customProperties: {'id': id},
   ));
 
   final buffer = StringBuffer();
@@ -476,7 +484,7 @@ Future<void> streamFromOllama(ChatMessage userMessage) async {
     buffer.write(chunk['message']['content'] as String);
     controller.updateMessage(ChatMessage(
       text: buffer.toString(), user: aiUser, createdAt: DateTime.now(),
-      customProperties: const {'id': id},
+      customProperties: {'id': id},
     ));
     if (chunk['done'] == true) break;
   }

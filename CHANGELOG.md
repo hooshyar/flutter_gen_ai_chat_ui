@@ -1,6 +1,79 @@
-## 2.20.1 - unreleased
+## 2.21.0 - unreleased
+
+Zero breaking changes. This release restores the pre-2.20 layouts as
+opt-in options (#48), makes the code block copy button styleable (#49), fixes
+three bugs that hit new users early, and drops an unused dependency.
+
+### Added
+- **Composer layout option (#48).** `InputOptions.composerLayout` takes
+  `ComposerLayout.stacked` (the default, unchanged) or
+  `ComposerLayout.singleRow`, which restores the pre-2.20 one-row composer:
+  `[attach] [leading] field [send]`. A toolbar builder, if any, sits below
+  that row.
+- **Attach button position (#48).** `FileUploadOptions.buttonPosition`
+  places the attach button at the start of the composer
+  (`AttachmentButtonPosition.leading`, the default) or right before the send
+  button (`AttachmentButtonPosition.trailing`).
+- **Full-width suggestions (#48).** `WelcomeMessageConfig.singleColumnQuestions`
+  stacks the suggestion tiles one per row at full width, spaced by
+  `questionSpacing`, instead of the two-column grid used when the reading
+  column is 600px or wider.
+- **Custom copy button (#49).** `MessageOptions.codeBlockCopyButtonBuilder`
+  replaces the default copy button on fenced code blocks, for example to
+  change its icon, colour or size or to add a label. It receives
+  `(context, copied, onCopy)` through the new `CodeBlockCopyButtonBuilder`
+  typedef. The same builder is available as `copyButtonBuilder` on
+  `CodeBlockView` and `CodeBlockMarkdownBuilder`.
+- `ChatMessagesController.currentUserId`, which `AiChatWidget` sets
+  automatically (see Fixed).
 
 ### Fixed
+- **`WelcomeMessageConfig(centerVertically: true)` centres again (#48).**
+  Since 2.20.0 the empty state also added its own 38%-of-height top offset,
+  which pushed the greeting well below the middle of the chat.
+- **Any AI user id works.** A message was only treated as an AI reply when
+  its user id was `ai`, `bot` or `assistant`, so with e.g.
+  `ChatUser(id: 'gemini')` replies had no word-by-word reveal and response
+  tracking for `scrollToFirstResponseMessage` was wrong. Replies are now
+  recognised as any message not from `currentUser`. Without `AiChatWidget`,
+  the controller still falls back to the old ids.
+- **`MessageOptions(enableImageTaps: true)` no longer disables
+  `onImageTap`.** The tappable markdown image builder was dropped exactly
+  when image taps were enabled, so the callback never fired.
+- `InputOptions.copyWith` no longer drops `inputToolbarBuilder`,
+  `sendOrMicBuilder`, `inputLeadingBuilder` and `attachmentPreviewBuilder`.
+
+### Removed
+- **The `google_fonts` dependency**, which nothing in `lib/` used. With it go
+  `http`, `path_provider` and their native-assets chain from every app's
+  dependency tree, along with the unreachable internal files
+  `lib/src/utils/font_helper.dart` and `lib/src/widgets/message_content_text.dart`.
+  Neither was exported. If your app imports `google_fonts`, add it to your
+  own `pubspec.yaml`. The Flutter floor stays at 3.35.0 for now.
+
+### Documentation
+- **README.**
+  - The Quick Start compiles again: it used `InputOptions(hintText: ...)`,
+    which only exists on the factory constructors. It now also adds the
+    user's own message, which the widget leaves to the app.
+  - Two AI Actions samples called `ChatMessage` without the required
+    `createdAt`.
+  - Removed the "What Developers Say" testimonials, the "Featured Apps" list
+    and the "Performance Benchmarks" figures, which had no source, plus the
+    stale "Recent Updates (v2.4.2+)" section. The intro now leads with what
+    the package is for.
+  - New sections cover the composer layout options and the copy button
+    builder.
+- **Cookbook.** The streaming recipes reused one id (`'reply'`) for every
+  answer, so each new reply overwrote the previous one. They now create a
+  fresh id per turn, and the first recipe adds the user's message and closes
+  the stream with `stopStreamingMessage`.
+- `example/README.md`, which pub.dev shows on the Example tab, is now a
+  recipe guide instead of an outdated file list.
+- `PROJECT.md` and the stale root `integration_test/` duplicate are excluded
+  from the published archive.
+
+### Fixed (carried over from the unreleased 2.20.1)
 - Two different id-less messages from the same user added in the same millisecond (common on web, where `DateTime.now()` has millisecond resolution) no longer collapse into one: the controller assigns the second a unique suffixed id and stores it. Identical re-adds still dedupe. `addStreamingMessage` now tracks the stored id. (task-035)
 
 ### Housekeeping

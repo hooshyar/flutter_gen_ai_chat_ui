@@ -345,6 +345,10 @@ class _AiChatWidgetState extends State<AiChatWidget>
 
     _textController.addListener(_textControllerListener!);
 
+    // Lets the controller tell the user's messages from AI replies whatever
+    // ids the app uses (it used to assume 'ai', 'bot' or 'assistant').
+    widget.controller.currentUserId = widget.currentUser.id;
+
     // Set the scroll behavior configuration
     if (widget.scrollBehaviorConfig != null) {
       widget.controller.scrollBehaviorConfig = widget.scrollBehaviorConfig;
@@ -383,6 +387,7 @@ class _AiChatWidgetState extends State<AiChatWidget>
   @override
   void didUpdateWidget(AiChatWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    widget.controller.currentUserId = widget.currentUser.id;
 
     // Check if the scroll behavior config has changed
     if (widget.scrollBehaviorConfig != oldWidget.scrollBehaviorConfig) {

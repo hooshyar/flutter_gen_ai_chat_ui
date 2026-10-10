@@ -358,12 +358,14 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       if (_seenMessageIds.contains(id)) continue;
       _seenMessageIds.add(id);
 
-      // Only animate AI messages
-      final isAi = msg.customProperties?['isUserMessage'] == false ||
-          msg.customProperties?['source'] != 'user' &&
-              (msg.user.id == 'ai' ||
-                  msg.user.id == 'bot' ||
-                  msg.user.id == 'assistant');
+      // Only animate AI messages: anything not sent by the current user,
+      // unless flagged otherwise. (This used to require the AI's id to be
+      // 'ai', 'bot' or 'assistant', so e.g. id 'gemini' never animated.)
+      final flaggedUser = msg.customProperties?['isUserMessage'];
+      final isAi = flaggedUser == false ||
+          (flaggedUser != true &&
+              msg.customProperties?['source'] != 'user' &&
+              msg.user.id != widget.currentUser.id);
       if (!isAi) continue;
 
       _pendingWordByWordIds.add(id);
@@ -1416,6 +1418,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           enableSyntaxHighlighting:
               widget.messageOptions.enableSyntaxHighlighting,
           showCopyButton: widget.messageOptions.showCodeBlockCopyButton,
+          copyButtonBuilder: widget.messageOptions.codeBlockCopyButtonBuilder,
           baseStyle: effectiveStyleSheet.code,
           // Only the package's own default stylesheet (chatMarkdownStyle)
           // leaves codeblockDecoration transparent for this to safely
@@ -1458,7 +1461,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           },
           styleSheet: effectiveStyleSheet,
           builders: codeBlockBuilders,
-          imageBuilder: widget.messageOptions.enableImageTaps
+          // The tappable image builder is only needed when there is a tap
+          // handler. (It used to be dropped whenever enableImageTaps was
+          // true, so onImageTap never fired with image taps enabled.)
+          imageBuilder: widget.messageOptions.onImageTap == null
               ? null
               : (uri, title, alt) {
                   return GestureDetector(
@@ -1542,6 +1548,8 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
               enableSyntaxHighlighting:
                   widget.messageOptions.enableSyntaxHighlighting,
               showCopyButton: widget.messageOptions.showCodeBlockCopyButton,
+              copyButtonBuilder:
+                  widget.messageOptions.codeBlockCopyButtonBuilder,
               baseStyle: effectiveStyleSheet.code,
             ),
           );

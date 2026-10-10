@@ -359,6 +359,22 @@ class ChatMessagesController extends ChangeNotifier {
   /// The user of the last message added (to track response chains)
   String? _lastMessageUserId;
 
+  /// The id of the person typing in this chat (`AiChatWidget.currentUser`).
+  ///
+  /// `AiChatWidget` sets this automatically. It decides which messages are
+  /// the user's own when tracking where an AI response starts (used by
+  /// `ScrollBehaviorConfig.scrollToFirstResponseMessage`). When null, only
+  /// messages from the ids `ai`, `bot` and `assistant` count as AI replies.
+  String? currentUserId;
+
+  /// Whether [id] belongs to the human side of the chat: compared against
+  /// [currentUserId] when known, otherwise against the legacy AI ids.
+  bool _isUserId(String id) {
+    final userId = currentUserId;
+    if (userId != null) return id == userId;
+    return id != 'ai' && id != 'bot' && id != 'assistant';
+  }
+
   /// The ID of the message currently being streamed
   String? _currentlyStreamingMessageId;
 
@@ -623,9 +639,7 @@ class ChatMessagesController extends ChangeNotifier {
       final isFromUser =
           ((message.customProperties?['isUserMessage'] as bool?) == true) ||
               (message.customProperties?['source'] == 'user') ||
-              (message.user.id != 'ai' &&
-                  message.user.id != 'bot' &&
-                  message.user.id != 'assistant');
+              _isUserId(message.user.id);
 
       // Get the user ID for response tracking
       final userId = message.user.id;

@@ -24,6 +24,7 @@ class WelcomeMessageConfig {
     this.animation = const Duration(milliseconds: 500),
     this.builder,
     this.centerVertically = false,
+    this.singleColumnQuestions = false,
   });
 
   /// The title text of the welcome message
@@ -86,6 +87,13 @@ class WelcomeMessageConfig {
   /// first message is sent, normal message layout resumes regardless.
   final bool centerVertically;
 
+  /// Whether to stack the suggestion tiles one per row at the full width of
+  /// the welcome block, separated by [questionSpacing] (the pre-2.20 layout).
+  ///
+  /// By default (false) the tiles form a two-column grid once the reading
+  /// column is at least 600px wide, and a single column below that.
+  final bool singleColumnQuestions;
+
   /// Creates a copy of this config with the given fields replaced with new values
   WelcomeMessageConfig copyWith({
     String? title,
@@ -103,6 +111,7 @@ class WelcomeMessageConfig {
     Duration? animation,
     Widget Function()? builder,
     bool? centerVertically,
+    bool? singleColumnQuestions,
   }) {
     return WelcomeMessageConfig(
       title: title ?? this.title,
@@ -124,6 +133,8 @@ class WelcomeMessageConfig {
       animation: animation ?? this.animation,
       builder: builder ?? this.builder,
       centerVertically: centerVertically ?? this.centerVertically,
+      singleColumnQuestions:
+          singleColumnQuestions ?? this.singleColumnQuestions,
     );
   }
 }

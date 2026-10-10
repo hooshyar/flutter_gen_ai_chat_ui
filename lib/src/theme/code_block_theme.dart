@@ -1,5 +1,25 @@
 import 'package:flutter/material.dart';
 
+/// Builds a replacement for a code block's header copy button.
+///
+/// `copied` is true for a moment after a successful copy, so the button can
+/// swap its icon or label. Call `onCopy` to copy the code to the clipboard.
+///
+/// ```dart
+/// MessageOptions(
+///   codeBlockCopyButtonBuilder: (context, copied, onCopy) => TextButton.icon(
+///     onPressed: onCopy,
+///     icon: Icon(copied ? Icons.check : Icons.copy, size: 14),
+///     label: Text(copied ? 'Copied' : 'Copy'),
+///   ),
+/// )
+/// ```
+typedef CodeBlockCopyButtonBuilder = Widget Function(
+  BuildContext context,
+  bool copied,
+  VoidCallback onCopy,
+);
+
 /// Immutable theme for fenced code blocks and their syntax highlighting.
 ///
 /// Colors follow GitHub's light/dark palettes so both variants stay
