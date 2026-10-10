@@ -25,19 +25,6 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
     goldenFileComparator = _AlwaysPassingGoldenFileComparator();
   }
 
-  // TEMP (to be reverted before merge): print widget-test failures as
-  // GitHub annotations so they can be read without the Actions log.
-  final originalReporter = reportTestException;
-  reportTestException = (details, description) {
-    final text = '$description: ${details.exceptionAsString()}';
-    final escaped = text
-        .replaceAll('%', '%25')
-        .replaceAll('\r', '%0D')
-        .replaceAll('\n', '%0A');
-    print('::error title=test failed::$escaped');
-    originalReporter(details, description);
-  };
-
   return testMain();
 }
 
