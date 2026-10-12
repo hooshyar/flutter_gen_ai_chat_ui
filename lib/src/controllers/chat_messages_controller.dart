@@ -2075,8 +2075,7 @@ class ChatResponseStream {
   /// the text received so far. Does nothing once the reply is finished.
   Future<void> cancel() async {
     if (_finished) return;
-    final subscription = _subscription;
     _finish?.call();
-    await subscription?.cancel();
+    await _subscription?.cancel();
   }
 }
