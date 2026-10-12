@@ -57,7 +57,9 @@ Read the two **Behaviour change** notes under Fixed and Removed.
   focused or clipboard permission is denied. The code block and message copy
   buttons let that error escape as an uncaught exception. They now catch it,
   and show the "copied" check (and call `onCopy`) only after a successful
-  copy.
+  copy. `onCopy` therefore fires once the clipboard write completes rather
+  than synchronously on tap; widget tests that check it should answer the
+  `Clipboard.setData` platform call with a mock handler.
 - **`InputOptions.copyWith` keeps its builders.** It no longer drops
   `inputToolbarBuilder`, `sendOrMicBuilder`, `inputLeadingBuilder` and
   `attachmentPreviewBuilder`.
