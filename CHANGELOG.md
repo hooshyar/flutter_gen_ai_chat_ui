@@ -3,7 +3,7 @@
 No API breaks: everything new is additive and opt-in. This release:
 - restores the pre-2.20 layouts as options (#48);
 - makes the code block copy button styleable (#49);
-- fixes four bugs;
+- fixes five bugs;
 - drops an unused dependency.
 
 Read the two **Behaviour change** notes under Fixed and Removed.
@@ -52,6 +52,12 @@ Read the two **Behaviour change** notes under Fixed and Removed.
   `onImageTap`.** The tappable markdown image builder was dropped exactly when
   image taps were enabled, so the callback never fired. Image rendering is
   unchanged in every other configuration.
+- **Copy buttons no longer throw when the clipboard refuses.** On the web the
+  browser can reject a clipboard write, for example when the page isn't
+  focused or clipboard permission is denied. The code block and message copy
+  buttons let that error escape as an uncaught exception. They now catch it,
+  and show the "copied" check (and call `onCopy`) only after a successful
+  copy.
 - **`InputOptions.copyWith` keeps its builders.** It no longer drops
   `inputToolbarBuilder`, `sendOrMicBuilder`, `inputLeadingBuilder` and
   `attachmentPreviewBuilder`.
@@ -87,6 +93,10 @@ Read the two **Behaviour change** notes under Fixed and Removed.
   answer, so each new reply overwrote the previous one. They now create a
   fresh id per turn. The first recipe also adds the user's message and closes
   the stream with `stopStreamingMessage`.
+- **Example app.** A new **Layout** demo switches live between the
+  single-row and stacked composer, the leading and trailing attach button,
+  a centred or bottom-anchored welcome, one or two columns of suggestions,
+  and a custom code block copy button.
 - **`example/README.md`** is now a recipe guide instead of an outdated file
   list. pub.dev shows it on the Example tab.
 - **Published archive.** It no longer includes `PROJECT.md` or the root

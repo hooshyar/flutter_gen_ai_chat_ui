@@ -10,6 +10,7 @@ import 'examples/rich_widgets_chat.dart';
 import 'examples/rtl_chat.dart';
 import 'examples/attachments_chat.dart';
 import 'examples/voice_chat.dart';
+import 'examples/layout_chat.dart';
 
 void main() {
   runApp(const ExampleApp());
@@ -81,6 +82,7 @@ class _ExampleAppState extends State<ExampleApp> {
       '/basic': (_) => BasicChatExample(onToggleTheme: _toggleTheme),
       '/streaming': (_) => StreamingChatExample(onToggleTheme: _toggleTheme),
       '/themed': (_) => ThemedChatExample(onToggleTheme: _toggleTheme),
+      '/layout': (_) => LayoutChatExample(onToggleTheme: _toggleTheme),
       '/actions': (_) => ActionsChatExample(onToggleTheme: _toggleTheme),
       '/rich-widgets': (_) =>
           RichWidgetsChatExample(onToggleTheme: _toggleTheme),
