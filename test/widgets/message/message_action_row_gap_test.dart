@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_gen_ai_chat_ui/src/widgets/message/message_action_row.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -49,6 +50,17 @@ void main() {
   testWidgets(
     'the copy control keeps its full 48x48 hit area',
     (tester) async {
+      // Copy feedback waits for the clipboard write to succeed, so answer it.
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async => null,
+      );
+      addTearDown(() {
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        );
+      });
       var copied = false;
       await tester.pumpWidget(
         MaterialApp(
