@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../theme/chat_tokens.dart';
+import '../../utils/clipboard_utils.dart';
 
 /// The action row rendered below a completed AI message: an optional copy
 /// control, then the timestamp at the trailing end (`DESIGN.md` §8.8).
@@ -70,8 +70,11 @@ class _MessageActionRowState extends State<MessageActionRow> {
       defaultTargetPlatform == TargetPlatform.iOS ||
       defaultTargetPlatform == TargetPlatform.android;
 
-  void _handleCopy() {
-    Clipboard.setData(ClipboardData(text: widget.text));
+  Future<void> _handleCopy() async {
+    // Only report the copy (and show the check) when the clipboard accepted
+    // the write; see copyTextToClipboard.
+    final copied = await copyTextToClipboard(widget.text);
+    if (!copied || !mounted) return;
     widget.onCopy?.call(widget.text);
     setState(() => _justCopied = true);
     Future<void>.delayed(const Duration(milliseconds: 1500), () {

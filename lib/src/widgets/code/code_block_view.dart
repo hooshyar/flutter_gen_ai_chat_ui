@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 
 import '../../theme/chat_tokens.dart';
 import '../../theme/code_block_theme.dart';
+import '../../utils/clipboard_utils.dart';
 import 'code_highlighter.dart';
 
 /// A self-contained code block: optional header (language label + copy
@@ -121,8 +121,9 @@ class _CodeBlockViewState extends State<CodeBlockView> {
   }
 
   Future<void> _copy() async {
-    await Clipboard.setData(ClipboardData(text: _displayCode));
-    if (!mounted) return;
+    // Only show the "copied" check when the clipboard accepted the write.
+    final copied = await copyTextToClipboard(_displayCode);
+    if (!copied || !mounted) return;
     setState(() => _copied = true);
     _copiedTimer?.cancel();
     _copiedTimer = Timer(_copiedFeedbackDuration, () {
