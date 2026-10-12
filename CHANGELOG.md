@@ -1,4 +1,4 @@
-## 2.21.0 - unreleased
+## 2.21.0 - 2026-10-12
 
 No API breaks: everything new is additive and opt-in. This release:
 - restores the pre-2.20 layouts as options (#48);
