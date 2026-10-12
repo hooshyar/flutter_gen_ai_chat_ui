@@ -52,6 +52,7 @@ class _LayoutChatExampleState extends State<LayoutChatExample> {
       text: '',
       user: _aiUser,
       createdAt: DateTime.now(),
+      isMarkdown: true,
       customProperties: {'id': messageId},
     );
 
