@@ -191,9 +191,11 @@ class _LayoutChatExampleState extends State<LayoutChatExample> {
               ),
               exampleQuestions: const [
                 ExampleQuestion(question: 'Write a Dart singleton pattern'),
-                ExampleQuestion(question: 'Explain async/await with an example'),
+                ExampleQuestion(
+                    question: 'Explain async/await with an example'),
                 ExampleQuestion(question: 'What is Flutter?'),
-                ExampleQuestion(question: 'Compare StatelessWidget and StatefulWidget'),
+                ExampleQuestion(
+                    question: 'Compare StatelessWidget and StatefulWidget'),
               ],
             ),
           ),
