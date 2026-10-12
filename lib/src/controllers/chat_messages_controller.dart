@@ -323,6 +323,9 @@ class ChatMessagesController extends ChangeNotifier {
   /// - it updates as chunks arrive;
   /// - it is marked complete when [chunks] closes.
   ///
+  /// The reply renders as markdown, as LLM replies usually are; pass
+  /// `isMarkdown: false` for plain text.
+  ///
   /// If [chunks] reports an error, the text received so far stays, the reply
   /// is marked complete, and [onError] is called.
   ///
@@ -342,6 +345,7 @@ class ChatMessagesController extends ChangeNotifier {
     required ChatUser user,
     String? id,
     bool accumulated = false,
+    bool isMarkdown = true,
     Map<String, dynamic>? customProperties,
     void Function(Object error, StackTrace stackTrace)? onError,
   }) {
@@ -356,6 +360,7 @@ class ChatMessagesController extends ChangeNotifier {
           text: text,
           user: user,
           createdAt: createdAt,
+          isMarkdown: isMarkdown,
           customProperties: <String, dynamic>{
             ...?customProperties,
             'id': messageId,
