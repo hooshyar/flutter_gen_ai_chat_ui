@@ -1,3 +1,37 @@
+## 2.22.0 - unreleased
+
+Streaming a reply is now one call. No API breaks: everything new is additive.
+
+### Added
+- **`ChatMessagesController.streamResponse(stream, user: aiUser)`** streams a
+  `Stream<String>` reply into the chat. It adds the reply with the first
+  text, updates it as chunks arrive and marks it complete when the stream
+  closes: the `addStreamingMessage` / `updateMessage` /
+  `stopStreamingMessage` sequence that every streaming integration used to
+  write by hand.
+  - Events are appended as deltas, which is what OpenAI, Anthropic and
+    Gemini streams deliver. Pass `accumulated: true` when each event is the
+    whole text so far.
+  - On a stream error the text so far stays, the reply is closed and
+    `onError` is called.
+  - Optional `id` and `customProperties`.
+- **`ChatResponseStream`**, returned by `streamResponse`: `cancel()` for a
+  stop button, `done` (the final message, or `null` if no text arrived),
+  `isActive`, `message` and `id`. Disposing the controller stops any reply
+  still streaming.
+
+### Documentation
+- **The README Quick Start streams.** It is now a complete app that streams
+  replies from a stand-in `Stream<String>` through `streamResponse`, so
+  pasting it into `lib/main.dart` shows the package working with no API key.
+  The same code is `example/lib/quickstart.dart`, which CI analyzes and
+  tests, and a test keeps the README copy identical to it.
+- **"Streaming AI responses"** now leads with `streamResponse`, including a
+  stop-button recipe, and keeps the manual three-call API under "Driving a
+  stream by hand".
+- **Example app.** The Basic demo uses `streamResponse`, which replaces about
+  40 lines of subscription and bookkeeping code.
+
 ## 2.21.0 - unreleased
 
 No API breaks: everything new is additive and opt-in. This release:

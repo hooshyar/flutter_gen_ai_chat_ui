@@ -1,7 +1,5 @@
 // Basic Chat - the proof screen. Only the required arguments, example
 // questions and a welcome title: everything else is the package default.
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
@@ -20,79 +18,45 @@ class BasicChatExample extends StatefulWidget {
 class _BasicChatExampleState extends State<BasicChatExample> {
   final _controller = ChatMessagesController();
   final _aiService = ExampleAiService(style: ResponseStyle.plain);
+  ChatResponseStream? _reply;
   bool _isLoading = false;
-  StreamSubscription<String>? _streamSub;
-  String? _currentStreamingId;
 
   static const _currentUser = ChatUser(id: 'user', name: 'You');
   static const _aiUser = ChatUser(id: 'ai', name: 'AI');
 
-  // Streams the reply word by word (via the mock service's tuned 25-40ms
-  // per-word pacing) instead of popping in the full text at once, so a
-  // short reply still visibly streams rather than feeling like it stalled
-  // then snapped in (DESIGN.md §9 "Basic").
+  // streamResponse adds the reply with its first words, updates it as the
+  // mock service streams (25-40ms per word), and closes it when the stream
+  // ends. The mock yields the whole text so far on each event, hence
+  // `accumulated: true`; a real LLM's token deltas need nothing extra.
   void _onSendMessage(ChatMessage message) {
     _controller.addMessage(message);
-    _streamSub?.cancel();
-    // Finalize whatever the previous stream left open before starting a new
-    // one - cancelling the subscription alone doesn't close the message, so
-    // without this a fast second send leaves the prior reply stuck with a
-    // permanent caret and no Copy button.
-    final prevId = _currentStreamingId;
-    if (prevId != null) {
-      _controller.stopStreamingMessage(prevId);
-    }
-    setState(() => _isLoading = true);
-
-    final messageId = 'ai_${DateTime.now().millisecondsSinceEpoch}';
-    _currentStreamingId = messageId;
-    final aiMessage = ChatMessage(
-      text: '',
+    // A new send closes the previous reply if it is still streaming, so it
+    // never stays stuck with a caret and no Copy button.
+    _reply?.cancel();
+    final reply = _controller.streamResponse(
+      _aiService.streamResponse(message.text),
       user: _aiUser,
-      createdAt: DateTime.now(),
-      customProperties: {'id': messageId},
+      accumulated: true,
     );
-
-    var receivedFirstChunk = false;
-    _streamSub = _aiService.streamResponse(message.text).listen(
-      (accumulated) {
-        if (!mounted) return;
-        if (receivedFirstChunk) {
-          _controller.updateMessage(aiMessage.copyWith(text: accumulated));
-        } else {
-          receivedFirstChunk = true;
-          _controller
-              .addStreamingMessage(aiMessage.copyWith(text: accumulated));
-        }
-      },
-      onDone: () {
-        if (!mounted) return;
-        _controller.stopStreamingMessage(messageId);
+    _reply = reply;
+    setState(() => _isLoading = true);
+    reply.done.whenComplete(() {
+      if (mounted && identical(_reply, reply)) {
         setState(() => _isLoading = false);
-      },
-      onError: (_) {
-        if (!mounted) return;
-        _controller.stopStreamingMessage(messageId);
-        setState(() => _isLoading = false);
-      },
-    );
+      }
+    });
   }
 
-  // Cancels the in-flight response. Wired to AiChatWidget.onCancelGenerating,
-  // which surfaces a stop button in the input while _isLoading is true.
+  // Wired to AiChatWidget.onCancelGenerating, which shows a stop button in
+  // the input while _isLoading is true.
   void _onCancelGenerating() {
-    _streamSub?.cancel();
-    _streamSub = null;
-    final id = _currentStreamingId;
-    if (id != null) {
-      _controller.stopStreamingMessage(id);
-    }
+    _reply?.cancel();
     setState(() => _isLoading = false);
   }
 
   @override
   void dispose() {
-    _streamSub?.cancel();
+    _reply?.cancel();
     _controller.dispose();
     super.dispose();
   }
