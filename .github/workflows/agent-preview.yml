@@ -16,7 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ref: [main, af404e4, 30194e8]
+        ref: ['af404e41dda1edd4b1971992391552cd4c930434', '30194e801b1bdeef1c162e28cc9b804716ae512a', 'main']
+        attempt: [1, 2]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -33,6 +34,7 @@ jobs:
         run: |
           flutter pub get > /dev/null
           flutter test --no-dds --tags fade_matrix --run-skipped -r json > tj.txt 2> te.txt || true
+          grep -h '"type":"print"' tj.txt | python3 -c "import json,sys; [print(json.loads(l).get('message','')) for l in sys.stdin]" > prints.txt || true
           python3 - "${{ matrix.ref }}" <<'PY'
           import json, sys
           ref = sys.argv[1]
@@ -56,13 +58,18 @@ jobs:
                   else:
                       failed.append(e['testID'])
           out = [f'{ref}: {passed} passed, {len(failed)} failed']
+          prints = open('prints.txt').read()
           for tid in failed[:5]:
-              out.append('FAILED: ' + names.get(tid, str(tid)) + '\n' + '\n'.join(errors.get(tid, []))[:3500])
+              out.append('FAILED: ' + names.get(tid, str(tid)) + '\n' + '\n'.join(errors.get(tid, []))[:1500])
+          if failed:
+              k = prints.find('EXCEPTION CAUGHT')
+              out.append('EXCEPTION LOG:\n' + (prints[k:k+3500] if k != -1 else prints[-3500:]))
           msg = '\n\n'.join(out).replace('%', '%25').replace('\r', '').replace('\n', '%0A')
-          print(('::error' if failed else '::notice') + ' title=fade_matrix @ ' + ref + '::' + msg)
+          print(('::error' if failed else '::notice') + ' title=fade_matrix @ ' + ref[:7] + '::' + msg)
           PY
 
   downgrade:
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
