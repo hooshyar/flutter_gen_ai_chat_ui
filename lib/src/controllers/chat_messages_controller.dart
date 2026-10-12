@@ -303,6 +303,112 @@ class ChatMessagesController extends ChangeNotifier {
     }
   }
 
+  /// Replies started by [streamResponse] that haven't finished yet, so
+  /// [dispose] can stop them.
+  final Set<ChatResponseStream> _activeResponses = {};
+
+  /// Counter that keeps generated [streamResponse] ids unique within one
+  /// microsecond.
+  int _responseCounter = 0;
+
+  /// Streams an AI reply into the chat in one call.
+  ///
+  /// Each event of [chunks] is appended to the reply, which suits the token
+  /// deltas that OpenAI, Anthropic and Gemini streams deliver. If each event
+  /// is instead the whole text so far, set [accumulated] to `true`.
+  ///
+  /// This does the add / update / [stopStreamingMessage] sequence for you:
+  /// - the reply is added with the first non-empty chunk, from [user], with
+  ///   [id] (or a generated id) in `customProperties['id']`;
+  /// - it updates as chunks arrive;
+  /// - it is marked complete when [chunks] closes.
+  ///
+  /// The reply renders as markdown, as LLM replies usually are; pass
+  /// `isMarkdown: false` for plain text.
+  ///
+  /// If [chunks] reports an error, the text received so far stays, the reply
+  /// is marked complete, and [onError] is called.
+  ///
+  /// The returned [ChatResponseStream] can be cancelled (for example from
+  /// `AiChatWidget.onCancelGenerating`), and its
+  /// [ChatResponseStream.done] completes with the final message, or `null`
+  /// if no text arrived.
+  ///
+  /// ```dart
+  /// onSendMessage: (message) {
+  ///   controller.addMessage(message);
+  ///   controller.streamResponse(llm.reply(message.text), user: aiUser);
+  /// },
+  /// ```
+  ChatResponseStream streamResponse(
+    Stream<String> chunks, {
+    required ChatUser user,
+    String? id,
+    bool accumulated = false,
+    bool isMarkdown = true,
+    Map<String, dynamic>? customProperties,
+    void Function(Object error, StackTrace stackTrace)? onError,
+  }) {
+    final messageId = id ??
+        'response_${clock.now().microsecondsSinceEpoch}_${_responseCounter++}';
+    final createdAt = clock.now();
+    final buffer = StringBuffer();
+    final response = ChatResponseStream._(messageId);
+    _activeResponses.add(response);
+
+    ChatMessage messageWith(String text) => ChatMessage(
+          text: text,
+          user: user,
+          createdAt: createdAt,
+          isMarkdown: isMarkdown,
+          customProperties: <String, dynamic>{
+            ...?customProperties,
+            'id': messageId,
+          },
+        );
+
+    void finish() {
+      if (response._finished) return;
+      response._finished = true;
+      _activeResponses.remove(response);
+      if (response._message != null && _mounted) {
+        stopStreamingMessage(messageId);
+      }
+      response._done.complete(response._message);
+    }
+
+    response
+      .._finish = finish
+      .._subscription = chunks.listen(
+        (chunk) {
+          if (response._finished || !_mounted) return;
+          final String text;
+          if (accumulated) {
+            text = chunk;
+          } else {
+            buffer.write(chunk);
+            text = buffer.toString();
+          }
+          if (text.isEmpty) return;
+          final message = messageWith(text);
+          final isFirst = response._message == null;
+          response._message = message;
+          if (isFirst) {
+            addStreamingMessage(message);
+          } else {
+            updateMessage(message);
+          }
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          finish();
+          onError?.call(error, stackTrace);
+        },
+        onDone: finish,
+        cancelOnError: true,
+      );
+    return response;
+  }
+
   /// Active timers scheduled by [simulateStreamingCompletion]. Tracked so
   /// [dispose] can cancel them and avoid `Timer still pending` failures in
   /// widget tests that exercise the demo / simulation path.
@@ -1924,6 +2030,13 @@ class ChatMessagesController extends ChangeNotifier {
     }
     _simulateStreamingTimers.clear();
 
+    // Stop replies still arriving through streamResponse; their `done`
+    // futures complete with whatever text had arrived.
+    for (final response in _activeResponses.toList()) {
+      unawaited(response.cancel());
+    }
+    _activeResponses.clear();
+
     // Remove scroll listener to prevent memory leaks
     if (_scrollController != null && _scrollListener != null) {
       _scrollController!.removeListener(_scrollListener!);
@@ -1935,5 +2048,39 @@ class ChatMessagesController extends ChangeNotifier {
     _messageCache.clear();
     _openStreamIds.clear();
     super.dispose();
+  }
+}
+
+/// A reply being streamed into the chat by
+/// [ChatMessagesController.streamResponse].
+class ChatResponseStream {
+  ChatResponseStream._(this.id);
+
+  /// The reply's message id, stored in `customProperties['id']`.
+  final String id;
+
+  final Completer<ChatMessage?> _done = Completer<ChatMessage?>();
+  StreamSubscription<String>? _subscription;
+  void Function()? _finish;
+  ChatMessage? _message;
+  bool _finished = false;
+
+  /// Completes when the reply is finished: its stream closed, reported an
+  /// error, or was cancelled. The value is the final message, or `null` if
+  /// no text arrived.
+  Future<ChatMessage?> get done => _done.future;
+
+  /// Whether chunks are still being received.
+  bool get isActive => !_finished;
+
+  /// The reply as received so far, or `null` before the first text.
+  ChatMessage? get message => _message;
+
+  /// Stops listening to the stream and marks the reply complete, keeping
+  /// the text received so far. Does nothing once the reply is finished.
+  Future<void> cancel() async {
+    if (_finished) return;
+    _finish?.call();
+    await _subscription?.cancel();
   }
 }
