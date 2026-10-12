@@ -22,6 +22,7 @@ class ChatEmptyState extends StatelessWidget {
     required this.exampleQuestions,
     required this.onQuestionTap,
     this.welcomeMessageConfig,
+    this.applyTopOffset = true,
   });
 
   /// Suggested questions rendered as tappable tiles below the greeting.
@@ -33,6 +34,11 @@ class ChatEmptyState extends StatelessWidget {
   /// Optional legacy/override configuration. When null, every value falls
   /// back to the package default described in `DESIGN.md` §8.6.
   final WelcomeMessageConfig? welcomeMessageConfig;
+
+  /// Whether to push the greeting down to 38% of the available height.
+  /// Pass false when the parent already centres this widget (the chat list
+  /// does for [WelcomeMessageConfig.centerVertically]).
+  final bool applyTopOffset;
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +60,10 @@ class ChatEmptyState extends StatelessWidget {
           ChatLayout.readingMaxWidth,
         );
         final isWide = availableWidth >= 840;
-        final isTwoColumn = columnWidth >= 600;
+        final singleColumn = config?.singleColumnQuestions ?? false;
+        final isTwoColumn = !singleColumn && columnWidth >= 600;
+        var suggestionSpacing = ChatSpace.s8;
+        if (singleColumn) suggestionSpacing = config!.questionSpacing;
 
         final titleStyle = config?.titleStyle ??
             TextStyle(
@@ -107,6 +116,7 @@ class ChatEmptyState extends StatelessWidget {
                 questions: exampleQuestions,
                 twoColumn: isTwoColumn,
                 columnWidth: columnWidth,
+                runSpacing: suggestionSpacing,
                 onQuestionTap: onQuestionTap,
               ),
             ],
@@ -121,8 +131,13 @@ class ChatEmptyState extends StatelessWidget {
           );
         }
 
+        // Skipped when the parent centres this widget: adding the offset on
+        // top of the centring pushed the greeting well below the middle
+        // (issue #48).
+        final topOffset = applyTopOffset ? availableHeight * 0.38 : 0.0;
+
         return Padding(
-          padding: EdgeInsets.only(top: availableHeight * 0.38),
+          padding: EdgeInsets.only(top: topOffset),
           child: Align(
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
@@ -146,12 +161,14 @@ class _SuggestionGrid extends StatelessWidget {
     required this.questions,
     required this.twoColumn,
     required this.columnWidth,
+    required this.runSpacing,
     required this.onQuestionTap,
   });
 
   final List<ExampleQuestion> questions;
   final bool twoColumn;
   final double columnWidth;
+  final double runSpacing;
   final ValueChanged<String> onQuestionTap;
 
   @override
@@ -160,7 +177,7 @@ class _SuggestionGrid extends StatelessWidget {
         twoColumn ? (columnWidth - ChatSpace.s8) / 2 : columnWidth;
     return Wrap(
       spacing: ChatSpace.s8,
-      runSpacing: ChatSpace.s8,
+      runSpacing: runSpacing,
       children: [
         for (final question in questions)
           SizedBox(

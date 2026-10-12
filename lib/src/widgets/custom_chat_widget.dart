@@ -350,6 +350,13 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       msg.customProperties?['id'] as String? ??
       '${msg.user.id}_${msg.createdAt.millisecondsSinceEpoch}';
 
+  /// Whether [id] is the AI user's id (the controller's `aiUserId`) or one
+  /// of the legacy AI ids.
+  bool _isAiUserId(String id) {
+    if (id == widget.controller?.aiUserId) return true;
+    return id == 'ai' || id == 'bot' || id == 'assistant';
+  }
+
   /// Detect newly added AI messages and schedule word-by-word animation.
   void _trackNewMessages() {
     if (!widget.streamingWordByWord || !widget.streamingEnabled) return;
@@ -358,12 +365,12 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       if (_seenMessageIds.contains(id)) continue;
       _seenMessageIds.add(id);
 
-      // Only animate AI messages
+      // Only animate AI messages. Besides the legacy ids, the AI user's own
+      // id (the controller's aiUserId, set by AiChatWidget) counts, so e.g.
+      // an AI user with id 'gemini' animates too.
+      final fromAiUser = _isAiUserId(msg.user.id);
       final isAi = msg.customProperties?['isUserMessage'] == false ||
-          msg.customProperties?['source'] != 'user' &&
-              (msg.user.id == 'ai' ||
-                  msg.user.id == 'bot' ||
-                  msg.user.id == 'assistant');
+          (msg.customProperties?['source'] != 'user' && fromAiUser);
       if (!isAi) continue;
 
       _pendingWordByWordIds.add(id);
@@ -595,6 +602,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         widget.messages.isEmpty &&
         (widget.typingUsers?.isEmpty ?? true) &&
         !widget.messageListOptions.isLoadingMore) {
+      final welcome = _buildWelcomeMessage(centered: true);
       return LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -604,8 +612,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
             padding: _effectiveMessageListPadding,
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child:
-                  Center(child: _centeredReadingColumn(_buildWelcomeMessage())),
+              child: Center(child: _centeredReadingColumn(welcome)),
             ),
           );
         },
@@ -1416,6 +1423,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           enableSyntaxHighlighting:
               widget.messageOptions.enableSyntaxHighlighting,
           showCopyButton: widget.messageOptions.showCodeBlockCopyButton,
+          copyButtonBuilder: widget.messageOptions.codeBlockCopyButtonBuilder,
           baseStyle: effectiveStyleSheet.code,
           // Only the package's own default stylesheet (chatMarkdownStyle)
           // leaves codeblockDecoration transparent for this to safely
@@ -1439,6 +1447,12 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
               widget.messageOptions.onImageTap != null ||
               widget.messageOptions.enableImageTaps;
 
+      // enableImageTaps without an onImageTap handler keeps the default
+      // image builder. (The custom, tappable one used to be dropped whenever
+      // enableImageTaps was true, so onImageTap never fired.)
+      final useDefaultImageBuilder = widget.messageOptions.enableImageTaps &&
+          widget.messageOptions.onImageTap == null;
+
       if (needsInteractiveMarkdown) {
         // Preserve interactive Markdown behavior
         textWidget = Markdown(
@@ -1458,7 +1472,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           },
           styleSheet: effectiveStyleSheet,
           builders: codeBlockBuilders,
-          imageBuilder: widget.messageOptions.enableImageTaps
+          imageBuilder: useDefaultImageBuilder
               ? null
               : (uri, title, alt) {
                   return GestureDetector(
@@ -1542,6 +1556,8 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
               enableSyntaxHighlighting:
                   widget.messageOptions.enableSyntaxHighlighting,
               showCopyButton: widget.messageOptions.showCodeBlockCopyButton,
+              copyButtonBuilder:
+                  widget.messageOptions.codeBlockCopyButtonBuilder,
               baseStyle: effectiveStyleSheet.code,
             ),
           );
@@ -1870,8 +1886,9 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     );
   }
 
-  /// Build the welcome message widget
-  Widget _buildWelcomeMessage() {
+  /// Build the welcome message widget. [centered] is true on the
+  /// `centerVertically` path, which centres it in the viewport itself.
+  Widget _buildWelcomeMessage({bool centered = false}) {
     // If custom builder is provided, use it
     if (widget.welcomeMessageConfig?.builder != null) {
       return Padding(
@@ -1887,6 +1904,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       welcomeMessageConfig: widget.welcomeMessageConfig,
       exampleQuestions: widget.exampleQuestions,
       onQuestionTap: _handleExampleQuestionTap,
+      applyTopOffset: !centered,
     );
   }
 

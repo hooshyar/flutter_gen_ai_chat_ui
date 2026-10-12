@@ -321,14 +321,18 @@ class _ChatInputState extends State<ChatInput> {
             tooltip: options.sendButtonTooltip,
           );
 
-    // Leading content (attach / toolbar builder / mic) moves send + itself
-    // into a dedicated bottom row below the text field (`DESIGN.md` §8.4).
-    // With no leading content, the field and send control share one row.
-    final hasLeading = (fileUploadOptions?.enabled == true) ||
-        (options.inputLeadingBuilder != null);
+    // Stacked (default): leading content (attach / toolbar builder / mic)
+    // moves send + itself into a dedicated bottom row below the text field
+    // (`DESIGN.md` §8.4). With no leading content, or with
+    // `ComposerLayout.singleRow`, the field and send control share one row.
+    final showAttach = fileUploadOptions?.enabled == true;
+    final attachPosition = fileUploadOptions?.buttonPosition;
+    final attachAtEnd = attachPosition == AttachmentButtonPosition.trailing;
+    final singleRow = options.composerLayout == ComposerLayout.singleRow;
+    final hasLeading = showAttach || (options.inputLeadingBuilder != null);
     final hasToolbar = options.inputToolbarBuilder != null;
     final hasPreview = options.attachmentPreviewBuilder != null;
-    final hasBottomRow = hasLeading || hasToolbar;
+    final hasBottomRow = !singleRow && (hasLeading || hasToolbar);
 
     Widget inputContent;
     if (hasBottomRow) {
@@ -341,14 +345,14 @@ class _ChatInputState extends State<ChatInput> {
         crossAxisAlignment: CrossAxisAlignment.center,
         textDirection: appDirection,
         children: [
-          if (fileUploadOptions?.enabled == true)
-            _buildFileUploadButton(context),
+          if (showAttach && !attachAtEnd) _buildFileUploadButton(context),
           if (options.inputLeadingBuilder != null)
             options.inputLeadingBuilder!(context),
           if (hasToolbar)
             Expanded(child: options.inputToolbarBuilder!(context))
           else
             const Spacer(),
+          if (showAttach && attachAtEnd) _buildFileUploadButton(context),
           sendControlContainer,
         ],
       );
@@ -361,18 +365,28 @@ class _ChatInputState extends State<ChatInput> {
         ],
       );
     } else {
+      // Leading content only reaches this branch with
+      // `ComposerLayout.singleRow`; otherwise it is all absent here.
       final inputRow = Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         textDirection: appDirection,
         children: [
+          if (showAttach && !attachAtEnd) _buildFileUploadButton(context),
+          if (options.inputLeadingBuilder != null)
+            options.inputLeadingBuilder!(context),
           Flexible(child: textField),
+          if (showAttach && attachAtEnd) _buildFileUploadButton(context),
           sendControlContainer,
         ],
       );
-      inputContent = hasPreview
+      inputContent = (hasPreview || hasToolbar)
           ? Column(
               mainAxisSize: MainAxisSize.min,
-              children: [options.attachmentPreviewBuilder!(context), inputRow],
+              children: [
+                if (hasPreview) options.attachmentPreviewBuilder!(context),
+                inputRow,
+                if (hasToolbar) options.inputToolbarBuilder!(context),
+              ],
             )
           : inputRow;
     }

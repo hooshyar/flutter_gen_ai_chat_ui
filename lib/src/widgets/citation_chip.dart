@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../models/chat/citation.dart';
+import '../utils/clipboard_utils.dart';
 
 /// Theme configuration for citation chips
 class CitationChipTheme {
@@ -259,14 +259,15 @@ class CitationChip extends StatelessWidget {
     return parts.join('\n');
   }
 
-  void _copyToClipboard(BuildContext context) {
+  Future<void> _copyToClipboard(BuildContext context) async {
     final textToCopy = citation.fullCitation.isNotEmpty
         ? citation.fullCitation
         : citation.shortCitation;
 
-    Clipboard.setData(ClipboardData(text: textToCopy));
+    final messenger = ScaffoldMessenger.of(context);
+    if (!await copyTextToClipboard(textToCopy)) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(
         content: Text(_getCopyMessage()),
         duration: const Duration(seconds: 2),
@@ -538,9 +539,12 @@ class CitationExpandedView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton.icon(
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: citation.fullCitation));
-                  ScaffoldMessenger.of(context).showSnackBar(
+                onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  if (!await copyTextToClipboard(citation.fullCitation)) {
+                    return;
+                  }
+                  messenger.showSnackBar(
                     SnackBar(
                       content: Text(_getCopyMessage()),
                       duration: const Duration(seconds: 2),

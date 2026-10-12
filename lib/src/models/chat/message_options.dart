@@ -358,6 +358,11 @@ class MessageOptions {
   /// raw code (without fences) to the clipboard. Defaults to true.
   final bool showCodeBlockCopyButton;
 
+  /// Replaces the code block header's default copy button, e.g. to change
+  /// its icon, colour, size or add a label. Only used while
+  /// [showCodeBlockCopyButton] is true. See [CodeBlockCopyButtonBuilder].
+  final CodeBlockCopyButtonBuilder? codeBlockCopyButtonBuilder;
+
   /// Custom builder for plain text content inside the bubble
   ///
   /// Allows overriding how non-markdown message text is rendered while keeping
@@ -491,6 +496,7 @@ class MessageOptions {
     this.enableSyntaxHighlighting = true,
     this.codeBlockTheme,
     this.showCodeBlockCopyButton = true,
+    this.codeBlockCopyButtonBuilder,
     this.textBuilder,
     this.markdownBuilder,
     this.customBubbleBuilder,
@@ -535,6 +541,7 @@ class MessageOptions {
     bool? enableSyntaxHighlighting,
     CodeBlockTheme? codeBlockTheme,
     bool? showCodeBlockCopyButton,
+    CodeBlockCopyButtonBuilder? codeBlockCopyButtonBuilder,
     Widget Function(BuildContext, String, TextStyle, bool)? textBuilder,
     Widget Function(BuildContext, String, MarkdownStyleSheet, bool)?
         markdownBuilder,
@@ -583,6 +590,8 @@ class MessageOptions {
         codeBlockTheme: codeBlockTheme ?? this.codeBlockTheme,
         showCodeBlockCopyButton:
             showCodeBlockCopyButton ?? this.showCodeBlockCopyButton,
+        codeBlockCopyButtonBuilder:
+            codeBlockCopyButtonBuilder ?? this.codeBlockCopyButtonBuilder,
         textBuilder: textBuilder ?? this.textBuilder,
         markdownBuilder: markdownBuilder ?? this.markdownBuilder,
         customBubbleBuilder: customBubbleBuilder ?? this.customBubbleBuilder,

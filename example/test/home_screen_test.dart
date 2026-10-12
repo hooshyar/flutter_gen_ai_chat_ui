@@ -66,14 +66,14 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('demo index renders 4 groups and 8 rows', (tester) async {
+  testWidgets('demo index renders 4 groups and 9 rows', (tester) async {
     setSurfaceSize(tester, const Size(1280, 2000));
 
     await tester.pumpWidget(buildHome());
     await settleLivePreview(tester);
 
     expect(find.byType(DemoGroupSection), findsNWidgets(4));
-    expect(find.byType(DemoIndexRow), findsNWidgets(8));
+    expect(find.byType(DemoIndexRow), findsNWidgets(9));
     expect(find.text('Core'), findsOneWidget);
     expect(find.text('Agents'), findsOneWidget);
     expect(find.text('Input'), findsOneWidget);

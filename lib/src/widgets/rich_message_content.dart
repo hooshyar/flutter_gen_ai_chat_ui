@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../theme/code_block_theme.dart';
+import '../utils/clipboard_utils.dart';
 import 'code/code_block_view.dart';
 
 /// Rich message content widget with advanced features
@@ -63,9 +63,8 @@ class RichMessageContent extends StatelessWidget {
     );
   }
 
-  void _copyToClipboard() {
-    Clipboard.setData(ClipboardData(text: text));
-    onTextCopy?.call();
+  Future<void> _copyToClipboard() async {
+    if (await copyTextToClipboard(text)) onTextCopy?.call();
   }
 }
 

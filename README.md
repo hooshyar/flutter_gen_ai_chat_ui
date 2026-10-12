@@ -9,9 +9,9 @@
 [![GitHub stars](https://img.shields.io/github/stars/hooshyar/flutter_gen_ai_chat_ui.svg?style=flat&logo=github&colorB=deeppink&label=stars)](https://github.com/hooshyar/flutter_gen_ai_chat_ui)
 [![GitHub issues](https://img.shields.io/github/issues/hooshyar/flutter_gen_ai_chat_ui.svg)](https://github.com/hooshyar/flutter_gen_ai_chat_ui/issues)
 
-A modern, high-performance Flutter chat UI kit for building beautiful messaging interfaces. Features streaming text animations, markdown support, file attachments, and extensive customization options. Perfect for AI assistants, customer support, team chat, social messaging, and any conversational application.
+A Flutter chat UI kit for AI apps. Stream ChatGPT, Claude or Gemini replies as live markdown with syntax-highlighted code and LaTeX, render tool calls and rich inline widgets, and get RTL, theming and accessibility out of the box. It works with any backend: you bring the model call, the widget handles the conversation UI.
 
-**🚀 Production Ready** | **📱 Cross-Platform** | **⚡ High Performance** | **🎨 Fully Customizable**
+▶️ **[Try the live web demo](https://hooshyar.github.io/flutter_gen_ai_chat_ui/)**
 
 ## Table of Contents
 - [Installation](#installation)
@@ -25,8 +25,7 @@ A modern, high-performance Flutter chat UI kit for building beautiful messaging 
 - [RTL & Bidirectional Languages](#rtl--bidirectional-languages)
 - [Configuration Options](#configuration-options)
 - [AI Actions System](#-ai-actions-system)
-- [Advanced Features](#advanced-features)
-- [Showcase](#-showcase)
+- [Community & Support](#community--support)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/hooshyar/flutter_gen_ai_chat_ui/main/doc/demo/demo.gif" alt="The 2.20.0 example app: live preview, streaming markdown with syntax-highlighted code, theme presets and RTL" width="720">
@@ -40,7 +39,7 @@ Add this to your package's pubspec.yaml file:
 
 ```yaml
 dependencies:
-  flutter_gen_ai_chat_ui: ^2.20.0
+  flutter_gen_ai_chat_ui: ^2.21.0
 ```
 
 Then run:
@@ -54,23 +53,32 @@ flutter pub get
 ## Quick Start
 
 ```dart
+import 'package:flutter/material.dart';
 import 'package:flutter_gen_ai_chat_ui/flutter_gen_ai_chat_ui.dart';
 
 class ChatScreen extends StatefulWidget {
+  const ChatScreen({super.key});
+
   @override
-  _ChatScreenState createState() => _ChatScreenState();
+  State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
   final _controller = ChatMessagesController();
-  final _currentUser = ChatUser(id: 'user', firstName: 'User');
-  final _aiUser = ChatUser(id: 'ai', firstName: 'AI Assistant');
+  final _currentUser = const ChatUser(id: 'user', firstName: 'You');
+  final _aiUser = const ChatUser(id: 'ai', firstName: 'Assistant');
   bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('AI Chat')),
+      appBar: AppBar(title: const Text('AI Chat')),
       body: AiChatWidget(
         // Required parameters
         currentUser: _currentUser,
@@ -80,41 +88,39 @@ class _ChatScreenState extends State<ChatScreen> {
 
         // Optional parameters
         loadingConfig: LoadingConfig(isLoading: _isLoading),
-        inputOptions: InputOptions(
-          hintText: 'Ask me anything...',
-          sendOnEnter: true,
-        ),
-        welcomeMessageConfig: WelcomeMessageConfig(
+        welcomeMessageConfig: const WelcomeMessageConfig(
           title: 'Welcome to AI Chat',
-          questionsSectionTitle: 'Try asking me:',
         ),
-        exampleQuestions: [
-          ExampleQuestion(question: "What can you help me with?"),
-          ExampleQuestion(question: "Tell me about your features"),
+        exampleQuestions: const [
+          ExampleQuestion(question: 'What can you help me with?'),
+          ExampleQuestion(question: 'Tell me about your features'),
         ],
       ),
     );
   }
 
   Future<void> _handleSendMessage(ChatMessage message) async {
+    // The widget hands you the user's message: add it to the conversation.
+    _controller.addMessage(message);
     setState(() => _isLoading = true);
 
     try {
-      // Your AI service logic here
-      await Future.delayed(Duration(seconds: 1)); // Simulating API call
+      final reply = await myAiService.reply(message.text); // your LLM call
 
-      // Add AI response
       _controller.addMessage(ChatMessage(
-        text: "This is a response to: ${message.text}",
+        text: reply,
         user: _aiUser,
         createdAt: DateTime.now(),
+        isMarkdown: true,
       ));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }
 ```
+
+To stream the reply token by token instead, see [Streaming AI responses](#streaming-ai-responses) below.
 
 > **Note:** when you add several messages for the same user back to back without an explicit `id` (e.g. a tool-call message immediately followed by a result card), give each one an explicit id. `ChatMessagesController` builds an id from the user id and `createdAt`'s millisecond timestamp when none is given, so two id-less messages added in the same millisecond can land on the same generated id and be treated as the same message. This can happen on any platform, and it is more likely on web, where `DateTime.now()` only has millisecond resolution. Pass `ChatMessage(customProperties: {'id': 'my-id'})` or `ChatMessage.rich(id: 'my-id')` to keep them distinct.
 
@@ -262,18 +268,12 @@ flutter run
 - **✨ Unique Streaming Text**: Word-by-word animations like ChatGPT and Claude
 - **📁 Complete File Support**: Multi-format, multi-file attachments (images, documents, videos) with a built-in image lightbox and per-file upload progress — see the [attachments cookbook recipe](doc/cookbook/README.md#customize-how-attachments-are-displayed)
 - **📝 Advanced Markdown**: Full support: fenced code blocks render in a bundled monospace font (JetBrains Mono, OFL) with built-in lightweight syntax highlighting, light/dark themes, a per-block copy button, horizontal scrolling, and LTR code inside RTL chats
-- **🚀 High Performance**: Optimized for large conversations (10K+ messages)
+- **🚀 Lazy rendering**: Messages are built on demand, so long conversations stay smooth
 - **🎨 Extensive Theming**: Complete customization to match your brand
 - **📱 Cross-Platform**: Works on all Flutter-supported platforms
 - **🔗 Backend Agnostic**: Compatible with any API or service
 - **⚡ Real-time Ready**: Built-in support for live updates
 - **💾 Persistable Threads**: Opt-in `ChatPersistence` hook to restore/save a long-running conversation across app restarts — see the [persistence cookbook recipe](doc/cookbook/README.md#persist-a-long-running-thread-across-app-restarts)
-
-### Performance Benchmarks
-- **Message Rendering**: 60 FPS with 1000+ messages
-- **Memory Efficiency**: Optimized for large conversations
-- **Startup Time**: <100ms initialization
-- **Streaming Speed**: Configurable 10-100ms per word
 
 ### Web / WebAssembly
 
@@ -410,7 +410,26 @@ AiChatWidget(
 
 ### Input Field Customization
 
-The package offers multiple ways to style the input field:
+The package offers multiple ways to style the input field.
+
+#### Composer layout
+
+Since 2.20 the composer is stacked by default: when an attach button or other leading content is present, the text field gets its own row and the attach and send buttons sit in a row below it. For the one-row composer of earlier versions, use `ComposerLayout.singleRow`. `FileUploadOptions.buttonPosition` puts the attach button before the field (`leading`, the default) or next to the send button (`trailing`):
+
+```dart
+AiChatWidget(
+  // ... required parameters
+  inputOptions: const InputOptions(
+    composerLayout: ComposerLayout.singleRow, // [attach] field [send]
+  ),
+  fileUploadOptions: FileUploadOptions(
+    onFilesSelected: (files) { /* pick and upload */ },
+    buttonPosition: AttachmentButtonPosition.trailing, // field [attach] [send]
+  ),
+)
+```
+
+The welcome screen has matching options. `WelcomeMessageConfig(centerVertically: true)` centres the greeting in the empty chat. `singleColumnQuestions: true` stacks the suggestions one per row at full width instead of a two-column grid on wide screens.
 
 #### Default Input
 
@@ -641,6 +660,20 @@ AiChatWidget(
 )
 ```
 
+To restyle the copy button (icon, colour, size, a text label), pass `codeBlockCopyButtonBuilder`. It receives whether the code was just copied and the callback that copies it:
+
+```dart
+MessageOptions(
+  codeBlockCopyButtonBuilder: (context, copied, onCopy) => TextButton.icon(
+    onPressed: onCopy,
+    icon: Icon(copied ? Icons.check : Icons.copy_all, size: 14),
+    label: Text(copied ? 'Copied' : 'Copy'),
+  ),
+)
+```
+
+`CodeBlockView` and `CodeBlockMarkdownBuilder` take the same builder as `copyButtonBuilder`.
+
 ### Custom Bubble Builder
 
 Create completely custom message bubbles with full control over styling and behavior:
@@ -807,6 +840,7 @@ class _MyAiChatState extends State<MyAiChat> {
         'I calculated that for you: ${result.data['equation']}' : 
         'Sorry, calculation failed: ${result.error}',
       user: aiUser,
+      createdAt: DateTime.now(),
     ));
   }
 }
@@ -973,6 +1007,7 @@ void _processAIMessage(String userMessage) async {
     _controller.addMessage(ChatMessage(
       text: 'Result: ${result.data}',
       user: aiUser,
+      createdAt: DateTime.now(),
     ));
   }
 }
@@ -1003,45 +1038,13 @@ flutter run
 
 ---
 
-## 🎯 Showcase
+## Community & Support
 
-### Featured Apps Using This Package
-- **AI Customer Support Bot** - SaaS company with 10K+ daily conversations
-- **Educational Tutor App** - Language learning with interactive chat
-- **Healthcare Assistant** - HIPAA-compliant patient communication
-- **E-commerce Support** - Real-time shopping assistance
-- **Gaming Guild Chat** - Team communication with file sharing
+- **🐛 [Issue Tracker](https://github.com/hooshyar/flutter_gen_ai_chat_ui/issues)**: report bugs and request features
+- **📝 [Changelog](CHANGELOG.md)**: what changed in each release
+- **⭐ [Star on GitHub](https://github.com/hooshyar/flutter_gen_ai_chat_ui)**: show your support
 
-*Want your app featured? [Submit a showcase request](https://github.com/hooshyar/flutter_gen_ai_chat_ui/issues/new?template=showcase.md)*
-
-### Community & Support
-
-- **🐛 [Issue Tracker](https://github.com/hooshyar/flutter_gen_ai_chat_ui/issues)** - Report bugs and request features
-- **⭐ [Star on GitHub](https://github.com/hooshyar/flutter_gen_ai_chat_ui)** - Show your support!
-
-## Recent Updates (v2.4.2+)
-
-### 🔧 Bug Fixes & Improvements
-
-- **Fixed Streaming Animation Disable**: The `enableAnimation: false`, `enableMarkdownStreaming: false`, and `streamingWordByWord: false` parameters now work correctly. Previously, markdown messages would always stream regardless of these settings.
-
-- **Added Focus Control**: New `autofocus` and `focusNode` support in `InputOptions` for better input field control.
-  ```dart
-  InputOptions(
-    autofocus: true,          // Auto-focus input on widget load
-    focusNode: myFocusNode,   // External focus control
-  )
-  ```
-
-- **Enhanced Factory Constructors**: `InputOptions.minimal()` and `InputOptions.glassmorphic()` now support the new focus parameters.
-
-### What Developers Say
-
-> *"The streaming text animation is incredibly smooth and the file attachment system saved us weeks of development."* - **Sarah Chen, Senior Flutter Developer**
-
-> *"Best chat UI package I've used. The performance with large message lists is outstanding."* - **Ahmed Hassan, Mobile Team Lead**
-
-> *"Finally, a chat package that actually works well for AI applications. The streaming feature is exactly what we needed."* - **Maria Rodriguez, Product Manager**
+Built something with this package? Open an issue with a link and a screenshot, and it can be listed here.
 
 ---
 

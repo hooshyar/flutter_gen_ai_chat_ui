@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 
 import '../../theme/chat_tokens.dart';
 import '../../theme/code_block_theme.dart';
+import '../../utils/clipboard_utils.dart';
 import 'code_highlighter.dart';
 
 /// A self-contained code block: optional header (language label + copy
@@ -31,6 +31,7 @@ class CodeBlockView extends StatefulWidget {
     this.baseStyle,
     this.padding,
     this.decorate = true,
+    this.copyButtonBuilder,
   });
 
   /// Raw source code — no markdown fences or language tag.
@@ -59,6 +60,10 @@ class CodeBlockView extends StatefulWidget {
 
   /// Whether to paint the rounded background/border container.
   final bool decorate;
+
+  /// Replaces the default header copy button with a custom widget (icon,
+  /// colour, size, label...). Only used while [showCopyButton] is true.
+  final CodeBlockCopyButtonBuilder? copyButtonBuilder;
 
   @override
   State<CodeBlockView> createState() => _CodeBlockViewState();
@@ -116,8 +121,9 @@ class _CodeBlockViewState extends State<CodeBlockView> {
   }
 
   Future<void> _copy() async {
-    await Clipboard.setData(ClipboardData(text: _displayCode));
-    if (!mounted) return;
+    // Only show the "copied" check when the clipboard accepted the write.
+    final copied = await copyTextToClipboard(_displayCode);
+    if (!copied || !mounted) return;
     setState(() => _copied = true);
     _copiedTimer?.cancel();
     _copiedTimer = Timer(_copiedFeedbackDuration, () {
@@ -243,6 +249,7 @@ class _CodeBlockViewState extends State<CodeBlockView> {
             copied: _copied,
             showCopyButton: widget.showCopyButton,
             onCopy: _copy,
+            copyButtonBuilder: widget.copyButtonBuilder,
           ),
           Container(height: 1, color: theme.borderColor),
         ],
@@ -273,6 +280,7 @@ class _Header extends StatelessWidget {
     required this.copied,
     required this.showCopyButton,
     required this.onCopy,
+    this.copyButtonBuilder,
   });
 
   final String language;
@@ -280,6 +288,7 @@ class _Header extends StatelessWidget {
   final bool copied;
   final bool showCopyButton;
   final VoidCallback onCopy;
+  final CodeBlockCopyButtonBuilder? copyButtonBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -303,7 +312,9 @@ class _Header extends StatelessWidget {
               )
             else
               const Spacer(),
-            if (showCopyButton)
+            if (showCopyButton && copyButtonBuilder != null)
+              copyButtonBuilder!(context, copied, onCopy)
+            else if (showCopyButton)
               Semantics(
                 button: true,
                 label: tooltip,
@@ -366,6 +377,7 @@ class CodeBlockMarkdownBuilder extends MarkdownElementBuilder {
     this.baseStyle,
     this.ownsDecoration = true,
     this.padding,
+    this.copyButtonBuilder,
   });
 
   /// Visual theme forwarded to [CodeBlockView.theme].
@@ -394,6 +406,9 @@ class CodeBlockMarkdownBuilder extends MarkdownElementBuilder {
   /// they set it on the very stylesheet passed to `MessageOptions`. Set
   /// this from that value (when non-null) so it still takes effect.
   final EdgeInsets? padding;
+
+  /// Forwarded to [CodeBlockView.copyButtonBuilder].
+  final CodeBlockCopyButtonBuilder? copyButtonBuilder;
 
   String? _language;
 
@@ -427,6 +442,7 @@ class CodeBlockMarkdownBuilder extends MarkdownElementBuilder {
       baseStyle: baseStyle,
       decorate: ownsDecoration,
       padding: padding,
+      copyButtonBuilder: copyButtonBuilder,
     );
     if (!ownsDecoration) return view;
     // Bottom-only: the ambient block spacing plus this already lines up

@@ -15,6 +15,20 @@ enum InputContainerWidth {
   custom,
 }
 
+/// Where the composer places leading content (the attach button,
+/// [InputOptions.inputLeadingBuilder], [InputOptions.inputToolbarBuilder])
+/// relative to the text field.
+enum ComposerLayout {
+  /// The 2.20 default: the text field sits on its own row, with leading
+  /// content and the send button in a row below it. Without leading
+  /// content the field and send button share one row.
+  stacked,
+
+  /// One row, the pre-2.20 layout: `[attach] [leading] field [send]`.
+  /// A toolbar from [InputOptions.inputToolbarBuilder], if any, goes below.
+  singleRow,
+}
+
 /// Input options for customizing the chat input field.
 /// Designed to be more aligned with Dila's approach.
 class InputOptions {
@@ -242,6 +256,11 @@ class InputOptions {
   final bool autofocus;
   final FocusNode? focusNode;
 
+  /// How the attach button and other leading content are arranged around
+  /// the text field. Defaults to [ComposerLayout.stacked]; use
+  /// [ComposerLayout.singleRow] for the pre-2.20 one-row composer.
+  final ComposerLayout composerLayout;
+
   const InputOptions({
     this.textController,
     this.textStyle,
@@ -315,6 +334,7 @@ class InputOptions {
     this.attachmentPreviewBuilder,
     this.autofocus = false,
     this.focusNode,
+    this.composerLayout = ComposerLayout.stacked,
   });
 
   /// Creates a minimal input field with no outer container.
@@ -496,6 +516,11 @@ class InputOptions {
     bool? enableInteractiveSelection,
     bool? autofocus,
     FocusNode? focusNode,
+    Widget Function(BuildContext context)? inputToolbarBuilder,
+    Widget Function(VoidCallback onSend, bool isEmpty)? sendOrMicBuilder,
+    Widget Function(BuildContext context)? inputLeadingBuilder,
+    Widget Function(BuildContext context)? attachmentPreviewBuilder,
+    ComposerLayout? composerLayout,
   }) {
     return InputOptions(
       textController: textController ?? this.textController,
@@ -573,6 +598,12 @@ class InputOptions {
           enableInteractiveSelection ?? this.enableInteractiveSelection,
       autofocus: autofocus ?? this.autofocus,
       focusNode: focusNode ?? this.focusNode,
+      inputToolbarBuilder: inputToolbarBuilder ?? this.inputToolbarBuilder,
+      sendOrMicBuilder: sendOrMicBuilder ?? this.sendOrMicBuilder,
+      inputLeadingBuilder: inputLeadingBuilder ?? this.inputLeadingBuilder,
+      attachmentPreviewBuilder:
+          attachmentPreviewBuilder ?? this.attachmentPreviewBuilder,
+      composerLayout: composerLayout ?? this.composerLayout,
     );
   }
 

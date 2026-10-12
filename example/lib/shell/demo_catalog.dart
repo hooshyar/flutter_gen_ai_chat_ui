@@ -63,6 +63,13 @@ const List<DemoEntry> demoCatalog = [
     sourceFile: 'themed_chat',
   ),
   DemoEntry(
+    route: '/layout',
+    title: 'Layout',
+    description: 'Single-row or stacked composer, welcome and copy options.',
+    group: 'Core',
+    sourceFile: 'layout_chat',
+  ),
+  DemoEntry(
     route: '/actions',
     title: 'Actions',
     description: 'Tool calls rendered as code, then a result card.',

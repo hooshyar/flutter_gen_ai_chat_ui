@@ -1,6 +1,6 @@
 name: flutter_gen_ai_chat_ui
 description: "AI chat UI for Flutter. Streaming text, markdown, LaTeX, rich inline widgets, function-calling/agent surface, RTL, theming. ChatGPT/Claude/Gemini ready."
-version: 2.20.0
+version: 2.21.0
 homepage: https://github.com/hooshyar/flutter_gen_ai_chat_ui
 repository: https://github.com/hooshyar/flutter_gen_ai_chat_ui
 issue_tracker: https://github.com/hooshyar/flutter_gen_ai_chat_ui/issues
@@ -41,6 +41,9 @@ environment:
   # job going green against it. A real consumer on Flutter
   # 3.27.x-3.34.x was already unable to `flutter pub get` this package;
   # this only makes the declared floor match that pre-existing reality.
+  # 2.21.0: google_fonts (unused by lib/) was removed as a dependency. The
+  # Flutter floor stays at 3.35.0 until the sdk-matrix floor leg confirms a
+  # lower one; flutter_streaming_text_markdown itself needs >=3.32.0.
   # `sdk:` is deliberately left at 3.6.0, not bumped to match 3.35.0's
   # bundled 3.9.0 — Dart 3.7 shipped a new default `dart format` style
   # (gated on the package's declared language version), so raising this
@@ -57,7 +60,6 @@ dependencies:
   clock: ^1.1.2
   flutter_markdown_plus: ^1.0.12
   markdown: ^7.3.1
-  google_fonts: ^8.1.0
   flutter_streaming_text_markdown: ^1.11.0
   url_launcher: ^6.3.1
   flutter_math_fork: ^0.7.2
