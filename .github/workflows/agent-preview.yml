@@ -40,6 +40,34 @@ jobs:
           fail=0
           report() { echo "::error title=$1::$(tail -n "${3:-80}" "$2" | sed -e 's/%/%25/g' -e 's/\r//g' | sed ':a;N;$!ba;s/\n/%0A/g')"; }
           step() { local t="$1"; shift; if ! "$@" > out.txt 2>&1; then report "$t" out.txt; fail=1; fi; }
+          tests() { local t="$1"; shift; if ! "$@" -r json > tj.txt 2> te.txt; then python3 - "$t" <<'PY'
+          import json, sys
+          title = sys.argv[1]
+          names, errors, failed = {}, {}, []
+          for line in open('tj.txt'):
+              line = line.strip()
+              if not line.startswith('{'):
+                  continue
+              try:
+                  e = json.loads(line)
+              except ValueError:
+                  continue
+              t = e.get('type')
+              if t == 'testStart':
+                  names[e['test']['id']] = e['test']['name']
+              elif t == 'error':
+                  errors.setdefault(e['testID'], []).append((e.get('error', '') + '\n' + e.get('stackTrace', ''))[:1500])
+              elif t == 'testDone' and e.get('result') != 'success' and not e.get('hidden'):
+                  failed.append(e['testID'])
+          out = []
+          for tid in failed[:8]:
+              out.append('FAILED: ' + names.get(tid, str(tid)) + '\n' + '\n'.join(errors.get(tid, []))[:2500])
+          if not out:
+              out.append('no failing test found; stderr: ' + open('te.txt').read()[-2000:])
+          msg = ('\n\n'.join(out)).replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+          print('::error title=' + title + ' (' + str(len(failed)) + ' failed)::' + msg)
+          PY
+          fail=1; fi; }
           # Work on a copy of the tree without this workflow's own commit noise.
           step "chat: pub get" flutter pub get
           (cd example && flutter pub get > ../ex.txt 2>&1) || { report "chat: example pub get" ex.txt; fail=1; }
@@ -56,8 +84,8 @@ jobs:
           fi
           step "chat: analyze" flutter analyze --fatal-infos
           (cd example && flutter analyze --fatal-infos > ../ex.txt 2>&1) || { report "chat: example analyze" ex.txt; fail=1; }
-          if ! flutter test -r failures-only > test.txt 2>&1; then report "chat: tests" test.txt 150; fail=1; fi
-          (cd example && flutter test -r failures-only > ../ex.txt 2>&1) || { report "chat: example tests" ex.txt 150; fail=1; }
+          tests "chat: tests" flutter test
+          cd example; tests "chat: example tests" flutter test; cd ..
           step "chat: doc drift" dart run tool/check_doc_drift.dart
           step "chat: publish dry-run" dart pub publish --dry-run
           [ "$fail" = 0 ] && echo "::notice title=chat checks::all passed"
@@ -80,19 +108,47 @@ jobs:
           fail=0
           report() { echo "::error title=$1::$(tail -n "${3:-80}" "$2" | sed -e 's/%/%25/g' -e 's/\r//g' | sed ':a;N;$!ba;s/\n/%0A/g')"; }
           step() { local t="$1"; shift; if ! "$@" > out.txt 2>&1; then report "$t" out.txt; fail=1; fi; }
+          tests() { local t="$1"; shift; if ! "$@" -r json > tj.txt 2> te.txt; then python3 - "$t" <<'PY'
+          import json, sys
+          title = sys.argv[1]
+          names, errors, failed = {}, {}, []
+          for line in open('tj.txt'):
+              line = line.strip()
+              if not line.startswith('{'):
+                  continue
+              try:
+                  e = json.loads(line)
+              except ValueError:
+                  continue
+              t = e.get('type')
+              if t == 'testStart':
+                  names[e['test']['id']] = e['test']['name']
+              elif t == 'error':
+                  errors.setdefault(e['testID'], []).append((e.get('error', '') + '\n' + e.get('stackTrace', ''))[:1500])
+              elif t == 'testDone' and e.get('result') != 'success' and not e.get('hidden'):
+                  failed.append(e['testID'])
+          out = []
+          for tid in failed[:8]:
+              out.append('FAILED: ' + names.get(tid, str(tid)) + '\n' + '\n'.join(errors.get(tid, []))[:2500])
+          if not out:
+              out.append('no failing test found; stderr: ' + open('te.txt').read()[-2000:])
+          msg = ('\n\n'.join(out)).replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+          print('::error title=' + title + ' (' + str(len(failed)) + ' failed)::' + msg)
+          PY
+          fail=1; fi; }
           step "stm: pub get" flutter pub get
           step "stm: generate version" dart run tool/generate_version.dart
           if ! dart format --output=none --set-exit-if-changed lib test > fmt.txt 2>&1; then
             dart format lib test > /dev/null
-            git diff > fmt.patch
+            git diff -- lib test > fmt.patch
             report "stm: format (patch follows)" fmt.patch 120
             git checkout -q -- .
             fail=1
           fi
           step "stm: analyze" flutter analyze
-          if ! flutter test --no-dds --exclude-tags benchmark -r failures-only > test.txt 2>&1; then report "stm: tests" test.txt 150; fail=1; fi
+          tests "stm: tests" flutter test --no-dds --exclude-tags benchmark
           (cd example && flutter pub get > ../ex.txt 2>&1 && flutter analyze > ../ex.txt 2>&1) || { report "stm: example analyze" ex.txt; fail=1; }
-          (cd example && flutter test > ../ex.txt 2>&1) || { report "stm: example tests" ex.txt; fail=1; }
+          cd example; tests "stm: example tests" flutter test; cd ..
           git checkout -- analysis_options.yaml example/analysis_options.yaml 2>/dev/null || true
           step "stm: publish dry-run" dart pub publish --dry-run
           dart pub global activate pana > /dev/null 2>&1
