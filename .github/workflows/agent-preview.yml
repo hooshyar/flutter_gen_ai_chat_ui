@@ -1,0 +1,219 @@
+# TEMPORARY - lives only on agent/preview-* branches, never merged.
+#
+# 1. check-*: runs format, analyze and tests for the release candidates and
+#    reports every failure as an annotation (the session driving this can read
+#    annotations but not job logs). When `dart format` would change anything,
+#    the formatted tree is pushed to agent/fmt-<pkg> so it can be pulled back.
+# 2. preview: builds the three example apps for web and publishes them to
+#    gh-pages under /preview/ (keep_files, so the live demo at the site root is
+#    untouched). The next normal demo deploy from main replaces the whole
+#    branch and removes the preview again.
+name: agent-preview
+
+on:
+  push:
+    branches: ['agent/preview-*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  STM_REF: agent/wip-1.11.1
+  DOT_REF: agent/quick-wins-2026-10
+  # agent/preview-2026-10 -> /preview/, any other agent/preview-* -> /preview-next/
+  PREVIEW_DIR: ${{ github.ref_name == 'agent/preview-2026-10' && 'preview' || 'preview-next' }}
+
+jobs:
+  check-chat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Check chat package and example
+        run: |
+          fail=0
+          report() { echo "::error title=$1::$(tail -n "${3:-80}" "$2" | sed -e 's/%/%25/g' -e 's/\r//g' | sed ':a;N;$!ba;s/\n/%0A/g')"; }
+          step() { local t="$1"; shift; if ! "$@" > out.txt 2>&1; then report "$t" out.txt; fail=1; fi; }
+          tests() { local t="$1"; shift; if ! "$@" -r json > tj.txt 2> te.txt; then python3 - "$t" <<'PY'
+          import json, sys
+          title = sys.argv[1]
+          names, errors, failed = {}, {}, []
+          for line in open('tj.txt'):
+              line = line.strip()
+              if not line.startswith('{'):
+                  continue
+              try:
+                  e = json.loads(line)
+              except ValueError:
+                  continue
+              t = e.get('type')
+              if t == 'testStart':
+                  names[e['test']['id']] = e['test']['name']
+              elif t == 'error':
+                  errors.setdefault(e['testID'], []).append((e.get('error', '') + '\n' + e.get('stackTrace', ''))[:1500])
+              elif t == 'testDone' and e.get('result') != 'success' and not e.get('hidden'):
+                  failed.append(e['testID'])
+          out = []
+          for tid in failed[:8]:
+              out.append('FAILED: ' + names.get(tid, str(tid)) + '\n' + '\n'.join(errors.get(tid, []))[:2500])
+          if not out:
+              out.append('no failing test found; stderr: ' + open('te.txt').read()[-2000:])
+          msg = ('\n\n'.join(out)).replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+          print('::error title=' + title + ' (' + str(len(failed)) + ' failed)::' + msg)
+          PY
+          fail=1; fi; }
+          # Work on a copy of the tree without this workflow's own commit noise.
+          step "chat: pub get" flutter pub get
+          (cd example && flutter pub get > ../ex.txt 2>&1) || { report "chat: example pub get" ex.txt; fail=1; }
+          (cd example && dart run tool/generate_version.dart > ../ex.txt 2>&1) || { report "chat: generate version" ex.txt; fail=1; }
+          if ! dart format --output=none --set-exit-if-changed . > fmt.txt 2>&1; then
+            report "chat: format (fixed tree pushed to agent/fmt-chat)" fmt.txt
+            dart format . > /dev/null
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git checkout -q -B agent/fmt-chat
+            git add -A -- '*.dart'
+            git commit -qm "dart format" && git push -qf origin agent/fmt-chat
+            fail=1
+          fi
+          step "chat: analyze" flutter analyze --fatal-infos
+          (cd example && flutter analyze --fatal-infos > ../ex.txt 2>&1) || { report "chat: example analyze" ex.txt; fail=1; }
+          tests "chat: tests" flutter test
+          cd example; tests "chat: example tests" flutter test; cd ..
+          step "chat: doc drift" dart run tool/check_doc_drift.dart
+          step "chat: publish dry-run" dart pub publish --dry-run
+          [ "$fail" = 0 ] && echo "::notice title=chat checks::all passed"
+          exit $fail
+
+  check-streaming:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: hooshyar/flutter_streaming_text_markdown
+          ref: ${{ env.STM_REF }}
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Check streaming package (as CI), then with upgraded deps (as Weekly)
+        run: |
+          fail=0
+          report() { echo "::error title=$1::$(tail -n "${3:-80}" "$2" | sed -e 's/%/%25/g' -e 's/\r//g' | sed ':a;N;$!ba;s/\n/%0A/g')"; }
+          step() { local t="$1"; shift; if ! "$@" > out.txt 2>&1; then report "$t" out.txt; fail=1; fi; }
+          tests() { local t="$1"; shift; if ! "$@" -r json > tj.txt 2> te.txt; then python3 - "$t" <<'PY'
+          import json, sys
+          title = sys.argv[1]
+          names, errors, failed = {}, {}, []
+          for line in open('tj.txt'):
+              line = line.strip()
+              if not line.startswith('{'):
+                  continue
+              try:
+                  e = json.loads(line)
+              except ValueError:
+                  continue
+              t = e.get('type')
+              if t == 'testStart':
+                  names[e['test']['id']] = e['test']['name']
+              elif t == 'error':
+                  errors.setdefault(e['testID'], []).append((e.get('error', '') + '\n' + e.get('stackTrace', ''))[:1500])
+              elif t == 'testDone' and e.get('result') != 'success' and not e.get('hidden'):
+                  failed.append(e['testID'])
+          out = []
+          for tid in failed[:8]:
+              out.append('FAILED: ' + names.get(tid, str(tid)) + '\n' + '\n'.join(errors.get(tid, []))[:2500])
+          if not out:
+              out.append('no failing test found; stderr: ' + open('te.txt').read()[-2000:])
+          msg = ('\n\n'.join(out)).replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+          print('::error title=' + title + ' (' + str(len(failed)) + ' failed)::' + msg)
+          PY
+          fail=1; fi; }
+          step "stm: pub get" flutter pub get
+          step "stm: generate version" dart run tool/generate_version.dart
+          if ! dart format --output=none --set-exit-if-changed lib test > fmt.txt 2>&1; then
+            dart format lib test > /dev/null
+            git diff -- lib test > fmt.patch
+            report "stm: format (patch follows)" fmt.patch 120
+            git checkout -q -- .
+            fail=1
+          fi
+          step "stm: analyze" flutter analyze
+          tests "stm: tests" flutter test --no-dds --exclude-tags benchmark
+          (cd example && flutter pub get > ../ex.txt 2>&1 && flutter analyze > ../ex.txt 2>&1) || { report "stm: example analyze" ex.txt; fail=1; }
+          cd example; tests "stm: example tests" flutter test; cd ..
+          git checkout -- analysis_options.yaml example/analysis_options.yaml 2>/dev/null || true
+          step "stm: publish dry-run" dart pub publish --dry-run
+          dart pub global activate pana > /dev/null 2>&1
+          if ! dart pub global run pana --exit-code-threshold 0 . > pana.txt 2>&1; then report "stm: pana" pana.txt 60; fail=1; else echo "::notice title=stm pana::$(grep -E 'Points:|points' pana.txt | tail -2 | tr '\n' ' ')"; fi
+          # Weekly "pub upgrade" leg, diagnosed separately (does not fail the job).
+          flutter pub upgrade > up.txt 2>&1 || report "weekly-diag: pub upgrade" up.txt
+          dart run tool/generate_version.dart > /dev/null 2>&1
+          if ! flutter analyze > upa.txt 2>&1; then echo "::warning title=weekly-diag: analyze after pub upgrade::$(tail -n 60 upa.txt | sed -e 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"; fi
+          [ "$fail" = 0 ] && echo "::notice title=streaming checks::all passed"
+          exit $fail
+
+  floor-diag:
+    # Why does the Weekly downgrade job fail at flutter-action on 3.32.0?
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.32.0
+      - run: echo "::notice title=floor-diag::$(flutter --version | head -1)"
+
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    concurrency:
+      group: agent-preview-gh-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: hooshyar/flutter_streaming_text_markdown
+          ref: ${{ env.STM_REF }}
+          path: _stm
+      - uses: actions/checkout@v4
+        with:
+          repository: hooshyar/flutter_dot_loader
+          ref: ${{ env.DOT_REF }}
+          path: _dot
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Build the three examples
+        run: |
+          set -o pipefail
+          run() { "$@" > step.log 2>&1 || { echo "::error title=preview: $*::$(tail -50 step.log | sed -e 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }; }
+          site="$GITHUB_WORKSPACE/_site"; mkdir -p "$site"
+          (cd _stm && run flutter pub get && run dart run tool/generate_version.dart && cd example && run flutter pub get \
+            && run flutter build web --release --base-href /flutter_gen_ai_chat_ui/$PREVIEW_DIR/streaming/ && cp -r build/web "$site/streaming")
+          printf 'dependency_overrides:\n  flutter_streaming_text_markdown:\n    path: ../_stm\n' > example/pubspec_overrides.yaml
+          run flutter pub get
+          (cd example && run flutter pub get && run dart run tool/generate_version.dart \
+            && run flutter build web --release --base-href /flutter_gen_ai_chat_ui/$PREVIEW_DIR/chat/ && cp -r build/web "$site/chat")
+          (cd _dot && run flutter pub get && cd example && run flutter pub get \
+            && run flutter build web --release --base-href /flutter_gen_ai_chat_ui/$PREVIEW_DIR/dot/ && cp -r build/web "$site/dot")
+          echo "::notice title=preview built::$(ls "$site" | tr '\n' ' ')"
+      - name: Publish preview to gh-pages/preview
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _site
+          destination_dir: ${{ env.PREVIEW_DIR }}
+          keep_files: true
+          publish_branch: gh-pages
+          commit_message: "preview: release candidates (temporary)"
