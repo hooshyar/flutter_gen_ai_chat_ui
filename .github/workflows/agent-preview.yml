@@ -18,12 +18,14 @@ permissions:
   contents: write
 
 concurrency:
-  group: agent-preview
+  group: agent-preview-${{ github.ref }}
   cancel-in-progress: true
 
 env:
   STM_REF: agent/wip-1.11.1
   DOT_REF: agent/quick-wins-2026-10
+  # agent/preview-2026-10 -> /preview/, any other agent/preview-* -> /preview-next/
+  PREVIEW_DIR: ${{ github.ref_name == 'agent/preview-2026-10' && 'preview' || 'preview-next' }}
 
 jobs:
   check-chat:
@@ -173,6 +175,9 @@ jobs:
   preview:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    concurrency:
+      group: agent-preview-gh-pages
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -195,20 +200,20 @@ jobs:
           run() { "$@" > step.log 2>&1 || { echo "::error title=preview: $*::$(tail -50 step.log | sed -e 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }; }
           site="$GITHUB_WORKSPACE/_site"; mkdir -p "$site"
           (cd _stm && run flutter pub get && run dart run tool/generate_version.dart && cd example && run flutter pub get \
-            && run flutter build web --release --base-href /flutter_gen_ai_chat_ui/preview/streaming/ && cp -r build/web "$site/streaming")
+            && run flutter build web --release --base-href /flutter_gen_ai_chat_ui/$PREVIEW_DIR/streaming/ && cp -r build/web "$site/streaming")
           printf 'dependency_overrides:\n  flutter_streaming_text_markdown:\n    path: ../_stm\n' > example/pubspec_overrides.yaml
           run flutter pub get
           (cd example && run flutter pub get && run dart run tool/generate_version.dart \
-            && run flutter build web --release --base-href /flutter_gen_ai_chat_ui/preview/chat/ && cp -r build/web "$site/chat")
+            && run flutter build web --release --base-href /flutter_gen_ai_chat_ui/$PREVIEW_DIR/chat/ && cp -r build/web "$site/chat")
           (cd _dot && run flutter pub get && cd example && run flutter pub get \
-            && run flutter build web --release --base-href /flutter_gen_ai_chat_ui/preview/dot/ && cp -r build/web "$site/dot")
+            && run flutter build web --release --base-href /flutter_gen_ai_chat_ui/$PREVIEW_DIR/dot/ && cp -r build/web "$site/dot")
           echo "::notice title=preview built::$(ls "$site" | tr '\n' ' ')"
       - name: Publish preview to gh-pages/preview
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: _site
-          destination_dir: preview
+          destination_dir: ${{ env.PREVIEW_DIR }}
           keep_files: true
           publish_branch: gh-pages
           commit_message: "preview: release candidates (temporary)"
