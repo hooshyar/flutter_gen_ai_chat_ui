@@ -1,0 +1,85 @@
+# TEMPORARY diagnostics branch (agent/preview-*), never merged.
+# Reproduces the streaming package's Weekly failures with readable output:
+# the exhaustive fade_matrix suite on main and on the commit just before the
+# 1.11.1 fade fix, and the pub downgrade + analyze leg.
+name: agent-preview
+
+on:
+  push:
+    branches: ['agent/preview-*']
+
+permissions:
+  contents: read
+
+jobs:
+  fade-matrix:
+    strategy:
+      fail-fast: false
+      matrix:
+        ref: [main, af404e4, 30194e8]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: hooshyar/flutter_streaming_text_markdown
+          ref: ${{ matrix.ref }}
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: fade_matrix
+        run: |
+          flutter pub get > /dev/null
+          flutter test --no-dds --tags fade_matrix --run-skipped -r json > tj.txt 2> te.txt || true
+          python3 - "${{ matrix.ref }}" <<'PY'
+          import json, sys
+          ref = sys.argv[1]
+          names, errors, failed, passed = {}, {}, [], 0
+          for line in open('tj.txt'):
+              line = line.strip()
+              if not line.startswith('{'):
+                  continue
+              try:
+                  e = json.loads(line)
+              except ValueError:
+                  continue
+              t = e.get('type')
+              if t == 'testStart':
+                  names[e['test']['id']] = e['test']['name']
+              elif t == 'error':
+                  errors.setdefault(e['testID'], []).append((e.get('error', '') + '\n' + e.get('stackTrace', ''))[:2500])
+              elif t == 'testDone' and not e.get('hidden'):
+                  if e.get('result') == 'success':
+                      passed += 1
+                  else:
+                      failed.append(e['testID'])
+          out = [f'{ref}: {passed} passed, {len(failed)} failed']
+          for tid in failed[:5]:
+              out.append('FAILED: ' + names.get(tid, str(tid)) + '\n' + '\n'.join(errors.get(tid, []))[:3500])
+          msg = '\n\n'.join(out).replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+          print(('::error' if failed else '::notice') + ' title=fade_matrix @ ' + ref + '::' + msg)
+          PY
+
+  downgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: hooshyar/flutter_streaming_text_markdown
+          ref: main
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.32.0
+      - name: pub downgrade + analyze
+        run: |
+          flutter pub downgrade > d.txt 2>&1 || true
+          dart run tool/generate_version.dart > /dev/null 2>&1 || true
+          if ! flutter analyze > a.txt 2>&1; then
+            echo "::error title=downgrade analyze::$(tail -n 60 a.txt | sed -e 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+          else
+            echo "::notice title=downgrade analyze::clean"
+          fi
+          echo "::notice title=downgrade resolved::$(grep -E 'gpt_markdown|flutter_math_fork|characters' d.txt | tr '\n' ' ' | cut -c1-400)"
