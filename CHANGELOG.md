@@ -1,4 +1,4 @@
-## 2.22.0 - unreleased
+## 2.22.0 - 2026-10-12
 
 Streaming a reply is now one call. No API breaks: everything new is additive.
 
