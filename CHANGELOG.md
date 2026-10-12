@@ -14,7 +14,8 @@ Streaming a reply is now one call. No API breaks: everything new is additive.
     whole text so far.
   - On a stream error the text so far stays, the reply is closed and
     `onError` is called.
-  - Optional `id` and `customProperties`.
+  - Replies render as markdown by default (`isMarkdown: false` for plain
+    text). Optional `id` and `customProperties`.
 - **`ChatResponseStream`**, returned by `streamResponse`: `cancel()` for a
   stop button, `done` (the final message, or `null` if no text arrived),
   `isActive`, `message` and `id`. Disposing the controller stops any reply

@@ -44,6 +44,7 @@ void main() {
     await chunks.close();
     final done = await response.done;
     expect(done?.text, 'Hello, world');
+    expect(done?.isMarkdown, isTrue, reason: 'LLM replies render as markdown');
     expect(controller.isMessageStreaming(response.id), isFalse);
     expect(response.isActive, isFalse);
   });
