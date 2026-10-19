@@ -105,7 +105,7 @@ jobs:
             test/widgets/streaming_pin_delayed_autoscroll_test.dart \
             test/golden/streaming_pin_golden_test.dart > targeted.json 2> targeted.err || fail=1
           python3 /tmp/report.py "targeted tests" targeted.json
-          if [ "${FULL_SUITE:-0}" = 1 ]; then
+          if [ "${FULL_SUITE:-1}" = 1 ]; then
             flutter test -r json > full.json 2> full.err || fail=1
             python3 /tmp/report.py "full suite" full.json
           fi
