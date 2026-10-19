@@ -1908,8 +1908,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
   void _handleScrollToBottomTap() {
     // The reader asked for the bottom: end any streaming pin first so it
-    // does not pull the list straight back up.
-    widget.controller?.releaseStreamingPin();
+    // does not pull the list straight back up, and so the list follows the
+    // rest of the answer from there as it would without a pin (a scroll
+    // gesture only releases the pin; see releaseStreamingPin).
+    widget.controller?.releaseStreamingPin(followAnswer: true);
     if (_scrollController.hasClients) {
       final paginationConfig = widget.messageListOptions.paginationConfig;
       final reduced = ChatMotion.reduced(context);
