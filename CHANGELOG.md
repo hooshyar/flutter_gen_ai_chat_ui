@@ -44,7 +44,10 @@ additive.
   go (the typing indicator appearing or disappearing, a new message). Before,
   rows were matched by index, so each one was rebuilt with its neighbour's
   widget. Layout and painting are unchanged. The index matching was the
-  cause of the end-of-answer jump fixed above.
+  cause of the end-of-answer jump fixed above. If a custom bubble builder
+  returns a `StatefulWidget` that reads the message only in `initState`, read
+  it in `didUpdateWidget` too: its `State` now stays with its message instead
+  of being recreated on every insertion.
 - **Requires `flutter_streaming_text_markdown` 1.11.1 or later** (was 1.11.0),
   so apps get its two fixes: markdown that could stay invisible after
   tap-to-complete, and an uncaught error when the browser refuses a
