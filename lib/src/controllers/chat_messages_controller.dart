@@ -545,16 +545,15 @@ class ChatMessagesController extends ChangeNotifier {
   /// answer's offset into the anchor's.
   double? _pinAnchorOffsetFromResponse;
 
-  /// Whether a streaming pin was armed for the current answer, whether it
-  /// is still held or the reader has released it.
-  ///
-  /// Until the next user message the pin owns the scroll position: while
-  /// held it keeps the anchor in place, after a release the reader does.
-  /// Either way the controller's own automatic scrolls for AI content (the
-  /// end-of-answer scroll to the bottom or back to the answer's first
-  /// message, [ScrollBehaviorConfig.scrollToFirstResponseMessage]) stay out
-  /// of it.
-  bool get _streamingPinOwnsScroll => _pinnedResponseId != null;
+  /// Id of the answer whose pin the reader ended with the scroll-to-bottom
+  /// button (`releaseStreamingPin(followAnswer: true)`): the pin is not armed
+  /// again for that answer, so the list follows it as it would without a
+  /// pin. Cleared, like the pin itself, by the next user message.
+  String? _pinDismissedResponseId;
+
+  /// The scroll the layout-time pin applied since [maintainStreamingPin]
+  /// last ran; reported to scroll notification listeners afterwards.
+  double _pinLayoutScrollDelta = 0;
 
   /// Whether a streaming pin is currently holding a message at the top of
   /// the viewport. See [ScrollBehaviorConfig.pinDuringStreaming].
@@ -955,12 +954,11 @@ class ChatMessagesController extends ChangeNotifier {
       bool isUserMessage, bool isStartOfResponse, ScrollBehaviorConfig config) {
     // While a streaming pin holds the answer's start (or the user's question)
     // at the top of the viewport, automatic scrolling for AI content would
-    // yank the reader away from it, and once the reader has released the pin
-    // they are reading at their own pace: the pin owns the scroll position
-    // for the rest of this answer either way. User messages still scroll as
-    // usual (they end the pin in addMessage before reaching here).
-    if (!isUserMessage && _streamingPinOwnsScroll) {
-      _debugLog('NOT SCROLLING: streaming pin owns the scroll position');
+    // yank the reader away from it — the pin owns the scroll position for
+    // the rest of this answer. User messages still scroll as usual (they end
+    // the pin in addMessage before reaching here).
+    if (!isUserMessage && isStreamingPinActive) {
+      _debugLog('NOT SCROLLING: streaming pin active');
       return;
     }
 
@@ -1045,8 +1043,8 @@ class ChatMessagesController extends ChangeNotifier {
       // `addMessage` and only arms the pin afterwards, so by the time the delay
       // elapses the pin is active and this scroll would tear the reader away
       // from the anchor (and, worse, count as an explicit scroll-to-bottom).
-      if (!isUserMessage && _streamingPinOwnsScroll) {
-        _debugLog('SCROLL ABORTED: streaming pin owns the scroll position');
+      if (!isUserMessage && isStreamingPinActive) {
+        _debugLog('SCROLL ABORTED: streaming pin active');
         return;
       }
 
@@ -1238,11 +1236,12 @@ class ChatMessagesController extends ChangeNotifier {
     Duration? duration,
     Curve? curve,
   ]) {
-    // An explicit scroll-to-bottom is the reader taking over: release any
-    // streaming pin so it does not immediately pull the list back up. The
-    // controller's own automatic scrolls go through [_scrollToBottomInternal]
-    // and never release the pin.
-    releaseStreamingPin();
+    // An explicit scroll-to-bottom is the reader taking over: end any
+    // streaming pin so it does not immediately pull the list back up, and
+    // let the list follow the answer from the bottom. The controller's own
+    // automatic scrolls go through [_scrollToBottomInternal] and never
+    // release the pin.
+    releaseStreamingPin(followAnswer: true);
     _scrollToBottomInternal(duration, curve);
   }
 
@@ -1504,13 +1503,18 @@ class ChatMessagesController extends ChangeNotifier {
             break;
         }
 
-        if (shouldScroll && wasStreaming && _streamingPinOwnsScroll) {
+        if (shouldScroll &&
+            wasStreaming &&
+            (isStreamingPinActive || messageId == _pinnedResponseId)) {
           // The reader is already where they want to be: at the pinned
-          // anchor, or, after releasing the pin, wherever they scrolled to.
-          // An end-of-stream scroll — to the bottom or back to the first
-          // message — is exactly the jump the pin exists to prevent (#42:
-          // with scrollToFirstResponseMessage it used to pull a reader who
-          // had scrolled on back to the start of the answer).
+          // anchor, or, when this is the pinned answer and they released the
+          // pin with a scroll gesture, wherever they scrolled to read at
+          // their own pace. An end-of-stream scroll — to the bottom or back
+          // to the first message — is exactly the jump the pin exists to
+          // prevent (#42: with scrollToFirstResponseMessage it pulled a
+          // reader who had scrolled on back to the start of the answer). The
+          // scroll-to-bottom button ends the pin instead (see
+          // releaseStreamingPin), and this scroll runs as without a pin.
           _debugLog('NOT SCROLLING: end of stream with a streaming pin');
         } else if (shouldScroll && wasStreaming) {
           // For streaming end, use a longer delay to prevent assertion errors
@@ -1884,6 +1888,7 @@ class ChatMessagesController extends ChangeNotifier {
     final anchor = scrollBehaviorConfig.pinDuringStreaming;
     if (anchor == StreamingPinAnchor.none) return;
     if (_pinnedResponseId == responseMessageId) return;
+    if (_pinDismissedResponseId == responseMessageId) return;
 
     String? anchorId;
     if (anchor == StreamingPinAnchor.userMessage) {
@@ -1916,15 +1921,33 @@ class ChatMessagesController extends ChangeNotifier {
     _pinLastResponseHeight = null;
     _pinAnchorSettled = false;
     _pinAnchorOffsetFromResponse = null;
+    _pinDismissedResponseId = null;
     _pinContextCache.clear();
   }
 
   /// Releases the streaming pin for the current answer: the reader has taken
-  /// over (a scroll gesture, or the scroll-to-bottom button). The pin stays
-  /// released until the next answer starts streaming. Safe to call when no
-  /// pin is active.
-  void releaseStreamingPin() {
-    if (_pinnedResponseId == null || _pinReleased) return;
+  /// over. Safe to call when no pin is active.
+  ///
+  /// By default (what a scroll gesture does) the reader then reads at their
+  /// own pace: the pin stays released until the next answer starts
+  /// streaming, a `reverse: true` list keeps the text they are looking at
+  /// still while the answer grows, and the end of this answer does not
+  /// scroll anywhere.
+  ///
+  /// With [followAnswer] (what the scroll-to-bottom button and
+  /// [scrollToBottom] do) the pin is ended for this answer instead: it is not
+  /// armed again for it, and the list follows the rest of the answer, and
+  /// whatever comes after it, exactly as it would without a pin.
+  void releaseStreamingPin({bool followAnswer = false}) {
+    final responseId = _pinnedResponseId;
+    if (responseId == null) return;
+    if (followAnswer) {
+      _clearStreamingPin();
+      _pinDismissedResponseId = responseId;
+      _debugLog('STREAMING PIN: ended by the user, following the answer');
+      return;
+    }
+    if (_pinReleased) return;
     _pinReleased = true;
     _debugLog('STREAMING PIN: released by the user');
   }
@@ -1955,10 +1978,25 @@ class ChatMessagesController extends ChangeNotifier {
     if (!_mounted) return;
     if (_pinMovedDuringLayout) {
       _pinMovedDuringLayout = false;
-      // The pin moved the list inside layout, where a scroll position does
-      // not notify its listeners. Give the controller's own scroll listener
-      // the call the post-frame jumpTo used to cause, so the manual-scroll
-      // bookkeeping behaves exactly as before.
+      final delta = _pinLayoutScrollDelta;
+      _pinLayoutScrollDelta = 0;
+      // The pin moved the list inside layout, where a scroll position neither
+      // notifies its listeners nor dispatches scroll notifications. Dispatch
+      // the ScrollStart/Update/End notifications the post-frame jumpTo used
+      // to, and give the controller's own scroll listener the call it used
+      // to get, so the manual-scroll bookkeeping behaves exactly as before.
+      // (Other listeners of the ScrollController itself are not called: see
+      // adjustStreamingPinForNewDimensions.)
+      final scrollController = _scrollController;
+      if (delta != 0 &&
+          scrollController != null &&
+          scrollController.hasClients &&
+          !scrollController.position.isScrollingNotifier.value) {
+        scrollController.position
+          ..didStartScroll()
+          ..didUpdateScrollPositionBy(delta)
+          ..didEndScroll();
+      }
       _scrollListener?.call();
     }
     final responseId = _pinnedResponseId;
@@ -1969,7 +2007,7 @@ class ChatMessagesController extends ChangeNotifier {
 
     try {
       if (_pinReleased) {
-        if (!paginationConfig.reverseOrder) return;
+        if (!axisDirectionIsReversed(position.axisDirection)) return;
         final responseBox = _pinRenderBox(responseId);
         if (responseBox == null) return;
         final height = responseBox.size.height;
@@ -2097,6 +2135,12 @@ class ChatMessagesController extends ChangeNotifier {
   /// `reverse: true` list every chunk was first painted with the anchor
   /// pushed up by however much the answer had grown, and pulled back on the
   /// next frame: a visible flicker at the top of the list (issue #42).
+  ///
+  /// A move made here is a layout-time correction of the scroll offset, so,
+  /// as for any such correction, listeners added to the list's
+  /// `ScrollController` are not called for it. The ScrollStart, ScrollUpdate
+  /// and ScrollEnd notifications a `jumpTo` would send are dispatched for it
+  /// right after the frame, by [maintainStreamingPin].
   double adjustStreamingPinForNewDimensions({
     required ScrollMetrics newPosition,
     required double pixels,
@@ -2109,7 +2153,10 @@ class ChatMessagesController extends ChangeNotifier {
       final result = _pinReleased
           ? _releasedPinPixels(responseId, newPosition, pixels)
           : _heldPinPixels(responseId, newPosition, pixels);
-      if (result != pixels) _pinMovedDuringLayout = true;
+      if (result != pixels) {
+        _pinMovedDuringLayout = true;
+        _pinLayoutScrollDelta += result - pixels;
+      }
       return result;
     } catch (e) {
       _debugLog('STREAMING PIN: could not apply the pin during layout: $e');
@@ -2158,7 +2205,7 @@ class ChatMessagesController extends ChangeNotifier {
     ScrollMetrics newPosition,
     double pixels,
   ) {
-    if (!paginationConfig.reverseOrder) return pixels;
+    if (!axisDirectionIsReversed(newPosition.axisDirection)) return pixels;
     final probe = _pinRenderBox(responseId);
     if (probe is! RenderStreamingPinProbe) return pixels;
     final height = probe.laidOutHeight;
@@ -2198,16 +2245,9 @@ class ChatMessagesController extends ChangeNotifier {
     var leading = 0.0;
     var insideSlivers = false;
     RenderObject child = probe;
-    while (true) {
-      final parent = child.parent;
+    var parent = child.parent;
+    while (parent is! RenderViewport) {
       if (parent == null) return null;
-      if (parent is RenderViewport) {
-        // A ListView has exactly one sliver, so nothing comes before it.
-        if (parent.firstChild != child || parent.lastChild != child) {
-          return null;
-        }
-        break;
-      }
       if (parent is RenderSliver) {
         final parentData = child.parentData;
         if (parentData is KeepAliveParentDataMixin && parentData.keptAlive) {
@@ -2221,10 +2261,14 @@ class ChatMessagesController extends ChangeNotifier {
         return null;
       }
       child = parent;
+      parent = child.parent;
     }
+    // A ListView has exactly one sliver, so nothing comes before it.
+    if (parent.firstChild != child || parent.lastChild != child) return null;
     // Same alignment as _offsetToRevealTop: in a reverse list the visual
-    // top of the message is its trailing edge.
-    return paginationConfig.reverseOrder
+    // top of the message is its trailing edge. The direction is the
+    // measured list's own, so this cannot disagree with it.
+    return axisDirectionIsReversed(parent.axisDirection)
         ? leading + height - viewportExtent
         : leading;
   }
@@ -2238,9 +2282,13 @@ class ChatMessagesController extends ChangeNotifier {
     if (renderObject == null) return null;
     final viewport = RenderAbstractViewport.maybeOf(renderObject);
     if (viewport == null) return null;
+    // The direction of the list being measured, like
+    // _offsetToRevealTopDuringLayout, so the two paths always agree.
+    final reversed = viewport is RenderViewport
+        ? axisDirectionIsReversed(viewport.axisDirection)
+        : paginationConfig.reverseOrder;
     return viewport
-        .getOffsetToReveal(
-            renderObject, paginationConfig.reverseOrder ? 1.0 : 0.0)
+        .getOffsetToReveal(renderObject, reversed ? 1.0 : 0.0)
         .offset;
   }
 
