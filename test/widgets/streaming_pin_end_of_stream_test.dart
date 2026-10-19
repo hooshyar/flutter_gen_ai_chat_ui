@@ -103,7 +103,7 @@ void main() {
           await chat.settle();
 
           // The reader scrolls down to read along at their own pace.
-          await tester.drag(find.byType(ListView), const Offset(0, -300));
+          await tester.drag(_chatList, const Offset(0, -300));
           await chat.settle();
           expect(chat.controller.isStreamingPinActive, isFalse);
           // Real time passes while they read (the controller's manual-scroll
@@ -137,6 +137,11 @@ void main() {
     );
   }
 }
+
+/// The chat's own list. Markdown answers contain list views of their own
+/// (`flutter_markdown_plus` renders a `Markdown` as a shrink-wrapped
+/// `ListView`); the chat list is the outermost one.
+final _chatList = find.byType(ListView).first;
 
 enum _Flow {
   /// `addMessage`/`updateMessage` flagged `isStreaming: true`, closed by an
@@ -291,7 +296,7 @@ class _Chat {
   }
 
   _Snapshot snapshot() {
-    final viewportTop = tester.getTopLeft(find.byType(ListView)).dy;
+    final viewportTop = tester.getTopLeft(_chatList).dy;
     final answer = find.byKey(const ValueKey(answerId));
     final question = find.byKey(const ValueKey(questionId));
     final hasQuestion = question.evaluate().isNotEmpty;
