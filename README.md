@@ -278,6 +278,7 @@ Builds and runs cleanly under Flutter's `--wasm` web compile target (`flutter bu
 - **Backends**: Firebase, Supabase, REST APIs, WebSockets, GraphQL
 - **Use Cases**: Customer support, AI assistants, team chat, social messaging
 - **Industries**: SaaS, E-commerce, Healthcare, Education, Gaming
+- **Companion packages**: [`flutter_streaming_text_markdown`](https://pub.dev/packages/flutter_streaming_text_markdown) renders the streamed replies here, and also works on its own for a single reply view. [`flutter_dot_loader`](https://pub.dev/packages/flutter_dot_loader) (1.1.0+) gives a dot-matrix typing indicator: `LoadingConfig(isLoading: _isGenerating, loadingIndicator: const DotLoader.thinking(color: Colors.indigo))`.
 
 ## RTL & Bidirectional Languages
 
