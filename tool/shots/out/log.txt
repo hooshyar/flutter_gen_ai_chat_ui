@@ -1,2 +1,0 @@
-[/basic] clicked "Tell me about Flutter"
-[/streaming] clicked "Write a Dart singleton pattern"

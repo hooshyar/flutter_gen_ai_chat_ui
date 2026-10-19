@@ -8,7 +8,7 @@ const browser = await chromium.launch();
 
 async function open(route) {
   const page = await browser.newPage({
-    viewport: { width: 430, height: 860 },
+    viewport: { width: 430, height: 620 },
     deviceScaleFactor: 2,
   });
   page.on('pageerror', (e) => log.push(`[${route}] pageerror: ${e.message}`));
@@ -44,7 +44,7 @@ async function run(route, question, name, frames, everyMs) {
   await page.close();
 }
 
-await run('/basic', 'Tell me about Flutter', 'basic', 12, 500);
-await run('/streaming', 'Write a Dart singleton pattern', 'pin', 40, 400);
+await run('/streaming', 'Write a Dart singleton pattern', 'pin', 45, 250);
+await run('/streaming', 'Compare StatelessWidget vs StatefulWidget', 'cmp', 45, 250);
 writeFileSync('out/log.txt', log.join('\n') + '\n');
 await browser.close();
