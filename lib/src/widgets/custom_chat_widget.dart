@@ -359,6 +359,17 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       (message.customProperties?['id'] as String? ??
           '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}');
 
+  /// The list row of each message id when the first message sits at row
+  /// [firstRow]; an id that occurs more than once maps to -1.
+  Map<String, int> _messageRowsById(List<ChatMessage> messages, int firstRow) {
+    final rows = <String, int>{};
+    for (var i = 0; i < messages.length; i++) {
+      final id = _rowMessageId(messages[i]);
+      rows[id] = rows.containsKey(id) ? -1 : i + firstRow;
+    }
+    return rows;
+  }
+
   /// Returns a stable ID for a message, consistent with _buildMessageContent.
   String _resolveMessageId(ChatMessage msg) =>
       msg.customProperties?['id'] as String? ??
@@ -662,21 +673,17 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     // matching.)
     final ChildIndexGetter? findMessageRow;
     if (paginationConfig.reverseOrder) {
+      final messages = widget.messages;
       final firstMessageRow = widget.typingUsers?.isNotEmpty == true ? 1 : 0;
-      final rowById = <String, int>{};
-      final duplicateIds = <String>{};
-      for (var i = 0; i < widget.messages.length; i++) {
-        final id = _rowMessageId(widget.messages[i]);
-        if (rowById.containsKey(id)) {
-          duplicateIds.add(id);
-        } else {
-          rowById[id] = i + firstMessageRow;
-        }
-      }
+      // Built on first use: the list only asks while it rebuilds rows that
+      // already exist.
+      Map<String, int>? rowById;
       findMessageRow = (key) {
         if (key is! ValueKey<String>) return null;
-        if (duplicateIds.contains(key.value)) return null;
-        return rowById[key.value];
+        final rows = rowById ??= _messageRowsById(messages, firstMessageRow);
+        final row = rows[key.value];
+        // A duplicated id is left to plain index matching.
+        return row == null || row < 0 ? null : row;
       };
     } else {
       findMessageRow = null;
