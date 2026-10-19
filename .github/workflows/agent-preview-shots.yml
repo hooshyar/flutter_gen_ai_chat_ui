@@ -1,0 +1,52 @@
+# TEMPORARY - lives only on the agent/preview-shots branch, never merged.
+# Builds the example app for the web from this branch, drives it with
+# Playwright and commits the screenshots to this branch, so a session
+# without a browser can look at them.
+name: agent-preview-shots
+
+on:
+  push:
+    branches: ['agent/preview-shots']
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Build the example for the web and serve it
+        run: |
+          flutter pub get > /dev/null
+          cd example
+          flutter pub get > /dev/null
+          dart run tool/generate_version.dart > /dev/null
+          flutter build web --release > /dev/null
+          (cd build/web && nohup python3 -m http.server 8080 > /dev/null 2>&1 &)
+          sleep 2
+          curl -sf http://localhost:8080/ > /dev/null && echo served
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright
+        run: |
+          cd tool/shots
+          npm init -y > /dev/null
+          npm i playwright@1.48.2 > /dev/null
+          npx playwright install --with-deps chromium > /dev/null
+      - name: Take screenshots
+        run: cd tool/shots && node shots.mjs
+      - name: Commit screenshots
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git add -f tool/shots/out
+          git commit -m "shots" -q || exit 0
+          git push -q origin HEAD:agent/preview-shots
