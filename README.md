@@ -1,37 +1,17 @@
 # Flutter Gen AI Chat UI
 
 [![pub package](https://img.shields.io/pub/v/flutter_gen_ai_chat_ui.svg)](https://pub.dev/packages/flutter_gen_ai_chat_ui)
-[![pub likes](https://img.shields.io/pub/likes/flutter_gen_ai_chat_ui)](https://pub.dev/packages/flutter_gen_ai_chat_ui/score)
 [![pub points](https://img.shields.io/pub/points/flutter_gen_ai_chat_ui)](https://pub.dev/packages/flutter_gen_ai_chat_ui/score)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Flutter](https://img.shields.io/badge/Flutter-3.35%2B-blue.svg)](https://flutter.dev)
-[![Platform](https://img.shields.io/badge/platform-android%20%7C%20ios%20%7C%20web%20%7C%20windows%20%7C%20macos%20%7C%20linux-lightgrey.svg)](https://pub.dev/packages/flutter_gen_ai_chat_ui)
-[![GitHub stars](https://img.shields.io/github/stars/hooshyar/flutter_gen_ai_chat_ui.svg?style=flat&logo=github&colorB=deeppink&label=stars)](https://github.com/hooshyar/flutter_gen_ai_chat_ui)
-[![GitHub issues](https://img.shields.io/github/issues/hooshyar/flutter_gen_ai_chat_ui.svg)](https://github.com/hooshyar/flutter_gen_ai_chat_ui/issues)
+[![pub likes](https://img.shields.io/pub/likes/flutter_gen_ai_chat_ui)](https://pub.dev/packages/flutter_gen_ai_chat_ui/score)
+[![CI](https://github.com/hooshyar/flutter_gen_ai_chat_ui/actions/workflows/ci.yml/badge.svg)](https://github.com/hooshyar/flutter_gen_ai_chat_ui/actions/workflows/ci.yml)
 
 A Flutter chat UI kit for AI apps. Stream ChatGPT, Claude or Gemini replies as live markdown with syntax-highlighted code and LaTeX, render tool calls and rich inline widgets, and get RTL, theming and accessibility out of the box. It works with any backend: you bring the model call, the widget handles the conversation UI.
 
-▶️ **[Try the live web demo](https://hooshyar.github.io/flutter_gen_ai_chat_ui/)**
-
-## Table of Contents
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Why this package?](#why-this-package)
-- [Streaming AI responses](#streaming-ai-responses)
-- [Live Examples](#-live-examples)
-- [Features](#features)
-- [Performance & Features](#-performance--features)
-- [Works Great With](#-works-great-with)
-- [RTL & Bidirectional Languages](#rtl--bidirectional-languages)
-- [Configuration Options](#configuration-options)
-- [AI Actions System](#-ai-actions-system)
-- [Community & Support](#community--support)
-
 <p align="center">
-  <img src="https://raw.githubusercontent.com/hooshyar/flutter_gen_ai_chat_ui/main/doc/demo/demo.gif" alt="The 2.20.0 example app: live preview, streaming markdown with syntax-highlighted code, theme presets and RTL" width="720">
+  <img src="https://raw.githubusercontent.com/hooshyar/flutter_gen_ai_chat_ui/main/doc/demo/demo.gif" alt="The example app: streaming markdown with syntax-highlighted code, theme presets and RTL" width="720">
 </p>
 
-Full-quality video: [doc/demo/demo.mp4](https://github.com/hooshyar/flutter_gen_ai_chat_ui/raw/main/doc/demo/demo.mp4)
+▶️ **[Try the live web demo](https://hooshyar.github.io/flutter_gen_ai_chat_ui/)** · [full-quality video](https://github.com/hooshyar/flutter_gen_ai_chat_ui/raw/main/doc/demo/demo.mp4)
 
 ## Installation
 
@@ -116,7 +96,19 @@ Stream<String> fakeLlmReply(String prompt) async* {
 
 The whole integration is `onSendMessage`: add the user's message, then hand the reply stream to `controller.streamResponse`. To use a real model, replace `fakeLlmReply()` with a `Stream<String>` of your model's tokens; [Streaming AI responses](#streaming-ai-responses) covers stop buttons, errors and provider streams.
 
-> **Note:** when you add several messages for the same user back to back without an explicit `id` (e.g. a tool-call message immediately followed by a result card), give each one an explicit id. `ChatMessagesController` builds an id from the user id and `createdAt`'s millisecond timestamp when none is given, so two id-less messages added in the same millisecond can land on the same generated id and be treated as the same message. This can happen on any platform, and it is more likely on web, where `DateTime.now()` only has millisecond resolution. Pass `ChatMessage(customProperties: {'id': 'my-id'})` or `ChatMessage.rich(id: 'my-id')` to keep them distinct.
+## Contents
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Why this package?](#why-this-package)
+- [Streaming AI responses](#streaming-ai-responses)
+- [Live Examples](#-live-examples)
+- [Features](#features)
+- [Performance & Features](#-performance--features)
+- [Works Great With](#-works-great-with)
+- [RTL & Bidirectional Languages](#rtl--bidirectional-languages)
+- [Configuration Options](#configuration-options)
+- [AI Actions System](#-ai-actions-system)
+- [Community & Support](#community--support)
 
 ## Why this package?
 
@@ -185,21 +177,24 @@ The reveal animation is controlled by `enableMarkdownStreaming` (master switch) 
 
 `streamResponse` is a wrapper around three controller calls you can also use directly, for example when replies arrive over a WebSocket you manage yourself: `addStreamingMessage` with a message carrying a stable `customProperties['id']`, `updateMessage` with the same id as text arrives, and `stopStreamingMessage(id)` at the end.
 
+> **Note:** when you add several messages for the same user back to back without an explicit `id` (e.g. a tool-call message immediately followed by a result card), give each one an explicit id. `ChatMessagesController` builds an id from the user id and `createdAt`'s millisecond timestamp when none is given, so two id-less messages added in the same millisecond can land on the same generated id and be treated as the same message. This can happen on any platform, and it is more likely on web, where `DateTime.now()` only has millisecond resolution. Pass `ChatMessage(customProperties: {'id': 'my-id'})` or `ChatMessage.rich(id: 'my-id')` to keep them distinct.
+
 Full runnable screen: [`example/lib/examples/streaming_chat.dart`](https://github.com/hooshyar/flutter_gen_ai_chat_ui/blob/main/example/lib/examples/streaming_chat.dart).
 
 ## 🎮 Live Examples
 
 **[Try the live web demo →](https://hooshyar.github.io/flutter_gen_ai_chat_ui/)** — no install needed, runs the actual example app in your browser. Redeployed automatically on every push to `main` that touches the package or the example app (see `.github/workflows/deploy-web-demo.yml`).
 
-Explore all features with our comprehensive example app:
-- **Basic Chat**: Simple send & receive, no streaming
-- **Streaming + Markdown**: Real-time word-by-word animations with code blocks
-- **Custom Themes**: Ocean, Sunset, and Default bubble styles
-- **AI Actions**: Calculator, weather, color — function calling with generative UI
-- **Rich Widgets**: Weather cards, products, charts rendered inline as bubbles
-- **RTL Chat**: Arabic streaming with bidirectional auto-detection
-- **Attachments**: File upload button and attached-file rendering (`FileUploadOptions`)
-- **Voice Input**: Mic/send toggle using the `VoiceSendButton` widget (`InputOptions.sendOrMicBuilder`)
+The example app has one screen per feature:
+- **Basic**: only the required arguments, replies streamed with `streamResponse`
+- **Streaming**: word-by-word reveal with syntax-highlighted code blocks
+- **Themes**: brand presets, light and dark
+- **Layout**: single-row or stacked composer, attach button position, welcome and copy-button options
+- **Actions**: tool calls rendered as code, then a result card
+- **Rich results**: weather, product and chart cards inline
+- **Attachments**: file upload button and attached-file rendering (`FileUploadOptions`)
+- **Voice**: mic/send toggle with the `VoiceSendButton` widget (`InputOptions.sendOrMicBuilder`)
+- **RTL**: Arabic and Sorani Kurdish, mirrored layout
 
 To run the example app:
 ```bash

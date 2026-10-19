@@ -32,6 +32,11 @@ Streaming a reply is now one call. No API breaks: everything new is additive.
   stream by hand".
 - **Example app.** The Basic demo uses `streamResponse`, which replaces about
   40 lines of subscription and bookkeeping code.
+- **README first screen.** The demo GIF and live demo link now sit right under
+  the description, ahead of the install and quick start; the table of
+  contents moved below the quick start, and the badges are down to pub
+  version, points, likes and CI. The example list matches the app's screens,
+  including the 2.21 Layout demo.
 
 ## 2.21.0 - 2026-10-12
 
