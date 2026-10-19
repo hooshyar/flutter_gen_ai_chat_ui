@@ -60,21 +60,24 @@ jobs:
           out = []
           def detail(tid):
               text = '\n'.join(logs.get(tid, []))
-              keep = []
+              keep, on = [], False
               for l in text.split('\n'):
                   ls = l.strip()
-                  if not ls or ls.startswith('#') or ls.startswith('When the exception') or ls.startswith('package:') or 'dart:' in ls[:10]:
+                  if 'EXCEPTION CAUGHT' in ls or 'was thrown' in ls:
+                      on = True
                       continue
-                  if ls.startswith('The test description was') or ls.startswith('════'):
-                      continue
-                  keep.append(ls)
-              return '\n'.join(keep)[:1400]
-          for tid in failed[:40]:
-              out.append('FAILED: ' + names.get(tid, str(tid)) + '\n' + detail(tid))
-          if failed:
-              print('::error title=' + title + ' (' + str(len(failed)) + ' failed, ' + str(passed) + ' passed)::' + esc('\n\n'.join(out)))
-          else:
-              print('::notice title=' + title + '::' + str(passed) + ' passed, 0 failed')
+                  if ls.startswith('When the exception') or ls.startswith('<asynchronous') or ls.startswith('#'):
+                      on = False
+                  if on and ls and not ls.startswith('════'):
+                      keep.append(ls)
+              if not keep:
+                  keep = ['\n'.join(errors.get(tid, []))]
+              return ' | '.join(keep)[:700]
+          print('::notice title=' + title + '::' + str(passed) + ' passed, ' + str(len(failed)) + ' failed')
+          groups = [failed[i:i + 3] for i in range(0, min(len(failed), 27), 3)]
+          for gi, g in enumerate(groups):
+              body = '\n\n'.join('FAILED: ' + names.get(t, str(t)) + '\n' + detail(t) for t in g)
+              print('::error title=' + title + ' ' + str(gi + 1) + '/' + str(len(groups)) + '::' + esc(body))
           if prints:
               print('::notice title=' + title + ' DIAG::' + esc('\n'.join(prints)[:20000]))
           PY

@@ -268,7 +268,8 @@ void main() {
             ChatMessage(
               text: moreText.substring(
                 0,
-                text.length + ((moreText.length - text.length) * i / 12).floor(),
+                text.length +
+                    ((moreText.length - text.length) * i / 12).floor(),
               ),
               user: aiUser,
               createdAt: DateTime.now(),
@@ -318,9 +319,8 @@ class _PaintedTopRecorder {
 
   void _onFrame(Duration _) {
     if (!_active) return;
-    final elements = find
-        .byKey(ValueKey<String>(messageId), skipOffstage: false)
-        .evaluate();
+    final elements =
+        find.byKey(ValueKey<String>(messageId), skipOffstage: false).evaluate();
     for (final element in elements) {
       final box = element.renderObject;
       if (box is RenderBox && box.attached && box.hasSize) {
@@ -333,8 +333,6 @@ class _PaintedTopRecorder {
 
   double get minGap => gaps.isEmpty ? 0 : gaps.reduce(math.min);
 
-  List<String> get overshoots => gaps
-      .where((g) => g < -0.5)
-      .map((g) => g.toStringAsFixed(1))
-      .toList();
+  List<String> get overshoots =>
+      gaps.where((g) => g < -0.5).map((g) => g.toStringAsFixed(1)).toList();
 }

@@ -57,7 +57,8 @@ void main() {
                   isTrue,
                   reason: 'the pin should hold the answer: $before',
                 );
-                expect(before.answerGap.abs(), lessThan(0.5), reason: '$before');
+                expect(before.answerGap.abs(), lessThan(0.5),
+                    reason: '$before');
 
                 await chat.finish(flow, longAnswer);
                 if (typingIndicator) chat.loading.value = false;
@@ -304,7 +305,10 @@ class _Chat {
       tester.getTopLeft(answer).dy - viewportTop,
       hasQuestion ? tester.getTopLeft(question).dy - viewportTop : null,
       hasQuestion ? tester.getBottomLeft(question).dy - viewportTop : null,
-      tester.state<ScrollableState>(find.byType(Scrollable).first).position.pixels,
+      tester
+          .state<ScrollableState>(find.byType(Scrollable).first)
+          .position
+          .pixels,
     );
   }
 }
