@@ -21,6 +21,12 @@ Streaming a reply is now one call. No API breaks: everything new is additive.
   `isActive`, `message` and `id`. Disposing the controller stops any reply
   still streaming.
 
+### Changed
+- **Requires `flutter_streaming_text_markdown` 1.11.1 or later** (was 1.11.0),
+  so apps get its two fixes: markdown that could stay invisible after
+  tap-to-complete, and an uncaught error when the browser refuses a
+  clipboard write.
+
 ### Documentation
 - **The README Quick Start streams.** It is now a complete app that streams
   replies from a stand-in `Stream<String>` through `streamResponse`, so
