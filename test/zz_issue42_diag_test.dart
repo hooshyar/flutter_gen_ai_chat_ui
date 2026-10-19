@@ -171,7 +171,6 @@ void main() {
           reason: '${expectedIds[k]} should be above ${expectedIds[k - 1]}',
         );
       }
-
     },
   );
 }
