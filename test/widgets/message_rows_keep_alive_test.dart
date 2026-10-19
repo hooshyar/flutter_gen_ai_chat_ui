@@ -83,18 +83,24 @@ void main() {
         messages.value = [for (final i in order) message(i)];
       }
 
-      // Build every row once (scroll to the oldest messages and back), so the
-      // old rows are kept alive far outside the cache extent.
+      // Show the oldest messages, then go back to the newest, so the rows
+      // that were on screen at the top are kept alive far outside the cache
+      // extent. (Rows the jumps only passed through are built and dropped
+      // within one layout pass, before AutomaticKeepAlive applies their
+      // keep-alive flag after the frame, so they are not kept alive: that is
+      // Flutter's behaviour, with or without this list.)
       position().jumpTo(position().maxScrollExtent);
       await settle();
+      final keptAliveIds = [
+        for (final element
+            in find.byType(_KeepAliveRow, skipOffstage: true).evaluate())
+          if ((element.widget as _KeepAliveRow).keepAlive)
+            (element.widget as _KeepAliveRow).id,
+      ];
+      expect(keptAliveIds, containsAll(<String>['m0', 'm1']));
       position().jumpTo(0);
       await settle();
       expect(find.text('message 0'), findsNothing);
-      final keptAliveIds = [
-        for (var i = 0; i < 30; i++)
-          if (i % 3 != 2 && created.containsKey('m$i')) 'm$i',
-      ];
-      expect(keptAliveIds, contains('m0'));
 
       // Remove a visible message, then an off-screen kept-alive one; add
       // new ones; toggle the typing indicator below the newest message.
@@ -166,7 +172,7 @@ void main() {
       }
 
       // Kept-alive rows that were never removed kept their state throughout.
-      for (final id in keptAliveIds.where((id) => id != 'm3' && id != 'm28')) {
+      for (final id in keptAliveIds.where((id) => id != 'm3')) {
         expect(created[id], 1, reason: '$id was rebuilt from scratch');
       }
     },
