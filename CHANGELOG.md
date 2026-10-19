@@ -41,6 +41,8 @@ additive.
     a reader who has scrolled on back to its start.
   - Tapping scroll-to-bottom while an answer is still streaming fast no
     longer stops short of the bottom.
+
+### Changed
 - **The scroll-to-bottom button now ends the pin for the current answer**
   (as does `ChatMessagesController.scrollToBottom`), so the list follows the
   answer from the bottom as it would without a pin. A scroll gesture still
@@ -49,8 +51,6 @@ additive.
   layout. Scroll notifications (`ScrollUpdateNotification` and the rest, and
   `ScrollMetricsNotification`) are dispatched for those corrections, but
   listeners added to the list's `ScrollController` are not called for them.
-
-### Changed
 - **Rows of the default newest-at-bottom list are matched by message id.**
   A message row now keeps its position and state when rows before it come or
   go (the typing indicator appearing or disappearing, a new message). Before,
