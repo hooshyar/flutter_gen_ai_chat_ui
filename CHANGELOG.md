@@ -1,6 +1,8 @@
 ## 2.22.0 - 2026-10-12
 
-Streaming a reply is now one call. No API breaks: everything new is additive.
+Streaming a reply is now one call, and the streaming pin no longer flickers
+or jumps at the end of an answer (#42). No API breaks: everything new is
+additive.
 
 ### Added
 - **`ChatMessagesController.streamResponse(stream, user: aiUser)`** streams a
@@ -20,8 +22,29 @@ Streaming a reply is now one call. No API breaks: everything new is additive.
   stop button, `done` (the final message, or `null` if no text arrived),
   `isActive`, `message` and `id`. Disposing the controller stops any reply
   still streaming.
+- `ChatMessagesController.adjustStreamingPinForNewDimensions`, which the chat
+  widget's list calls during layout to apply the streaming pin. Like
+  `maintainStreamingPin`, apps don't need to call it.
+
+### Fixed
+- **Streaming pin (#42): no flicker at the pin, no jump at the end.** With
+  `ScrollBehaviorConfig.pinDuringStreaming`:
+  - Each new chunk no longer paints one frame with the pinned message pushed
+    above the top of the list before it snaps back. The pin is now applied
+    while the list lays out, instead of one frame later.
+  - Hiding the typing indicator when an answer finishes
+    (`LoadingConfig(isLoading: false)`) no longer throws a pinned list back
+    to its top, onto the question.
+  - With `scrollToFirstResponseMessage`, the end of an answer no longer pulls
+    a reader who has scrolled on back to its start.
 
 ### Changed
+- **Rows of the default newest-at-bottom list are matched by message id.**
+  A message row now keeps its position and state when rows before it come or
+  go (the typing indicator appearing or disappearing, a new message). Before,
+  rows were matched by index, so each one was rebuilt with its neighbour's
+  widget. Layout and painting are unchanged. The index matching was the
+  cause of the end-of-answer jump fixed above.
 - **Requires `flutter_streaming_text_markdown` 1.11.1 or later** (was 1.11.0),
   so apps get its two fixes: markdown that could stay invisible after
   tap-to-complete, and an uncaught error when the browser refuses a
