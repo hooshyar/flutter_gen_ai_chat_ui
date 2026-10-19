@@ -22,6 +22,8 @@ additive.
   stop button, `done` (the final message, or `null` if no text arrived),
   `isActive`, `message` and `id`. Disposing the controller stops any reply
   still streaming.
+- `releaseStreamingPin({bool followAnswer = false})`: `followAnswer: true`
+  ends the pin for the current answer instead of only releasing it.
 - `ChatMessagesController.adjustStreamingPinForNewDimensions`, which the chat
   widget's list calls during layout to apply the streaming pin. Like
   `maintainStreamingPin`, apps don't need to call it.
@@ -37,6 +39,16 @@ additive.
     to its top, onto the question.
   - With `scrollToFirstResponseMessage`, the end of an answer no longer pulls
     a reader who has scrolled on back to its start.
+  - Tapping scroll-to-bottom while an answer is still streaming fast no
+    longer stops short of the bottom.
+- **The scroll-to-bottom button now ends the pin for the current answer**
+  (as does `ChatMessagesController.scrollToBottom`), so the list follows the
+  answer from the bottom as it would without a pin. A scroll gesture still
+  only releases it, and the end of that answer then doesn't scroll anywhere.
+- The pin holds its anchor by correcting the list's scroll offset during
+  layout. Scroll notifications (`ScrollUpdateNotification` and the rest, and
+  `ScrollMetricsNotification`) are dispatched for those corrections, but
+  listeners added to the list's `ScrollController` are not called for them.
 
 ### Changed
 - **Rows of the default newest-at-bottom list are matched by message id.**
