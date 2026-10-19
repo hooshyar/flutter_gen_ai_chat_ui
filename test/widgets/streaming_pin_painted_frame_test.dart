@@ -283,6 +283,8 @@ void main() {
           await tester.pump(const Duration(milliseconds: 16));
         }
         recorder.stop();
+        // Let the controller's 300 ms manual-scroll reset timer run out.
+        await tester.pump(const Duration(seconds: 1));
 
         expect(controller.isStreamingPinActive, isFalse);
         final moved = recorder.gaps

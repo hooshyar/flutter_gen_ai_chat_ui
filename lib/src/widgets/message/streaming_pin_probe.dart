@@ -24,8 +24,8 @@ class StreamingPinProbe extends SingleChildRenderObjectWidget {
 
 /// Render object of [StreamingPinProbe].
 class RenderStreamingPinProbe extends RenderProxyBox {
-  /// Creates the render object, optionally with a [child].
-  RenderStreamingPinProbe([RenderBox? child]) : super(child);
+  /// Creates the render object, optionally with a child.
+  RenderStreamingPinProbe([super.child]);
 
   double? _laidOutHeight;
 

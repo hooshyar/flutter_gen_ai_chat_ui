@@ -2036,8 +2036,7 @@ class ChatMessagesController extends ChangeNotifier {
     final target =
         reveal.clamp(newPosition.minScrollExtent, newPosition.maxScrollExtent);
     var result = pixels;
-    if (pixels < target - 0.5 ||
-        (_pinAnchorSettled && pixels > target + 0.5)) {
+    if (pixels < target - 0.5 || (_pinAnchorSettled && pixels > target + 0.5)) {
       result = target;
     }
     _pinAnchorSettled = (result - target).abs() <= 0.5;
