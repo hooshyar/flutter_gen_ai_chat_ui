@@ -27,6 +27,7 @@ import 'code/code_block_view.dart';
 import 'math_markdown.dart';
 import 'message/message_action_row.dart';
 import 'message/streaming_caret.dart';
+import 'message/streaming_pin_probe.dart';
 import 'message_attachment.dart';
 import 'result/result_renderer_registry.dart';
 
@@ -124,6 +125,12 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
   late ScrollController _scrollController;
   bool _showScrollToBottom = false;
   Timer? _scrollDebounce;
+
+  /// Set by [_StreamingPinScrollPhysics] when the streaming pin moved the
+  /// list during layout. A scroll position does not notify its listeners
+  /// for such a move, so [_handleScroll] (which derives the scroll-to-bottom
+  /// button's visibility from the position) is run once the frame is done.
+  bool _pinMovedList = false;
 
   /// Message IDs seen on previous render — used to detect newly added messages.
   final Set<String> _seenMessageIds = {};
@@ -343,6 +350,24 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
     // Connect scroll controller to the messages controller if available
     _connectScrollControllerToMessagesController();
+  }
+
+  /// The id a message row of the list is keyed by (and that the
+  /// controller's message-context resolver looks up).
+  String _rowMessageId(ChatMessage message) =>
+      widget.controller?.getMessageId(message) ??
+      (message.customProperties?['id'] as String? ??
+          '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}');
+
+  /// The list row of each message id when the first message sits at row
+  /// [firstRow]; an id that occurs more than once maps to -1.
+  Map<String, int> _messageRowsById(List<ChatMessage> messages, int firstRow) {
+    final rows = <String, int>{};
+    for (var i = 0; i < messages.length; i++) {
+      final id = _rowMessageId(messages[i]);
+      rows[id] = rows.containsKey(id) ? -1 : i + firstRow;
+    }
+    return rows;
   }
 
   /// Returns a stable ID for a message, consistent with _buildMessageContent.
@@ -632,13 +657,51 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
           _buildNoMoreMessagesIndicator();
     }
 
+    // Message rows are keyed by message id (see itemBuilder). In the default
+    // reverse list rows are counted from the bottom, so every row index
+    // shifts by one when the typing indicator below the newest message
+    // appears or disappears (apps typically hide it when an answer
+    // finishes), or when a new message is added. Matched by index only,
+    // each row then got the widget of the message one row further up while
+    // keeping the old occupant's layout offset. A list scrolled away from
+    // the bottom (a streaming pin holding a long answer's first line at the
+    // top) was laid out from those stale offsets, its extent collapsed, and
+    // it ended up at its very top, on the question (issue #42). Telling the
+    // list where each id lives now keeps every row's element and position.
+    // (The chronological list shows the typing indicator after the last
+    // message, where it shifts no message row, and keeps plain index
+    // matching.)
+    final ChildIndexGetter? findMessageRow;
+    if (paginationConfig.reverseOrder) {
+      final messages = widget.messages;
+      final firstMessageRow = widget.typingUsers?.isNotEmpty == true ? 1 : 0;
+      // Built on first use: the list only asks while it rebuilds rows that
+      // already exist.
+      Map<String, int>? rowById;
+      findMessageRow = (key) {
+        if (key is! ValueKey<String>) return null;
+        final rows = rowById ??= _messageRowsById(messages, firstMessageRow);
+        final row = rows[key.value];
+        // A duplicated id is left to plain index matching.
+        return row == null || row < 0 ? null : row;
+      };
+    } else {
+      findMessageRow = null;
+    }
+
     // Build the list with header/footer as needed
     final list = ListView.builder(
       // key: const PageStorageKey('chat_messages'),
       controller: _scrollController,
       reverse: paginationConfig.reverseOrder,
-      physics: widget.messageListOptions.scrollPhysics ??
-          const BouncingScrollPhysics(),
+      // Always wrapped (even without a controller or a pin) so the physics
+      // chain keeps one runtime type across rebuilds; the wrapper changes
+      // nothing unless a streaming pin is armed.
+      physics: _StreamingPinScrollPhysics(
+        owner: this,
+        parent: widget.messageListOptions.scrollPhysics ??
+            const BouncingScrollPhysics(),
+      ),
       keyboardDismissBehavior:
           widget.messageListOptions.keyboardDismissBehavior ??
               ScrollViewKeyboardDismissBehavior.onDrag,
@@ -652,6 +715,7 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       // which would break this package's 3.27 floor. Keep `cacheExtent`.
       // ignore: deprecated_member_use
       cacheExtent: paginationConfig.cacheExtent,
+      findChildIndexCallback: findMessageRow,
       itemBuilder: (context, index) {
         // In reverse mode (newest at bottom), we want to show the loading indicator at index 0 (bottom of screen)
         if (paginationConfig.reverseOrder) {
@@ -728,20 +792,24 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
         if (index < widget.messages.length) {
           final message = widget.messages[index];
           final isUser = message.user.id == widget.currentUser.id;
-          final messageId = widget.controller?.getMessageId(message) ??
-              (message.customProperties?['id'] as String? ??
-                  '${message.user.id}_${message.createdAt.millisecondsSinceEpoch}');
+          final messageId = _rowMessageId(message);
           final isLastAiMessage = !isUser && index == lastAiMessageIndex;
 
-          // return _buildMessageBubble(message, isUser);
-          return RepaintBoundary(
-            child: KeyedSubtree(
-              key: ValueKey(messageId),
-              child: _buildMessageBubble(
-                message,
-                isUser,
-                index,
-                isLastAiMessage,
+          // The key sits on the row's outermost widget so the list can find
+          // a row again after its index changed (findChildIndexCallback
+          // above). The probe records the row's laid-out height for the
+          // streaming pin (see StreamingPinProbe); it is the render object
+          // the ValueKey(messageId) lookups resolve to.
+          return KeyedSubtree(
+            key: ValueKey(messageId),
+            child: StreamingPinProbe(
+              child: RepaintBoundary(
+                child: _buildMessageBubble(
+                  message,
+                  isUser,
+                  index,
+                  isLastAiMessage,
+                ),
               ),
             ),
           );
@@ -754,14 +822,20 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
     final controller = widget.controller;
     if (controller == null) return list;
 
-    // Streaming pin (ScrollBehaviorConfig.pinDuringStreaming): every time the
-    // list's content extent changes (the answer grew) let the controller
-    // re-apply the pin, and let any genuine user scroll gesture — drag, fling
-    // or mouse wheel, i.e. a non-idle UserScrollNotification, which
-    // programmatic jumpTo/animateTo never emit — release it.
+    // Streaming pin (ScrollBehaviorConfig.pinDuringStreaming): the list's
+    // scroll physics applies the pin while the list lays out new content
+    // (_StreamingPinScrollPhysics). After every scroll-metrics change the
+    // controller also re-checks it (for anything layout could not handle),
+    // and any genuine user scroll gesture — drag, fling or mouse wheel, i.e.
+    // a non-idle UserScrollNotification, which programmatic jumpTo/animateTo
+    // never emit — releases it.
     return NotificationListener<ScrollMetricsNotification>(
       onNotification: (_) {
         controller.maintainStreamingPin();
+        if (_pinMovedList) {
+          _pinMovedList = false;
+          _handleScroll();
+        }
         return false;
       },
       child: NotificationListener<UserScrollNotification>(
@@ -1940,6 +2014,70 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
       padding: const EdgeInsets.all(16),
       child: ChatLoadingBars(caption: message.text),
     );
+  }
+}
+
+/// Scroll physics of the message list: the app's own physics (or the
+/// default `BouncingScrollPhysics`), plus the streaming pin
+/// (`ScrollBehaviorConfig.pinDuringStreaming`) applied while the list lays
+/// out new content.
+///
+/// `adjustPositionForNewDimensions` runs inside the viewport's layout,
+/// whenever the content extent or the viewport size changes; a different
+/// offset returned from it is laid out again before the frame is painted.
+/// Applying the pin there means a frame is never painted with the anchor
+/// pushed off the top by a chunk that just arrived (issue #42); the
+/// controller's post-frame `maintainStreamingPin` used to be the only place
+/// the pin was applied, one painted frame late.
+///
+/// Without an armed pin every call is passed straight to [parent], so an
+/// app's physics behaves exactly as before.
+class _StreamingPinScrollPhysics extends ScrollPhysics {
+  const _StreamingPinScrollPhysics({required this.owner, super.parent});
+
+  /// The list's state. The controller is read through it on every call
+  /// instead of being captured: a `Scrollable` keeps the physics it built
+  /// its position with for as long as the physics' runtime types do not
+  /// change, which can outlive a change of [CustomChatWidget.controller].
+  final _CustomChatWidgetState owner;
+
+  @override
+  _StreamingPinScrollPhysics applyTo(ScrollPhysics? ancestor) =>
+      _StreamingPinScrollPhysics(owner: owner, parent: buildParent(ancestor));
+
+  // ScrollPhysics answers these two itself instead of asking its parent, so
+  // forward them: wrapping must not change what the app's own physics (for
+  // example NeverScrollableScrollPhysics) allows.
+  @override
+  bool get allowUserScrolling =>
+      parent?.allowUserScrolling ?? super.allowUserScrolling;
+
+  @override
+  bool get allowImplicitScrolling =>
+      parent?.allowImplicitScrolling ?? super.allowImplicitScrolling;
+
+  @override
+  double adjustPositionForNewDimensions({
+    required ScrollMetrics oldPosition,
+    required ScrollMetrics newPosition,
+    required bool isScrolling,
+    required double velocity,
+  }) {
+    final pixels = super.adjustPositionForNewDimensions(
+      oldPosition: oldPosition,
+      newPosition: newPosition,
+      isScrolling: isScrolling,
+      velocity: velocity,
+    );
+    final controller = owner.mounted ? owner.widget.controller : null;
+    if (controller == null) return pixels;
+    final pinned = controller.adjustStreamingPinForNewDimensions(
+      newPosition: newPosition,
+      pixels: pixels,
+      isScrolling: isScrolling,
+    );
+    if (pinned != pixels) owner._pinMovedList = true;
+    return pinned;
   }
 }
 
