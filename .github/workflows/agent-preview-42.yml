@@ -103,6 +103,9 @@ jobs:
             test/widgets/streaming_pin_end_of_stream_test.dart \
             test/widgets/streaming_pin_test.dart \
             test/widgets/streaming_pin_delayed_autoscroll_test.dart \
+            test/widgets/streaming_pin_release_test.dart \
+            test/widgets/message_rows_keep_alive_test.dart \
+            test/zz_issue42_diag_test.dart \
             test/golden/streaming_pin_golden_test.dart > targeted.json 2> targeted.err || fail=1
           python3 /tmp/report.py "targeted tests" targeted.json
           if [ "${FULL_SUITE:-1}" = 1 ] && [ "$GITHUB_REF_NAME" = agent/preview-42 ]; then

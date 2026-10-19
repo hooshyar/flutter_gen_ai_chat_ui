@@ -273,8 +273,10 @@ class ScrollBehaviorConfig {
   ///
   /// This is different from [scrollToFirstResponseMessage], which acts only
   /// once the answer has *finished* (it scrolls back to the answer's first
-  /// message at that point). The two can be combined; when a pin is active
-  /// the end-of-answer scroll is skipped because the reader is already there.
+  /// message at that point). The two can be combined; for an answer the pin
+  /// was armed for, the end-of-answer scroll is skipped: the reader is
+  /// either already at the anchor or, after releasing the pin, reading at
+  /// their own pace.
   final StreamingPinAnchor pinDuringStreaming;
 
   const ScrollBehaviorConfig({
