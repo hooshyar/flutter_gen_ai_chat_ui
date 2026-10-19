@@ -1,0 +1,95 @@
+# TEMPORARY - lives only on the agent/preview-42 branch, never merged.
+# Runs format/analyze/tests for the issue #42 work and reports every failing
+# test (name + error) as an annotation, since job logs are not readable from
+# the session driving this. When `dart format` would change anything, the
+# formatted tree is pushed to agent/fmt-42.
+name: agent-preview-42
+
+on:
+  push:
+    branches: ['agent/preview-42']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-preview-42
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Write the json-report helper
+        run: |
+          cat > /tmp/report.py <<'PY'
+          import json, sys
+          title, path = sys.argv[1], sys.argv[2]
+          names, errors, failed, passed, prints = {}, {}, [], 0, []
+          for line in open(path):
+              line = line.strip()
+              if not line.startswith('{'):
+                  continue
+              try:
+                  e = json.loads(line)
+              except ValueError:
+                  continue
+              t = e.get('type')
+              if t == 'testStart':
+                  names[e['test']['id']] = e['test']['name']
+              elif t == 'error':
+                  errors.setdefault(e['testID'], []).append(e.get('error', '') + '\n' + e.get('stackTrace', '')[:300])
+              elif t == 'print' and e.get('message', '').startswith('DIAG'):
+                  prints.append(e['message'])
+              elif t == 'testDone' and not e.get('hidden'):
+                  if e.get('result') == 'success':
+                      passed += 1
+                  else:
+                      failed.append(e['testID'])
+          def esc(s):
+              return s.replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+          out = []
+          for tid in failed[:40]:
+              out.append('FAILED: ' + names.get(tid, str(tid)) + '\n' + '\n'.join(errors.get(tid, []))[:900])
+          if failed:
+              print('::error title=' + title + ' (' + str(len(failed)) + ' failed, ' + str(passed) + ' passed)::' + esc('\n\n'.join(out)))
+          else:
+              print('::notice title=' + title + '::' + str(passed) + ' passed, 0 failed')
+          if prints:
+              print('::notice title=' + title + ' DIAG::' + esc('\n'.join(prints)[:20000]))
+          PY
+      - name: Format, analyze, targeted tests, full suite
+        run: |
+          fail=0
+          report() { echo "::error title=$1::$(tail -n "${3:-80}" "$2" | sed -e 's/%/%25/g' -e 's/\r//g' | sed ':a;N;$!ba;s/\n/%0A/g')"; }
+          step() { local t="$1"; shift; if ! "$@" > out.txt 2>&1; then report "$t" out.txt; fail=1; fi; }
+          step "pub get" flutter pub get
+          if ! dart format --output=none --set-exit-if-changed . > fmt.txt 2>&1; then
+            report "format (fixed tree pushed to agent/fmt-42)" fmt.txt
+            dart format . > /dev/null
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git checkout -q -B agent/fmt-42
+            git add -A -- '*.dart'
+            git commit -qm "dart format" && git push -qf origin agent/fmt-42
+            fail=1
+          fi
+          step "analyze" flutter analyze --fatal-infos
+          flutter test -r json \
+            test/widgets/streaming_pin_painted_frame_test.dart \
+            test/widgets/streaming_pin_end_of_stream_test.dart \
+            test/widgets/streaming_pin_test.dart \
+            test/widgets/streaming_pin_delayed_autoscroll_test.dart \
+            test/golden/streaming_pin_golden_test.dart > targeted.json 2> targeted.err || fail=1
+          python3 /tmp/report.py "targeted tests" targeted.json
+          if [ "${FULL_SUITE:-1}" = 1 ]; then
+            flutter test -r json > full.json 2> full.err || fail=1
+            python3 /tmp/report.py "full suite" full.json
+          fi
+          exit $fail
