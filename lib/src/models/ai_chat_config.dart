@@ -267,16 +267,26 @@ class ScrollBehaviorConfig {
   ///    the top of the viewport;
   /// 3. from then on the anchor is held there — new text arrives below the
   ///    fold and the scroll-to-bottom button appears;
-  /// 4. any user scroll gesture, or a tap on the scroll-to-bottom button,
-  ///    releases the pin for the rest of that answer;
+  /// 4. any user scroll gesture (drag, fling, mouse wheel) releases the pin
+  ///    for the rest of that answer: the reader reads at their own pace;
+  ///    a tap on the scroll-to-bottom button (or
+  ///    `ChatMessagesController.scrollToBottom`) ends the pin for that
+  ///    answer instead, and the list follows the answer from the bottom as
+  ///    it would without a pin;
   /// 5. when the stream ends nothing jumps — the reader stays where they are.
   ///
   /// This is different from [scrollToFirstResponseMessage], which acts only
   /// once the answer has *finished* (it scrolls back to the answer's first
-  /// message at that point). The two can be combined; for an answer the pin
-  /// was armed for, the end-of-answer scroll is skipped: the reader is
-  /// either already at the anchor or, after releasing the pin, reading at
-  /// their own pace.
+  /// message at that point). The two can be combined; the end-of-answer
+  /// scroll is skipped while the pin holds the anchor, and for the answer a
+  /// reader released the pin from with a scroll gesture.
+  ///
+  /// The pin holds the anchor by correcting the list's scroll offset while
+  /// the list is laid out, so listeners added to the list's
+  /// `ScrollController` are not called for those corrections (as for any
+  /// layout-time correction of a scroll offset); scroll notifications
+  /// (`ScrollUpdateNotification` and the like, `ScrollMetricsNotification`)
+  /// are dispatched for them.
   final StreamingPinAnchor pinDuringStreaming;
 
   const ScrollBehaviorConfig({

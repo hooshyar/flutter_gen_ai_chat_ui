@@ -1908,8 +1908,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 
   void _handleScrollToBottomTap() {
     // The reader asked for the bottom: end any streaming pin first so it
-    // does not pull the list straight back up.
-    widget.controller?.releaseStreamingPin();
+    // does not pull the list straight back up, and so the list follows the
+    // rest of the answer from there as it would without a pin (a scroll
+    // gesture only releases the pin; see releaseStreamingPin).
+    widget.controller?.releaseStreamingPin(followAnswer: true);
     if (_scrollController.hasClients) {
       final paginationConfig = widget.messageListOptions.paginationConfig;
       final reduced = ChatMotion.reduced(context);
@@ -2035,10 +2037,10 @@ class _CustomChatWidgetState extends State<CustomChatWidget> {
 class _StreamingPinScrollPhysics extends ScrollPhysics {
   const _StreamingPinScrollPhysics({required this.owner, super.parent});
 
-  /// Looked up on every call rather than captured: a `Scrollable` keeps the
-  /// physics it built its position with for as long as the physics' runtime
-  /// types do not change, which can outlive a change of
-  /// [CustomChatWidget.controller].
+  /// The list's state. The controller is read through it on every call
+  /// instead of being captured: a `Scrollable` keeps the physics it built
+  /// its position with for as long as the physics' runtime types do not
+  /// change, which can outlive a change of [CustomChatWidget.controller].
   final _CustomChatWidgetState owner;
 
   @override
