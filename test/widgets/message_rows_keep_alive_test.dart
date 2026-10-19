@@ -120,9 +120,8 @@ void main() {
       // bottom to the oldest at the top.
       final seen = <String, double>{};
       void collect() {
-        for (final element in find
-            .byType(_KeepAliveRow, skipOffstage: true)
-            .evaluate()) {
+        for (final element
+            in find.byType(_KeepAliveRow, skipOffstage: true).evaluate()) {
           final row = element.widget as _KeepAliveRow;
           final box = element.renderObject! as RenderBox;
           expect(
