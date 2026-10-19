@@ -2,17 +2,10 @@ import 'dart:async';
 import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart'
-    show
-        KeepAliveParentDataMixin,
-        RenderAbstractViewport,
-        RenderProxyBox,
-        RenderSliver,
-        RenderViewport;
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 
 import '../models/ai_chat_config.dart';
 import '../models/chat/models.dart';
-import '../widgets/message/streaming_pin_probe.dart';
 
 /// Controller for managing chat messages and their states.
 ///
@@ -414,42 +407,6 @@ class ChatMessagesController extends ChangeNotifier {
   /// per-frame check does not walk the element tree while nothing changed.
   final Map<String, BuildContext> _pinContextCache = {};
 
-  /// Whether the held pin had the anchor exactly where it wants it (or the
-  /// list following the answer at the bottom) the last time it looked.
-  ///
-  /// Only then does [adjustStreamingPinForNewDimensions] also follow content
-  /// that got SHORTER below the anchor (the end of a stream removes the live
-  /// caret and, in most apps, the typing indicator), so the anchor stays at
-  /// the top instead of sliding down and uncovering what is above it. When
-  /// the reader is elsewhere the pin only ever scrolls towards the anchor.
-  bool _pinAnchorSettled = false;
-
-  /// Set when [adjustStreamingPinForNewDimensions] moved the list during
-  /// layout; consumed by [maintainStreamingPin].
-  bool _pinMovedDuringLayout = false;
-
-  /// For a pin whose anchor is not the answer itself (`userMessage`): the
-  /// anchor's pin offset minus the answer's, last time both were laid out.
-  ///
-  /// The rows between the answer's top and the anchor's top do not change
-  /// while the answer streams, so this stays constant (the question's
-  /// height, in the usual layout). A big chunk can push the question past
-  /// the list's cache extent, so it is not laid out in the pass that has to
-  /// correct for that chunk; the answer always is, and this turns the
-  /// answer's offset into the anchor's.
-  double? _pinAnchorOffsetFromResponse;
-
-  /// Whether a streaming pin was armed for the current answer, whether it
-  /// is still held or the reader has released it.
-  ///
-  /// Until the next user message the pin owns the scroll position: while
-  /// held it keeps the anchor in place, after a release the reader does.
-  /// Either way the controller's own automatic scrolls for AI content (the
-  /// end-of-answer scroll to the bottom or back to the answer's first
-  /// message, [ScrollBehaviorConfig.scrollToFirstResponseMessage]) stay out
-  /// of it.
-  bool get _streamingPinOwnsScroll => _pinnedResponseId != null;
-
   /// Whether a streaming pin is currently holding a message at the top of
   /// the viewport. See [ScrollBehaviorConfig.pinDuringStreaming].
   bool get isStreamingPinActive => _pinnedResponseId != null && !_pinReleased;
@@ -849,12 +806,11 @@ class ChatMessagesController extends ChangeNotifier {
       bool isUserMessage, bool isStartOfResponse, ScrollBehaviorConfig config) {
     // While a streaming pin holds the answer's start (or the user's question)
     // at the top of the viewport, automatic scrolling for AI content would
-    // yank the reader away from it, and once the reader has released the pin
-    // they are reading at their own pace: the pin owns the scroll position
-    // for the rest of this answer either way. User messages still scroll as
-    // usual (they end the pin in addMessage before reaching here).
-    if (!isUserMessage && _streamingPinOwnsScroll) {
-      _debugLog('NOT SCROLLING: streaming pin owns the scroll position');
+    // yank the reader away from it — the pin owns the scroll position for
+    // the rest of this answer. User messages still scroll as usual (they end
+    // the pin in addMessage before reaching here).
+    if (!isUserMessage && isStreamingPinActive) {
+      _debugLog('NOT SCROLLING: streaming pin active');
       return;
     }
 
@@ -939,8 +895,8 @@ class ChatMessagesController extends ChangeNotifier {
       // `addMessage` and only arms the pin afterwards, so by the time the delay
       // elapses the pin is active and this scroll would tear the reader away
       // from the anchor (and, worse, count as an explicit scroll-to-bottom).
-      if (!isUserMessage && _streamingPinOwnsScroll) {
-        _debugLog('SCROLL ABORTED: streaming pin owns the scroll position');
+      if (!isUserMessage && isStreamingPinActive) {
+        _debugLog('SCROLL ABORTED: streaming pin active');
         return;
       }
 
@@ -1398,14 +1354,11 @@ class ChatMessagesController extends ChangeNotifier {
             break;
         }
 
-        if (shouldScroll && wasStreaming && _streamingPinOwnsScroll) {
-          // The reader is already where they want to be: at the pinned
-          // anchor, or, after releasing the pin, wherever they scrolled to.
-          // An end-of-stream scroll — to the bottom or back to the first
-          // message — is exactly the jump the pin exists to prevent (#42:
-          // with scrollToFirstResponseMessage it used to pull a reader who
-          // had scrolled on back to the start of the answer).
-          _debugLog('NOT SCROLLING: end of stream with a streaming pin');
+        if (shouldScroll && wasStreaming && isStreamingPinActive) {
+          // The reader is already where they want to be (the pinned anchor);
+          // an end-of-stream scroll — to the bottom or back to the first
+          // message — is exactly the jump the pin exists to prevent.
+          _debugLog('NOT SCROLLING: end of stream with streaming pin active');
         } else if (shouldScroll && wasStreaming) {
           // For streaming end, use a longer delay to prevent assertion errors
           // Cancel any pending scroll timer first
@@ -1796,8 +1749,6 @@ class ChatMessagesController extends ChangeNotifier {
     _pinAnchorMessageId = anchorId ?? responseMessageId;
     _pinReleased = false;
     _pinLastResponseHeight = null;
-    _pinAnchorSettled = false;
-    _pinAnchorOffsetFromResponse = null;
     _pinContextCache.clear();
     _debugLog('STREAMING PIN: armed for $responseMessageId, '
         'anchor=$_pinAnchorMessageId');
@@ -1808,8 +1759,6 @@ class ChatMessagesController extends ChangeNotifier {
     _pinAnchorMessageId = null;
     _pinReleased = false;
     _pinLastResponseHeight = null;
-    _pinAnchorSettled = false;
-    _pinAnchorOffsetFromResponse = null;
     _pinContextCache.clear();
   }
 
@@ -1847,14 +1796,6 @@ class ChatMessagesController extends ChangeNotifier {
   /// very bottom, where following the answer is what they want.
   void maintainStreamingPin() {
     if (!_mounted) return;
-    if (_pinMovedDuringLayout) {
-      _pinMovedDuringLayout = false;
-      // The pin moved the list inside layout, where a scroll position does
-      // not notify its listeners. Give the controller's own scroll listener
-      // the call the post-frame jumpTo used to cause, so the manual-scroll
-      // bookkeeping behaves exactly as before.
-      _scrollListener?.call();
-    }
     final responseId = _pinnedResponseId;
     if (responseId == null) return;
     final controller = _scrollController;
@@ -1888,21 +1829,13 @@ class ChatMessagesController extends ChangeNotifier {
       }
       final reveal = _offsetToRevealTop(anchorId);
       if (reveal != null) {
-        if (anchorId != responseId) {
-          final responseReveal = _offsetToRevealTop(responseId);
-          if (responseReveal != null) {
-            _pinAnchorOffsetFromResponse = reveal - responseReveal;
-          }
-        }
         final target =
             reveal.clamp(position.minScrollExtent, position.maxScrollExtent);
         if (position.pixels < target - 0.5) {
           controller.jumpTo(target);
         }
-        _pinAnchorSettled = (position.pixels - target).abs() <= 0.5;
         return;
       }
-      _pinAnchorSettled = false;
 
       // The anchor is not built right now (a `userMessage` anchor sits just
       // above the answer, and a large chunk can push it past the list's
@@ -1926,201 +1859,24 @@ class ChatMessagesController extends ChangeNotifier {
   }
 
   /// The laid-out [RenderBox] of [messageId], or null when it is not built.
-  /// Resolved contexts are cached per pin turn; a cached element whose
-  /// render object is no longer in the tree (scrolled out of the list's
-  /// cache extent, or replaced by a rebuild) is looked up again.
+  /// Resolved contexts are cached per pin turn; a cached element that has
+  /// since been unmounted (scrolled out of the list's cache extent) is
+  /// looked up again.
   RenderBox? _pinRenderBox(String messageId) {
-    final cached = _pinContextCache[messageId];
-    if (cached != null) {
-      final box = _attachedBoxOf(cached);
-      if (box != null) return box;
+    var context = _pinContextCache[messageId];
+    if (context == null || !context.mounted) {
       _pinContextCache.remove(messageId);
+      context = _messageContextResolver?.call(messageId);
+      if (context == null || !context.mounted) return null;
+      _pinContextCache[messageId] = context;
     }
-    final context = _messageContextResolver?.call(messageId);
-    if (context == null) return null;
-    final box = _attachedBoxOf(context);
-    if (box != null) _pinContextCache[messageId] = context;
-    return box;
-  }
-
-  /// The render box of [context] if it is attached and laid out.
-  ///
-  /// Also called while the list is being laid out (see
-  /// [adjustStreamingPinForNewDimensions]), when an element the list just
-  /// dropped is deactivated but not unmounted yet. `Element.renderObject` is
-  /// read instead of `findRenderObject()`, which asserts on such elements;
-  /// their render object is already detached, so the `attached` check
-  /// rejects it.
-  static RenderBox? _attachedBoxOf(BuildContext context) {
-    if (!context.mounted) return null;
-    final renderObject =
-        context is Element ? context.renderObject : context.findRenderObject();
+    final renderObject = context.findRenderObject();
     if (renderObject is! RenderBox ||
         !renderObject.attached ||
         !renderObject.hasSize) {
       return null;
     }
     return renderObject;
-  }
-
-  /// Applies the streaming pin while the chat list is laid out with new
-  /// content, so the frame that shows the new content already shows the
-  /// pinned message in place.
-  ///
-  /// `CustomChatWidget` calls this from its message list's scroll physics
-  /// (`ScrollPhysics.adjustPositionForNewDimensions`) whenever the list's
-  /// content extent or viewport size changes. [pixels] is the scroll offset
-  /// the list would otherwise keep; the return value replaces it. Consumers
-  /// normally never need to call this.
-  ///
-  /// Returns [pixels] unchanged unless
-  /// [ScrollBehaviorConfig.pinDuringStreaming] armed a pin for the current
-  /// answer and the list is not in the middle of a drag, fling or animation
-  /// ([isScrolling]). Otherwise it applies the rules described on
-  /// [maintainStreamingPin]:
-  ///
-  /// * while the pin is HELD the anchor is kept at the top of the viewport.
-  ///   The list only ever scrolls towards that position, except that when
-  ///   the anchor was already there, content that got shorter below it is
-  ///   followed too, so the anchor does not slide down.
-  /// * after the reader has RELEASED it, a `reverse: true` list keeps the
-  ///   text they are reading still while the answer grows.
-  ///
-  /// [maintainStreamingPin] still runs after every frame and applies the
-  /// same rules; on its own it moved the list one frame late. In a
-  /// `reverse: true` list every chunk was first painted with the anchor
-  /// pushed up by however much the answer had grown, and pulled back on the
-  /// next frame: a visible flicker at the top of the list (issue #42).
-  double adjustStreamingPinForNewDimensions({
-    required ScrollMetrics newPosition,
-    required double pixels,
-    required bool isScrolling,
-  }) {
-    if (!_mounted || isScrolling) return pixels;
-    final responseId = _pinnedResponseId;
-    if (responseId == null) return pixels;
-    try {
-      final result = _pinReleased
-          ? _releasedPinPixels(responseId, newPosition, pixels)
-          : _heldPinPixels(responseId, newPosition, pixels);
-      if (result != pixels) _pinMovedDuringLayout = true;
-      return result;
-    } catch (e) {
-      _debugLog('STREAMING PIN: could not apply the pin during layout: $e');
-      return pixels;
-    }
-  }
-
-  /// The held-pin half of [adjustStreamingPinForNewDimensions].
-  double _heldPinPixels(
-    String responseId,
-    ScrollMetrics newPosition,
-    double pixels,
-  ) {
-    final anchorId = _pinAnchorMessageId;
-    if (anchorId == null) return pixels;
-    final viewportExtent = newPosition.viewportDimension;
-    var reveal = _offsetToRevealTopDuringLayout(anchorId, viewportExtent);
-    if (anchorId != responseId) {
-      final responseReveal =
-          _offsetToRevealTopDuringLayout(responseId, viewportExtent);
-      final offsetFromResponse = _pinAnchorOffsetFromResponse;
-      if (reveal != null && responseReveal != null) {
-        _pinAnchorOffsetFromResponse = reveal - responseReveal;
-      } else if (responseReveal != null && offsetFromResponse != null) {
-        reveal = responseReveal + offsetFromResponse;
-      }
-    }
-    // Not laid out in this pass: maintainStreamingPin handles it afterwards.
-    if (reveal == null) return pixels;
-    final target =
-        reveal.clamp(newPosition.minScrollExtent, newPosition.maxScrollExtent);
-    var result = pixels;
-    if (pixels < target - 0.5 || (_pinAnchorSettled && pixels > target + 0.5)) {
-      result = target;
-    }
-    _pinAnchorSettled = (result - target).abs() <= 0.5;
-    return result;
-  }
-
-  /// The released-pin half of [adjustStreamingPinForNewDimensions]: the same
-  /// compensation as the released branch of [maintainStreamingPin], applied
-  /// before the frame is painted. It records the new height, so
-  /// [maintainStreamingPin] does not apply the growth a second time.
-  double _releasedPinPixels(
-    String responseId,
-    ScrollMetrics newPosition,
-    double pixels,
-  ) {
-    if (!paginationConfig.reverseOrder) return pixels;
-    final probe = _pinRenderBox(responseId);
-    if (probe is! RenderStreamingPinProbe) return pixels;
-    final height = probe.laidOutHeight;
-    if (height == null) return pixels;
-    final previousHeight = _pinLastResponseHeight;
-    _pinLastResponseHeight = height;
-    if (previousHeight == null || pixels <= 0.5) return pixels;
-    final grown = height - previousHeight;
-    if (grown <= 0.5) return pixels;
-    return (pixels + grown)
-        .clamp(newPosition.minScrollExtent, newPosition.maxScrollExtent);
-  }
-
-  /// [_offsetToRevealTop], computed while the list is still being laid out.
-  ///
-  /// The viewport's `getOffsetToReveal` reads the sizes of render boxes
-  /// inside the list, which the framework only allows once their parent has
-  /// finished laying them out, i.e. not while the scroll position is being
-  /// corrected for new content dimensions. This computes the same offset
-  /// from what can be read at that point: the scroll offsets the slivers
-  /// assigned to their children (`childScrollOffset`) and the height the
-  /// message's [StreamingPinProbe] recorded during its own layout.
-  ///
-  /// It only understands the shape `CustomChatWidget` builds (one sliver
-  /// list whose rows wrap the probe in plain proxy boxes) and returns null
-  /// for anything else, which leaves the correction to
-  /// [maintainStreamingPin].
-  double? _offsetToRevealTopDuringLayout(
-    String messageId,
-    double viewportExtent,
-  ) {
-    final probe = _pinRenderBox(messageId);
-    if (probe is! RenderStreamingPinProbe) return null;
-    final height = probe.laidOutHeight;
-    if (height == null) return null;
-
-    var leading = 0.0;
-    var insideSlivers = false;
-    RenderObject child = probe;
-    while (true) {
-      final parent = child.parent;
-      if (parent == null) return null;
-      if (parent is RenderViewport) {
-        // A ListView has exactly one sliver, so nothing comes before it.
-        if (parent.firstChild != child || parent.lastChild != child) {
-          return null;
-        }
-        break;
-      }
-      if (parent is RenderSliver) {
-        final parentData = child.parentData;
-        if (parentData is KeepAliveParentDataMixin && parentData.keptAlive) {
-          return null;
-        }
-        final offset = parent.childScrollOffset(child);
-        if (offset == null) return null;
-        leading += offset;
-        insideSlivers = true;
-      } else if (insideSlivers || parent is! RenderProxyBox) {
-        return null;
-      }
-      child = parent;
-    }
-    // Same alignment as _offsetToRevealTop: in a reverse list the visual
-    // top of the message is its trailing edge.
-    return paginationConfig.reverseOrder
-        ? leading + height - viewportExtent
-        : leading;
   }
 
   /// The scroll offset that aligns the visual top of [messageId] with the

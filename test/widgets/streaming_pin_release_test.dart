@@ -144,6 +144,7 @@ void main() {
         // message); zero-length scroll animations and reduced motion (the
         // button then jumps) keep the controller's manual-scroll detection,
         // which any scroll animation trips, out of the comparison.
+        final endOfAnswerGaps = <double>[];
         Future<List<String>> runTurn(StreamingPinAnchor anchor) async {
           final controller = await pumpChat(
             tester,
@@ -188,6 +189,7 @@ void main() {
 
           await finish(tester, controller);
           checkpoint('end of the answer');
+          endOfAnswerGaps.add(gapToViewportTop(tester, 'resp1'));
 
           final p = position(tester);
           p.jumpTo(p.maxScrollExtent);
@@ -230,10 +232,13 @@ void main() {
         final withoutPin = await runTurn(StreamingPinAnchor.none);
         final withPin = await runTurn(StreamingPinAnchor.responseStart);
 
-        expect(withPin.skip(1), withoutPin.skip(1));
-        // And those scrolls really ran: at the end of the answer the list
-        // went back to the answer's first message.
-        expect(gapToViewportTop(tester, 'resp1').abs(), lessThan(1.0));
+        expect(withPin.skip(1).toList(), withoutPin.skip(1).toList());
+        // And the end-of-answer scroll really ran in both: the list went
+        // back to the answer's first message.
+        expect(endOfAnswerGaps, hasLength(2));
+        for (final gap in endOfAnswerGaps) {
+          expect(gap.abs(), lessThan(1.0));
+        }
       });
     },
   );
