@@ -1,4 +1,4 @@
-## 2.22.0 - 2026-10-12
+## 2.22.0 - 2026-10-20
 
 Streaming a reply is now one call, and the streaming pin no longer flickers
 or jumps at the end of an answer (#42). No API breaks: everything new is
