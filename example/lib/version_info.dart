@@ -6,4 +6,4 @@
 
 /// The published version of `flutter_gen_ai_chat_ui`, read from the
 /// package's own pubspec.yaml at generation time.
-const String packageVersion = '2.21.0';
+const String packageVersion = '2.22.0';

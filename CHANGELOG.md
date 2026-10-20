@@ -1,3 +1,87 @@
+## 2.22.0 - 2026-10-20
+
+Streaming a reply is now one call, and the streaming pin no longer flickers
+or jumps at the end of an answer (#42). No API breaks: everything new is
+additive.
+
+### Added
+- **`ChatMessagesController.streamResponse(stream, user: aiUser)`** streams a
+  `Stream<String>` reply into the chat. It adds the reply with the first
+  text, updates it as chunks arrive and marks it complete when the stream
+  closes: the `addStreamingMessage` / `updateMessage` /
+  `stopStreamingMessage` sequence that every streaming integration used to
+  write by hand.
+  - Events are appended as deltas, which is what OpenAI, Anthropic and
+    Gemini streams deliver. Pass `accumulated: true` when each event is the
+    whole text so far.
+  - On a stream error the text so far stays, the reply is closed and
+    `onError` is called.
+  - Replies render as markdown by default (`isMarkdown: false` for plain
+    text). Optional `id` and `customProperties`.
+- **`ChatResponseStream`**, returned by `streamResponse`: `cancel()` for a
+  stop button, `done` (the final message, or `null` if no text arrived),
+  `isActive`, `message` and `id`. Disposing the controller stops any reply
+  still streaming.
+- `releaseStreamingPin({bool followAnswer = false})`: `followAnswer: true`
+  ends the pin for the current answer instead of only releasing it.
+- `ChatMessagesController.adjustStreamingPinForNewDimensions`, which the chat
+  widget's list calls during layout to apply the streaming pin. Like
+  `maintainStreamingPin`, apps don't need to call it.
+
+### Fixed
+- **Streaming pin (#42): no flicker at the pin, no jump at the end.** With
+  `ScrollBehaviorConfig.pinDuringStreaming`:
+  - Each new chunk no longer paints one frame with the pinned message pushed
+    above the top of the list before it snaps back. The pin is now applied
+    while the list lays out, instead of one frame later.
+  - Hiding the typing indicator when an answer finishes
+    (`LoadingConfig(isLoading: false)`) no longer throws a pinned list back
+    to its top, onto the question.
+  - With `scrollToFirstResponseMessage`, the end of an answer no longer pulls
+    a reader who has scrolled on back to its start.
+  - Tapping scroll-to-bottom while an answer is still streaming fast no
+    longer stops short of the bottom.
+
+### Changed
+- **The scroll-to-bottom button now ends the pin for the current answer**
+  (as does `ChatMessagesController.scrollToBottom`), so the list follows the
+  answer from the bottom as it would without a pin. A scroll gesture still
+  only releases it, and the end of that answer then doesn't scroll anywhere.
+- The pin holds its anchor by correcting the list's scroll offset during
+  layout. Scroll notifications (`ScrollUpdateNotification` and the rest, and
+  `ScrollMetricsNotification`) are dispatched for those corrections, but
+  listeners added to the list's `ScrollController` are not called for them.
+- **Rows of the default newest-at-bottom list are matched by message id.**
+  A message row now keeps its position and state when rows before it come or
+  go (the typing indicator appearing or disappearing, a new message). Before,
+  rows were matched by index, so each one was rebuilt with its neighbour's
+  widget. Layout and painting are unchanged. The index matching was the
+  cause of the end-of-answer jump fixed above. If a custom bubble builder
+  returns a `StatefulWidget` that reads the message only in `initState`, read
+  it in `didUpdateWidget` too: its `State` now stays with its message instead
+  of being recreated on every insertion.
+- **Requires `flutter_streaming_text_markdown` 1.11.1 or later** (was 1.11.0),
+  so apps get its two fixes: markdown that could stay invisible after
+  tap-to-complete, and an uncaught error when the browser refuses a
+  clipboard write.
+
+### Documentation
+- **The README Quick Start streams.** It is now a complete app that streams
+  replies from a stand-in `Stream<String>` through `streamResponse`, so
+  pasting it into `lib/main.dart` shows the package working with no API key.
+  The same code is `example/lib/quickstart.dart`, which CI analyzes and
+  tests, and a test keeps the README copy identical to it.
+- **"Streaming AI responses"** now leads with `streamResponse`, including a
+  stop-button recipe, and keeps the manual three-call API under "Driving a
+  stream by hand".
+- **Example app.** The Basic demo uses `streamResponse`, which replaces about
+  40 lines of subscription and bookkeeping code.
+- **README first screen.** The demo GIF and live demo link now sit right under
+  the description, ahead of the install and quick start; the table of
+  contents moved below the quick start, and the badges are down to pub
+  version, points, likes and CI. The example list matches the app's screens,
+  including the 2.21 Layout demo.
+
 ## 2.21.0 - 2026-10-12
 
 No API breaks: everything new is additive and opt-in. This release:
